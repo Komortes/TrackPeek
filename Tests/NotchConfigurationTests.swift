@@ -36,4 +36,35 @@ struct NotchConfigurationTests {
         #expect(!NotchSongInfoVisibility.whilePlaying.shouldShow(isPlaying: false))
         #expect(!NotchSongInfoVisibility.never.shouldShow(isPlaying: true))
     }
+
+    @Test("expands for enabled hover click or song notification sources")
+    func expansionPolicyUsesEnabledSources() {
+        #expect(
+            NotchExpansionPolicy.shouldExpand(
+                hoverReady: true,
+                hoverEnabled: true,
+                isPinned: false,
+                clickEnabled: true,
+                notificationVisible: false
+            )
+        )
+        #expect(
+            !NotchExpansionPolicy.shouldExpand(
+                hoverReady: true,
+                hoverEnabled: false,
+                isPinned: true,
+                clickEnabled: false,
+                notificationVisible: false
+            )
+        )
+        #expect(
+            NotchExpansionPolicy.shouldExpand(
+                hoverReady: false,
+                hoverEnabled: false,
+                isPinned: false,
+                clickEnabled: false,
+                notificationVisible: true
+            )
+        )
+    }
 }

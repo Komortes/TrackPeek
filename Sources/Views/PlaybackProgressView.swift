@@ -8,6 +8,7 @@ struct PlaybackProgressView: View {
     let snapshotDate: Date
     let onSeek: (TimeInterval) -> Void
     var usesCompactTime = false
+    var tint: Color = .accentColor
 
     @State private var dragPosition: TimeInterval?
     @State private var isDragging = false
@@ -87,7 +88,7 @@ struct PlaybackProgressView: View {
                 Capsule()
                     .fill(
                         LinearGradient(
-                            colors: [.accentColor, .accentColor.opacity(0.72)],
+                            colors: [tint, tint.opacity(0.72)],
                             startPoint: .leading,
                             endPoint: .trailing
                         )
@@ -100,7 +101,7 @@ struct PlaybackProgressView: View {
                     .frame(width: 10, height: 10)
                     .overlay {
                         Circle()
-                            .stroke(Color.accentColor.opacity(0.3), lineWidth: 1)
+                            .stroke(tint.opacity(0.3), lineWidth: 1)
                     }
                     .shadow(color: .black.opacity(0.22), radius: 3, y: 1)
                     .offset(x: max((proxy.size.width - 10) * fraction, 0))

@@ -33,7 +33,8 @@ struct SettingsView: View {
     private var backgroundStyleRawValue = PopoverBackgroundStyle.fallback.rawValue
     @AppStorage(ArtworkSizePreference.storageKey)
     private var artworkSizeValue = ArtworkSizePreference.fallback
-    @AppStorage("displayMode") private var selectedModeRawValue = DisplayMode.fallback.rawValue
+    @AppStorage(DisplayMode.storageKey)
+    private var selectedModeRawValue = DisplayMode.fallback.rawValue
 
     private var playerLayout: PlayerLayout {
         PlayerLayout(rawValue: playerLayoutRawValue) ?? .fallback
@@ -216,7 +217,7 @@ struct SettingsView: View {
             }
 
             Label(
-                "Сейчас работает Menu Bar. Notch и Floating Widget подключим следующими этапами.",
+                "Menu Bar и Notch доступны. Floating Widget подключим следующим этапом.",
                 systemImage: "info.circle"
             )
             .font(.caption)

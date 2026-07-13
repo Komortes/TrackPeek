@@ -100,6 +100,24 @@ enum NotchPreferences {
     static let coloredProgressFallback = true
     static let coloredWaveformFallback = true
 
+    static func registerDefaults(in defaults: UserDefaults = .standard) {
+        defaults.register(defaults: [
+            enabledKey: enabledFallback,
+            displayTargetKey: NotchDisplayTarget.fallback.rawValue,
+            widthKey: widthFallback,
+            heightAdjustmentKey: heightAdjustmentFallback,
+            hapticFeedbackKey: hapticFeedbackFallback,
+            songInfoVisibilityKey: NotchSongInfoVisibility.fallback.rawValue,
+            hoverEnabledKey: hoverEnabledFallback,
+            clickEnabledKey: clickEnabledFallback,
+            hoverDelayKey: hoverDelayFallback,
+            notificationsEnabledKey: notificationsEnabledFallback,
+            notificationDurationKey: notificationDurationFallback,
+            coloredProgressKey: coloredProgressFallback,
+            coloredWaveformKey: coloredWaveformFallback,
+        ])
+    }
+
     static func clampedWidth(_ value: Double) -> Double {
         min(max(value, widthRange.lowerBound), widthRange.upperBound)
     }
@@ -128,5 +146,19 @@ enum NotchPreferences {
             width: max(clampedWidth(width) + 96, 390),
             height: 188 + clampedHeightAdjustment(heightAdjustment)
         )
+    }
+}
+
+enum NotchExpansionPolicy {
+    static func shouldExpand(
+        hoverReady: Bool,
+        hoverEnabled: Bool,
+        isPinned: Bool,
+        clickEnabled: Bool,
+        notificationVisible: Bool
+    ) -> Bool {
+        (hoverReady && hoverEnabled)
+            || (isPinned && clickEnabled)
+            || notificationVisible
     }
 }
