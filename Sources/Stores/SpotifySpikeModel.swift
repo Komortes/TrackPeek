@@ -8,6 +8,7 @@ final class SpotifySpikeModel {
 
     private(set) var track: SpotifyTrack?
     private(set) var statusText = "Обновление…"
+    private(set) var snapshotDate = Date()
 
     init(provider: any SpotifyPlaybackProviding = SpotifyAppleScriptClient()) {
         self.provider = provider
@@ -17,6 +18,7 @@ final class SpotifySpikeModel {
         do {
             let track = try provider.fetchCurrentTrack()
             self.track = track
+            snapshotDate = Date()
             statusText = track.isPlaying ? "Играет" : "На паузе"
         } catch {
             track = nil
@@ -69,6 +71,7 @@ final class SpotifySpikeModel {
                 artworkURL: track.artworkURL,
                 isPlaying: track.isPlaying
             )
+            snapshotDate = Date()
         } catch {
             statusText = error.localizedDescription
         }

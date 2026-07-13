@@ -3,35 +3,132 @@ import SwiftUI
 struct PlaybackProgressView: View {
     let position: TimeInterval
     let duration: TimeInterval
+    let isPlaying: Bool
+    let snapshotDate: Date
+    let onSeek: (TimeInterval) -> Void
+
+    @State private var dragPosition: TimeInterval?
+    @State private var isDragging = false
+    @State private var isHovering = false
 
     var body: some View {
-        VStack(spacing: 6) {
-            ProgressView(value: clampedPosition, total: progressTotal)
-                .progressViewStyle(.linear)
-                .tint(.accentColor)
+        TimelineView(
+            .animation(
+                minimumInterval: 1 / 30,
+                paused: !isPlaying || isDragging
+            )
+        ) { context in
+            let displayedPosition = dragPosition ?? PlaybackPositionResolver.livePosition(
+                snapshotPosition: position,
+                snapshotDate: snapshotDate,
+                now: context.date,
+                duration: duration,
+                isPlaying: isPlaying
+            )
 
-            HStack {
-                Text(PlaybackTimeFormatter.string(from: position))
+            VStack(spacing: 5) {
+                scrubber(position: displayedPosition)
 
-                Spacer()
+                HStack {
+                    Text(PlaybackTimeFormatter.string(from: displayedPosition))
 
-                Text(PlaybackTimeFormatter.string(from: duration))
+                    Spacer()
+
+                    Text(PlaybackTimeFormatter.string(from: duration))
+                }
+                .font(.caption2.monospacedDigit())
+                .foregroundStyle(.secondary)
             }
-            .font(.caption2.monospacedDigit())
-            .foregroundStyle(.secondary)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Прогресс воспроизведения")
+            .accessibilityValue(
+                "\(PlaybackTimeFormatter.string(from: displayedPosition)) из \(PlaybackTimeFormatter.string(from: duration))"
+            )
+            .accessibilityHint("Перетащите или измените значение для перемотки")
+            .accessibilityAdjustableAction { direction in
+                let step = max(duration * 0.02, 5)
+                let target: TimeInterval
+
+                switch direction {
+                case .increment:
+                    target = min(displayedPosition + step, duration)
+                case .decrement:
+                    target = max(displayedPosition - step, 0)
+                @unknown default:
+                    return
+                }
+
+                onSeek(target)
+            }
         }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Прогресс воспроизведения")
-        .accessibilityValue(
-            "\(PlaybackTimeFormatter.string(from: position)) из \(PlaybackTimeFormatter.string(from: duration))"
-        )
     }
 
-    private var progressTotal: TimeInterval {
-        max(duration, 1)
-    }
+    private func scrubber(position: TimeInterval) -> some View {
+        GeometryReader { proxy in
+            let fraction = duration > 0
+                ? min(max(position / duration, 0), 1)
+                : 0
 
-    private var clampedPosition: TimeInterval {
-        min(max(position, 0), progressTotal)
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(.quaternary)
+                    .frame(height: 4)
+
+                Capsule()
+                    .fill(
+                        LinearGradient(
+                            colors: [.accentColor, .accentColor.opacity(0.72)],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .frame(height: 4)
+                    .scaleEffect(x: fraction, anchor: .leading)
+
+                Circle()
+                    .fill(.white)
+                    .frame(width: 10, height: 10)
+                    .overlay {
+                        Circle()
+                            .stroke(Color.accentColor.opacity(0.3), lineWidth: 1)
+                    }
+                    .shadow(color: .black.opacity(0.22), radius: 3, y: 1)
+                    .offset(x: max((proxy.size.width - 10) * fraction, 0))
+                    .opacity(isHovering || isDragging ? 1 : 0)
+                    .scaleEffect(isHovering || isDragging ? 1 : 0.72)
+                    .animation(.easeOut(duration: 0.12), value: isDragging)
+            }
+            .frame(maxHeight: .infinity)
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { value in
+                        isDragging = true
+                        dragPosition = PlaybackPositionResolver.position(
+                            at: value.location.x,
+                            width: proxy.size.width,
+                            duration: duration
+                        )
+                    }
+                    .onEnded { value in
+                        let target = PlaybackPositionResolver.position(
+                            at: value.location.x,
+                            width: proxy.size.width,
+                            duration: duration
+                        )
+                        onSeek(target)
+                        dragPosition = nil
+                        isDragging = false
+                    }
+            )
+            .onHover { hovering in
+                withAnimation(.easeOut(duration: 0.14)) {
+                    isHovering = hovering
+                }
+            }
+            .help("Перетащите для перемотки")
+        }
+        .frame(height: 16)
+        .allowsHitTesting(duration > 0)
     }
 }

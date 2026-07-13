@@ -22,13 +22,13 @@ struct TrackArtworkView: View {
                 placeholder(showsProgress: false)
             }
         }
-        .frame(width: 94, height: 94)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .frame(width: 100, height: 100)
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .stroke(.white.opacity(0.12), lineWidth: 1)
         }
-        .shadow(color: .black.opacity(0.2), radius: 12, y: 6)
+        .shadow(color: .black.opacity(0.2), radius: 14, y: 7)
         .accessibilityHidden(true)
     }
 

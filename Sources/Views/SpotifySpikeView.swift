@@ -23,12 +23,11 @@ struct SpotifySpikeView: View {
                 model.refresh()
 
                 let interval = model.track?.isPlaying == true
-                    ? Duration.seconds(1)
-                    : Duration.seconds(3)
+                    ? Duration.seconds(2)
+                    : Duration.seconds(4)
                 try? await Task.sleep(for: interval)
             }
         }
-        .animation(.snappy(duration: 0.24), value: model.track)
     }
 
     private var header: some View {
@@ -42,13 +41,26 @@ struct SpotifySpikeView: View {
 
             Spacer()
 
+            if let track = model.track {
+                HStack(spacing: 5) {
+                    Circle()
+                        .fill(track.isPlaying ? Color.green : Color.secondary)
+                        .frame(width: 6, height: 6)
+
+                    Text(model.statusText)
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(.secondary)
+                }
+                .contentTransition(.opacity)
+                .animation(.easeOut(duration: 0.18), value: track.isPlaying)
+            }
+
             Button {
                 model.refresh()
             } label: {
                 Image(systemName: "arrow.clockwise")
             }
             .buttonStyle(.borderless)
-            .keyboardShortcut("r", modifiers: .command)
             .help("Обновить текущий трек")
             .accessibilityLabel("Обновить текущий трек")
         }
@@ -59,42 +71,46 @@ struct SpotifySpikeView: View {
     @ViewBuilder
     private var content: some View {
         if let track = model.track {
-            VStack(spacing: 16) {
-                HStack(alignment: .center, spacing: 14) {
+            VStack(spacing: 18) {
+                HStack(alignment: .center, spacing: 16) {
                     TrackArtworkView(url: track.artworkURL)
 
-                    VStack(alignment: .leading, spacing: 5) {
+                    VStack(alignment: .leading, spacing: 6) {
                         Text(track.title)
-                            .font(.title3.weight(.semibold))
+                            .font(.system(size: 17, weight: .semibold))
                             .lineLimit(2)
                             .truncationMode(.tail)
+                            .contentTransition(.opacity)
 
                         Text(track.artist)
-                            .font(.subheadline)
+                            .font(.callout.weight(.medium))
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
+                            .contentTransition(.opacity)
 
                         if let album = track.album {
                             Text(album)
-                                .font(.caption)
+                                .font(.caption2)
                                 .foregroundStyle(.tertiary)
                                 .lineLimit(1)
+                                .contentTransition(.opacity)
                         }
-
-                        statusBadge(for: track)
-                            .padding(.top, 3)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
                 PlaybackProgressView(
                     position: track.position,
-                    duration: track.duration
+                    duration: track.duration,
+                    isPlaying: track.isPlaying,
+                    snapshotDate: model.snapshotDate,
+                    onSeek: model.seek(to:)
                 )
 
                 playbackControls(for: track)
             }
-            .padding(16)
+            .padding(18)
+            .animation(.easeOut(duration: 0.2), value: trackIdentity(track))
             .transition(.opacity.combined(with: .scale(scale: 0.98)))
         } else {
             unavailableContent
@@ -103,29 +119,15 @@ struct SpotifySpikeView: View {
         }
     }
 
-    private func statusBadge(for track: SpotifyTrack) -> some View {
-        Label(
-            model.statusText,
-            systemImage: track.isPlaying ? "waveform" : "pause.fill"
-        )
-        .font(.caption2.weight(.medium))
-        .foregroundStyle(track.isPlaying ? Color.green : Color.secondary)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(.quaternary, in: Capsule())
-    }
-
     private func playbackControls(for track: SpotifyTrack) -> some View {
-        HStack(spacing: 26) {
+        HStack(spacing: 18) {
             Button {
                 model.previousTrack()
             } label: {
                 Image(systemName: "backward.end.fill")
                     .font(.system(size: 16, weight: .semibold))
-                    .frame(width: 32, height: 32)
             }
-            .buttonStyle(.plain)
-            .foregroundStyle(.secondary)
+            .buttonStyle(PlaybackControlButtonStyle(isPrimary: false))
             .help("Предыдущий трек")
             .accessibilityLabel("Предыдущий трек")
 
@@ -133,12 +135,11 @@ struct SpotifySpikeView: View {
                 model.togglePlayback()
             } label: {
                 Image(systemName: track.isPlaying ? "pause.fill" : "play.fill")
-                    .font(.system(size: 16, weight: .semibold))
-                    .frame(width: 22, height: 22)
+                    .font(.system(size: 17, weight: .semibold))
+                    .contentTransition(.opacity)
             }
-            .buttonStyle(.borderedProminent)
-            .buttonBorderShape(.circle)
-            .controlSize(.large)
+            .buttonStyle(PlaybackControlButtonStyle(isPrimary: true))
+            .animation(.easeOut(duration: 0.16), value: track.isPlaying)
             .help(track.isPlaying ? "Поставить на паузу" : "Продолжить воспроизведение")
             .accessibilityLabel(track.isPlaying ? "Пауза" : "Воспроизвести")
 
@@ -147,14 +148,16 @@ struct SpotifySpikeView: View {
             } label: {
                 Image(systemName: "forward.end.fill")
                     .font(.system(size: 16, weight: .semibold))
-                    .frame(width: 32, height: 32)
             }
-            .buttonStyle(.plain)
-            .foregroundStyle(.secondary)
+            .buttonStyle(PlaybackControlButtonStyle(isPrimary: false))
             .help("Следующий трек")
             .accessibilityLabel("Следующий трек")
         }
         .frame(maxWidth: .infinity)
+    }
+
+    private func trackIdentity(_ track: SpotifyTrack) -> String {
+        "\(track.title)|\(track.artist)|\(track.album ?? "")"
     }
 
     private var unavailableContent: some View {
@@ -202,7 +205,6 @@ struct SpotifySpikeView: View {
                 Image(systemName: "power")
             }
             .buttonStyle(.borderless)
-            .keyboardShortcut("q", modifiers: .command)
             .help("Завершить TrackPeek")
             .accessibilityLabel("Завершить TrackPeek")
         }
