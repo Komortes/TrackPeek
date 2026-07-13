@@ -261,9 +261,7 @@ private final class NotchTrackingHostingView<Content: View>: NSHostingView<Conte
     override func updateTrackingAreas() {
         super.updateTrackingAreas()
 
-        if let notchTrackingArea {
-            removeTrackingArea(notchTrackingArea)
-        }
+        guard notchTrackingArea == nil else { return }
 
         let trackingArea = NSTrackingArea(
             rect: .zero,

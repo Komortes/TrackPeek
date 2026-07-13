@@ -30,6 +30,7 @@ struct NotchPlayerView: View {
     @State private var hoverReady = false
     @State private var isPinned = false
     @State private var notificationVisible = false
+    @State private var artworkPalette = ArtworkPalette.fallback
     @State private var hoverTask: Task<Void, Never>?
     @State private var notificationTask: Task<Void, Never>?
 
@@ -65,8 +66,7 @@ struct NotchPlayerView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background {
-            notchShape
-                .fill(Color.black.opacity(0.97))
+            notchBackground
         }
         .clipShape(notchShape)
         .contentShape(Rectangle())
@@ -91,6 +91,12 @@ struct NotchPlayerView: View {
             }
         }
         .onChange(of: trackIdentity, handleTrackChange)
+        .task(id: model.track?.artworkURL) {
+            artworkPalette = .fallback
+            artworkPalette = await ArtworkPaletteLoader.shared.palette(
+                for: model.track?.artworkURL
+            )
+        }
         .onAppear {
             onExpansionChange(false)
             handleHover(pointerState.isInside)
@@ -111,6 +117,29 @@ struct NotchPlayerView: View {
         )
     }
 
+    private var notchBackground: some View {
+        ZStack {
+            Color.black.opacity(0.985)
+
+            if coloredWaveform {
+                LinearGradient(
+                    colors: [
+                        artworkPalette.primary.swiftUIColor.opacity(isExpanded ? 0.20 : 0.12),
+                        artworkPalette.secondary.swiftUIColor.opacity(isExpanded ? 0.10 : 0.04),
+                        .clear,
+                    ],
+                    startPoint: .bottomLeading,
+                    endPoint: .topTrailing
+                )
+                .blendMode(.plusLighter)
+            }
+        }
+        .animation(
+            reduceMotion ? nil : .easeOut(duration: 0.28),
+            value: artworkPalette
+        )
+    }
+
     @ViewBuilder
     private var compactContent: some View {
         if let track = model.track, model.availability == .ready {
@@ -123,19 +152,27 @@ struct NotchPlayerView: View {
                 )
 
                 if songInfoVisibility.shouldShow(isPlaying: track.isPlaying) {
-                    Text(track.title)
-                        .font(.system(size: 11, weight: .semibold, design: .rounded))
-                        .lineLimit(1)
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(track.title)
+                            .font(.system(size: 10.5, weight: .semibold, design: .rounded))
+                            .lineLimit(1)
+
+                        Text(track.artist)
+                            .font(.system(size: 8.5, weight: .medium, design: .rounded))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
                         .frame(maxWidth: .infinity)
                 } else {
                     Spacer(minLength: 0)
                 }
 
-                NotchWaveformView(
+                ArtworkEqualizerView(
                     isPlaying: track.isPlaying,
-                    isColored: coloredWaveform
+                    isColored: coloredWaveform,
+                    palette: artworkPalette
                 )
-                .frame(width: 25)
+                .frame(width: 30, height: 18)
             }
             .padding(.horizontal, 8)
             .onTapGesture {
@@ -167,73 +204,101 @@ struct NotchPlayerView: View {
     @ViewBuilder
     private var expandedContent: some View {
         if let track = model.track, model.availability == .ready {
-            VStack(spacing: 11) {
-                HStack(spacing: 12) {
+            HStack(alignment: .center, spacing: 15) {
+                VStack(spacing: 7) {
                     TrackArtworkView(
                         url: track.artworkURL,
-                        size: 58,
-                        cornerRadius: 11,
+                        size: 78,
+                        cornerRadius: 15,
                         showsShadow: true
                     )
 
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(track.title)
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
-                            .lineLimit(1)
+                    HStack(spacing: 5) {
+                        Circle()
+                            .fill(track.isPlaying ? artworkPalette.primary.swiftUIColor : .secondary)
+                            .frame(width: 5, height: 5)
 
-                        Text(track.artist)
-                            .font(.system(size: 12, weight: .medium, design: .rounded))
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-
-                        if let album = track.album, !album.isEmpty {
-                            Text(album)
-                                .font(.system(size: 10, weight: .medium, design: .rounded))
-                                .foregroundStyle(.tertiary)
-                                .lineLimit(1)
-                        }
+                        Text(track.isPlaying ? "ИГРАЕТ" : "ПАУЗА")
+                            .font(.system(size: 8, weight: .bold, design: .rounded))
+                            .tracking(0.7)
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .foregroundStyle(.secondary)
+                }
+                .frame(width: 82)
 
-                    NotchWaveformView(
+                VStack(alignment: .leading, spacing: 0) {
+                    HStack(alignment: .top, spacing: 10) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(track.title)
+                                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                .lineLimit(1)
+
+                            Text(track.artist)
+                                .font(.system(size: 11.5, weight: .medium, design: .rounded))
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+
+                            if let album = track.album, !album.isEmpty {
+                                Text(album)
+                                    .font(.system(size: 9.5, weight: .medium, design: .rounded))
+                                    .foregroundStyle(.tertiary)
+                                    .lineLimit(1)
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                        Button {
+                            isPinned = false
+                            notificationVisible = false
+                            hoverReady = false
+                        } label: {
+                            Image(systemName: "chevron.up")
+                                .font(.system(size: 9, weight: .bold))
+                                .frame(width: 22, height: 22)
+                                .background(.white.opacity(0.06), in: Circle())
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(.secondary)
+                        .help("Свернуть плеер")
+                    }
+
+                    Spacer(minLength: 6)
+
+                    PlaybackProgressView(
+                        position: track.position,
+                        duration: track.duration,
                         isPlaying: track.isPlaying,
-                        isColored: coloredWaveform
+                        snapshotDate: model.snapshotDate,
+                        onSeek: model.seek(to:),
+                        tint: coloredProgress ? artworkPalette.primary.swiftUIColor : .white
                     )
 
-                    Button {
-                        isPinned = false
-                        notificationVisible = false
-                        hoverReady = false
-                    } label: {
-                        Image(systemName: "chevron.up")
-                            .font(.system(size: 10, weight: .bold))
-                            .frame(width: 24, height: 24)
+                    Spacer(minLength: 4)
+
+                    HStack(spacing: 12) {
+                        PlaybackControlsView(
+                            isPlaying: track.isPlaying,
+                            onPrevious: model.previousTrack,
+                            onPlayPause: model.togglePlayback,
+                            onNext: model.nextTrack,
+                            spacing: 10
+                        )
+                        .tint(artworkPalette.primary.swiftUIColor)
+
+                        Spacer(minLength: 8)
+
+                        ArtworkEqualizerView(
+                            isPlaying: track.isPlaying,
+                            isColored: coloredWaveform,
+                            palette: artworkPalette
+                        )
+                        .frame(width: 48, height: 24)
                     }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(.secondary)
-                    .help("Свернуть плеер")
                 }
-
-                PlaybackProgressView(
-                    position: track.position,
-                    duration: track.duration,
-                    isPlaying: track.isPlaying,
-                    snapshotDate: model.snapshotDate,
-                    onSeek: model.seek(to:),
-                    tint: coloredProgress ? .cyan : .white
-                )
-
-                PlaybackControlsView(
-                    isPlaying: track.isPlaying,
-                    onPrevious: model.previousTrack,
-                    onPlayPause: model.togglePlayback,
-                    onNext: model.nextTrack,
-                    spacing: 24
-                )
             }
-            .padding(.horizontal, 18)
-            .padding(.top, 12)
-            .padding(.bottom, 14)
+            .padding(.horizontal, 16)
+            .padding(.top, 13)
+            .padding(.bottom, 12)
         } else {
             VStack(spacing: 12) {
                 Image(systemName: "music.note")
@@ -296,30 +361,5 @@ struct NotchPlayerView: View {
             guard !Task.isCancelled else { return }
             notificationVisible = false
         }
-    }
-}
-
-private struct NotchWaveformView: View {
-    let isPlaying: Bool
-    let isColored: Bool
-
-    @State private var pulses = false
-
-    var body: some View {
-        Image(systemName: "waveform")
-            .font(.system(size: 13, weight: .semibold))
-            .foregroundStyle(isColored ? Color.cyan : Color.white.opacity(0.72))
-            .scaleEffect(y: isPlaying && pulses ? 1 : 0.7)
-            .opacity(isPlaying ? 1 : 0.58)
-            .animation(
-                isPlaying
-                    ? .easeInOut(duration: 0.52).repeatForever(autoreverses: true)
-                    : .easeOut(duration: 0.18),
-                value: pulses
-            )
-            .onAppear {
-                pulses = true
-            }
-            .accessibilityHidden(true)
     }
 }
