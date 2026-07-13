@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct PlaybackProgressView: View {
@@ -6,6 +7,7 @@ struct PlaybackProgressView: View {
     let isPlaying: Bool
     let snapshotDate: Date
     let onSeek: (TimeInterval) -> Void
+    var usesCompactTime = false
 
     @State private var dragPosition: TimeInterval?
     @State private var isDragging = false
@@ -29,16 +31,23 @@ struct PlaybackProgressView: View {
             VStack(spacing: 5) {
                 scrubber(position: displayedPosition)
 
-                HStack {
-                    Text(PlaybackTimeFormatter.string(from: displayedPosition))
+                if usesCompactTime {
+                    Text(
+                        "\(PlaybackTimeFormatter.string(from: displayedPosition)) / \(PlaybackTimeFormatter.string(from: duration))"
+                    )
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    HStack {
+                        Text(PlaybackTimeFormatter.string(from: displayedPosition))
 
-                    Spacer()
+                        Spacer()
 
-                    Text(PlaybackTimeFormatter.string(from: duration))
+                        Text(PlaybackTimeFormatter.string(from: duration))
+                    }
                 }
-                .font(.caption2.monospacedDigit())
-                .foregroundStyle(.secondary)
             }
+            .font(.system(size: 10, weight: .medium, design: .rounded).monospacedDigit())
+            .foregroundStyle(.secondary)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Прогресс воспроизведения")
             .accessibilityValue(
@@ -68,11 +77,12 @@ struct PlaybackProgressView: View {
             let fraction = duration > 0
                 ? min(max(position / duration, 0), 1)
                 : 0
+            let trackHeight: CGFloat = isHovering || isDragging ? 6 : 3
 
             ZStack(alignment: .leading) {
                 Capsule()
                     .fill(.quaternary)
-                    .frame(height: 4)
+                    .frame(height: trackHeight)
 
                 Capsule()
                     .fill(
@@ -82,11 +92,11 @@ struct PlaybackProgressView: View {
                             endPoint: .trailing
                         )
                     )
-                    .frame(height: 4)
+                    .frame(height: trackHeight)
                     .scaleEffect(x: fraction, anchor: .leading)
 
                 Circle()
-                    .fill(.white)
+                    .fill(Color(nsColor: .controlBackgroundColor))
                     .frame(width: 10, height: 10)
                     .overlay {
                         Circle()

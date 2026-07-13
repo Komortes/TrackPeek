@@ -5,9 +5,10 @@ struct PlaybackControlsView: View {
     let onPrevious: () -> Void
     let onPlayPause: () -> Void
     let onNext: () -> Void
+    var spacing: CGFloat = 16
 
     var body: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: spacing) {
             control(
                 symbol: "backward.fill",
                 label: "Предыдущий трек",
