@@ -16,10 +16,17 @@ struct SpotifySpikeView: View {
 
             footer
         }
-        .frame(width: 340)
+        .frame(width: 360)
         .background(.regularMaterial)
         .task {
-            model.refresh()
+            while !Task.isCancelled {
+                model.refresh()
+
+                let interval = model.track?.isPlaying == true
+                    ? Duration.seconds(1)
+                    : Duration.seconds(3)
+                try? await Task.sleep(for: interval)
+            }
         }
         .animation(.snappy(duration: 0.24), value: model.track)
     }
@@ -52,9 +59,9 @@ struct SpotifySpikeView: View {
     @ViewBuilder
     private var content: some View {
         if let track = model.track {
-            VStack(spacing: 18) {
+            VStack(spacing: 16) {
                 HStack(alignment: .center, spacing: 14) {
-                    artworkPlaceholder
+                    TrackArtworkView(url: track.artworkURL)
 
                     VStack(alignment: .leading, spacing: 5) {
                         Text(track.title)
@@ -67,25 +74,25 @@ struct SpotifySpikeView: View {
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
 
+                        if let album = track.album {
+                            Text(album)
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                                .lineLimit(1)
+                        }
+
                         statusBadge(for: track)
                             .padding(.top, 3)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
-                Button {
-                    model.togglePlayback()
-                } label: {
-                    Image(systemName: track.isPlaying ? "pause.fill" : "play.fill")
-                        .font(.system(size: 16, weight: .semibold))
-                        .frame(width: 22, height: 22)
-                }
-                .buttonStyle(.borderedProminent)
-                .buttonBorderShape(.circle)
-                .controlSize(.large)
-                .keyboardShortcut(.space, modifiers: [])
-                .help(track.isPlaying ? "Поставить на паузу" : "Продолжить воспроизведение")
-                .accessibilityLabel(track.isPlaying ? "Пауза" : "Воспроизвести")
+                PlaybackProgressView(
+                    position: track.position,
+                    duration: track.duration
+                )
+
+                playbackControls(for: track)
             }
             .padding(16)
             .transition(.opacity.combined(with: .scale(scale: 0.98)))
@@ -94,29 +101,6 @@ struct SpotifySpikeView: View {
                 .padding(20)
                 .transition(.opacity)
         }
-    }
-
-    private var artworkPlaceholder: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color.accentColor.opacity(0.88),
-                            Color.accentColor.opacity(0.42),
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-
-            Image(systemName: "music.note")
-                .font(.system(size: 29, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.92))
-        }
-        .frame(width: 82, height: 82)
-        .shadow(color: Color.accentColor.opacity(0.18), radius: 10, y: 4)
-        .accessibilityHidden(true)
     }
 
     private func statusBadge(for track: SpotifyTrack) -> some View {
@@ -129,6 +113,48 @@ struct SpotifySpikeView: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .background(.quaternary, in: Capsule())
+    }
+
+    private func playbackControls(for track: SpotifyTrack) -> some View {
+        HStack(spacing: 26) {
+            Button {
+                model.previousTrack()
+            } label: {
+                Image(systemName: "backward.end.fill")
+                    .font(.system(size: 16, weight: .semibold))
+                    .frame(width: 32, height: 32)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.secondary)
+            .help("Предыдущий трек")
+            .accessibilityLabel("Предыдущий трек")
+
+            Button {
+                model.togglePlayback()
+            } label: {
+                Image(systemName: track.isPlaying ? "pause.fill" : "play.fill")
+                    .font(.system(size: 16, weight: .semibold))
+                    .frame(width: 22, height: 22)
+            }
+            .buttonStyle(.borderedProminent)
+            .buttonBorderShape(.circle)
+            .controlSize(.large)
+            .help(track.isPlaying ? "Поставить на паузу" : "Продолжить воспроизведение")
+            .accessibilityLabel(track.isPlaying ? "Пауза" : "Воспроизвести")
+
+            Button {
+                model.nextTrack()
+            } label: {
+                Image(systemName: "forward.end.fill")
+                    .font(.system(size: 16, weight: .semibold))
+                    .frame(width: 32, height: 32)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.secondary)
+            .help("Следующий трек")
+            .accessibilityLabel("Следующий трек")
+        }
+        .frame(maxWidth: .infinity)
     }
 
     private var unavailableContent: some View {

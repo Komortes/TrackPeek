@@ -4,6 +4,8 @@ import AppKit
 protocol SpotifyPlaybackProviding {
     func fetchCurrentTrack() throws -> SpotifyTrack
     func playPause() throws
+    func nextTrack() throws
+    func previousTrack() throws
 }
 
 @MainActor
@@ -33,7 +35,14 @@ final class SpotifyAppleScriptClient: SpotifyPlaybackProviding {
         let descriptor = try execute(
             """
             tell application "Spotify"
-                return {name of current track, artist of current track, album of current track, (duration of current track) as text, (player position) as text, artwork url of current track, player state as text}
+                set activeTrack to current track
+                set trackAlbum to album of activeTrack
+                set trackArtworkURL to artwork url of activeTrack
+
+                if trackAlbum is missing value then set trackAlbum to ""
+                if trackArtworkURL is missing value then set trackArtworkURL to ""
+
+                return {name of activeTrack, artist of activeTrack, trackAlbum as text, (duration of activeTrack) as text, (player position) as text, trackArtworkURL as text, player state as text}
             end tell
             """
         )
@@ -53,6 +62,22 @@ final class SpotifyAppleScriptClient: SpotifyPlaybackProviding {
         }
 
         _ = try execute("tell application \"Spotify\" to playpause")
+    }
+
+    func nextTrack() throws {
+        guard isSpotifyRunning else {
+            throw Error.spotifyNotRunning
+        }
+
+        _ = try execute("tell application \"Spotify\" to next track")
+    }
+
+    func previousTrack() throws {
+        guard isSpotifyRunning else {
+            throw Error.spotifyNotRunning
+        }
+
+        _ = try execute("tell application \"Spotify\" to previous track")
     }
 
     private var isSpotifyRunning: Bool {

@@ -30,14 +30,54 @@ struct SpotifySpikeModelTests {
         #expect(model.track == nil)
         #expect(model.statusText == "Spotify не запущен.")
     }
+
+    @Test("next track refreshes the playback snapshot")
+    func nextTrackRefreshesSnapshot() {
+        let provider = FakeSpotifyProvider(
+            result: .success(
+                SpotifyTrack(title: "Reckoner", artist: "Radiohead", isPlaying: true)
+            ),
+            nextTrack: SpotifyTrack(title: "House of Cards", artist: "Radiohead", isPlaying: true)
+        )
+        let model = SpotifySpikeModel(provider: provider)
+        model.refresh()
+
+        model.nextTrack()
+
+        #expect(model.track?.title == "House of Cards")
+    }
+
+    @Test("previous track refreshes the playback snapshot")
+    func previousTrackRefreshesSnapshot() {
+        let provider = FakeSpotifyProvider(
+            result: .success(
+                SpotifyTrack(title: "Reckoner", artist: "Radiohead", isPlaying: true)
+            ),
+            previousTrack: SpotifyTrack(title: "Nude", artist: "Radiohead", isPlaying: true)
+        )
+        let model = SpotifySpikeModel(provider: provider)
+        model.refresh()
+
+        model.previousTrack()
+
+        #expect(model.track?.title == "Nude")
+    }
 }
 
 @MainActor
 private final class FakeSpotifyProvider: SpotifyPlaybackProviding {
-    let result: Result<SpotifyTrack, Swift.Error>
+    private var result: Result<SpotifyTrack, Swift.Error>
+    private let nextTrackValue: SpotifyTrack?
+    private let previousTrackValue: SpotifyTrack?
 
-    init(result: Result<SpotifyTrack, Swift.Error>) {
+    init(
+        result: Result<SpotifyTrack, Swift.Error>,
+        nextTrack: SpotifyTrack? = nil,
+        previousTrack: SpotifyTrack? = nil
+    ) {
         self.result = result
+        self.nextTrackValue = nextTrack
+        self.previousTrackValue = previousTrack
     }
 
     func fetchCurrentTrack() throws -> SpotifyTrack {
@@ -45,6 +85,18 @@ private final class FakeSpotifyProvider: SpotifyPlaybackProviding {
     }
 
     func playPause() throws {}
+
+    func nextTrack() throws {
+        if let nextTrackValue {
+            result = .success(nextTrackValue)
+        }
+    }
+
+    func previousTrack() throws {
+        if let previousTrackValue {
+            result = .success(previousTrackValue)
+        }
+    }
 }
 
 private enum FakeError: LocalizedError {

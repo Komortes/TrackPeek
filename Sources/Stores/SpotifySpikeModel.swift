@@ -32,4 +32,22 @@ final class SpotifySpikeModel {
             statusText = error.localizedDescription
         }
     }
+
+    func nextTrack() {
+        do {
+            try provider.nextTrack()
+            refresh()
+        } catch {
+            statusText = error.localizedDescription
+        }
+    }
+
+    func previousTrack() {
+        do {
+            try provider.previousTrack()
+            refresh()
+        } catch {
+            statusText = error.localizedDescription
+        }
+    }
 }
