@@ -1,7 +1,23 @@
+import AppKit
 import SwiftUI
 
 struct TrackArtworkView: View {
     let url: URL?
+    let size: CGFloat
+    let cornerRadius: CGFloat
+    let showsShadow: Bool
+
+    init(
+        url: URL?,
+        size: CGFloat = 100,
+        cornerRadius: CGFloat = 12,
+        showsShadow: Bool = true
+    ) {
+        self.url = url
+        self.size = size
+        self.cornerRadius = cornerRadius
+        self.showsShadow = showsShadow
+    }
 
     var body: some View {
         AsyncImage(
@@ -22,35 +38,32 @@ struct TrackArtworkView: View {
                 placeholder(showsProgress: false)
             }
         }
-        .frame(width: 100, height: 100)
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .frame(width: size, height: size)
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(.white.opacity(0.12), lineWidth: 1)
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .stroke(Color(nsColor: .separatorColor).opacity(0.45), lineWidth: 1)
         }
-        .shadow(color: .black.opacity(0.2), radius: 14, y: 7)
+        .shadow(
+            color: showsShadow ? .black.opacity(0.18) : .clear,
+            radius: showsShadow ? 8 : 0,
+            y: showsShadow ? 3 : 0
+        )
         .accessibilityHidden(true)
     }
 
     private func placeholder(showsProgress: Bool) -> some View {
         ZStack {
-            LinearGradient(
-                colors: [
-                    Color.accentColor.opacity(0.92),
-                    Color.accentColor.opacity(0.42),
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
+            Color(nsColor: .controlBackgroundColor)
 
             if showsProgress {
                 ProgressView()
                     .controlSize(.small)
-                    .tint(.white)
+                    .tint(.secondary)
             } else {
                 Image(systemName: "music.note")
                     .font(.system(size: 30, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.92))
+                    .foregroundStyle(.secondary)
             }
         }
     }
