@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import Testing
 @testable import TrackPeek
@@ -63,5 +64,17 @@ struct PlayerLayoutTests {
         #expect(PopoverBackgroundStyle(rawValue: "artworkBlur") == .artworkBlur)
         #expect(PopoverBackgroundStyle.fallback == .systemMaterial)
         #expect(PopoverBackgroundStyle.storageKey == "popoverBackgroundStyle")
+    }
+
+    @Test("settings tabs use available macOS system symbols")
+    func settingsTabSymbolsAreAvailable() {
+        for tab in SettingsTab.allCases {
+            #expect(
+                NSImage(
+                    systemSymbolName: tab.symbolName,
+                    accessibilityDescription: tab.title
+                ) != nil
+            )
+        }
     }
 }

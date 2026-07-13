@@ -1,5 +1,28 @@
 import SwiftUI
 
+enum SettingsTab: CaseIterable {
+    case general
+    case player
+
+    var title: String {
+        switch self {
+        case .general:
+            "Основные"
+        case .player:
+            "Плеер"
+        }
+    }
+
+    var symbolName: String {
+        switch self {
+        case .general:
+            "switch.2"
+        case .player:
+            "play.square"
+        }
+    }
+}
+
 struct SettingsView: View {
     @AppStorage(PlayerLayout.storageKey)
     private var playerLayoutRawValue = PlayerLayout.fallback.rawValue
@@ -45,7 +68,10 @@ struct SettingsView: View {
                 displayModeSection
             }
             .tabItem {
-                Label("Основные", systemImage: "switch.2")
+                Label(
+                    SettingsTab.general.title,
+                    systemImage: SettingsTab.general.symbolName
+                )
             }
 
             settingsPage(
@@ -55,7 +81,10 @@ struct SettingsView: View {
                 appearanceSection
             }
             .tabItem {
-                Label("Плеер", systemImage: "music.note.square")
+                Label(
+                    SettingsTab.player.title,
+                    systemImage: SettingsTab.player.symbolName
+                )
             }
         }
         .frame(width: 720, height: 610)
