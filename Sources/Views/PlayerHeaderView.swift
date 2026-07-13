@@ -8,15 +8,7 @@ struct PlayerHeaderView: View {
     var body: some View {
         HStack(spacing: 8) {
             if showsPlaybackStatus {
-                HStack(spacing: 6) {
-                    Circle()
-                        .fill(statusColor)
-                        .frame(width: 6, height: 6)
-
-                    Text("Spotify")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(.secondary)
-                }
+                PlayerStatusBadge(isPlaying: track?.isPlaying == true)
             } else {
                 Text("TrackPeek")
                     .font(.system(size: 11, weight: .semibold))
@@ -29,8 +21,20 @@ struct PlayerHeaderView: View {
         }
         .frame(height: 22)
     }
+}
 
-    private var statusColor: Color {
-        track?.isPlaying == true ? .green : .secondary
+struct PlayerStatusBadge: View {
+    let isPlaying: Bool
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Circle()
+                .fill(isPlaying ? Color.green : Color.secondary)
+                .frame(width: 6, height: 6)
+
+            Text("Spotify")
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.secondary)
+        }
     }
 }

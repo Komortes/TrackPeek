@@ -6,6 +6,7 @@ struct PlaybackControlsView: View {
     let onPlayPause: () -> Void
     let onNext: () -> Void
     var spacing: CGFloat = 16
+    var appearance: PlaybackControlsAppearance = .standard
 
     var body: some View {
         HStack(spacing: spacing) {
@@ -42,15 +43,22 @@ struct PlaybackControlsView: View {
             symbol: symbol,
             label: label,
             isPrimary: isPrimary,
+            appearance: appearance,
             action: action
         )
     }
+}
+
+enum PlaybackControlsAppearance {
+    case standard
+    case overArtwork
 }
 
 private struct PlaybackControlButton: View {
     let symbol: String
     let label: String
     let isPrimary: Bool
+    let appearance: PlaybackControlsAppearance
     let action: () -> Void
 
     @State private var isHovered = false
@@ -64,7 +72,8 @@ private struct PlaybackControlButton: View {
         .buttonStyle(
             PlaybackControlButtonStyle(
                 isPrimary: isPrimary,
-                isHovered: isHovered
+                isHovered: isHovered,
+                appearance: appearance
             )
         )
         .onHover { hovering in

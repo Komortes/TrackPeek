@@ -9,8 +9,11 @@ struct TrackPeekPopoverView: View {
     @AppStorage("showAlbumName") private var showsAlbum = true
     @AppStorage("showPlaybackStatus") private var showsPlaybackStatus = true
     @AppStorage("showArtworkShadow") private var showsArtworkShadow = true
+    @AppStorage(PopoverBackgroundStyle.storageKey)
+    private var backgroundStyleRawValue = PopoverBackgroundStyle.fallback.rawValue
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     private var playerLayout: PlayerLayout {
         PlayerLayout(rawValue: playerLayoutRawValue) ?? .fallback
@@ -22,6 +25,10 @@ struct TrackPeekPopoverView: View {
             showsPlaybackStatus: showsPlaybackStatus,
             showsArtworkShadow: showsArtworkShadow
         )
+    }
+
+    private var backgroundStyle: PopoverBackgroundStyle {
+        PopoverBackgroundStyle(rawValue: backgroundStyleRawValue) ?? .fallback
     }
 
     var body: some View {
@@ -38,7 +45,12 @@ struct TrackPeekPopoverView: View {
             width: playerLayout.popoverSize.width,
             height: playerLayout.popoverSize.height
         )
-        .background(.ultraThinMaterial)
+        .background {
+            PopoverBackground(
+                style: reduceTransparency ? .systemMaterial : backgroundStyle,
+                artworkURL: model.track?.artworkURL
+            )
+        }
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
@@ -47,6 +59,10 @@ struct TrackPeekPopoverView: View {
         .animation(
             reduceMotion ? nil : .easeOut(duration: 0.2),
             value: model.track?.title
+        )
+        .animation(
+            reduceMotion ? nil : .easeInOut(duration: 0.22),
+            value: playerLayout
         )
         .task {
             while !Task.isCancelled {
@@ -86,5 +102,42 @@ struct TrackPeekPopoverView: View {
             )
         }
         .padding(playerLayout == .artworkVertical ? 20 : 14)
+    }
+}
+
+private struct PopoverBackground: View {
+    let style: PopoverBackgroundStyle
+    let artworkURL: URL?
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        ZStack {
+            Rectangle()
+                .fill(.ultraThinMaterial)
+
+            if style == .artworkBlur, let artworkURL {
+                AsyncImage(
+                    url: artworkURL,
+                    transaction: Transaction(
+                        animation: reduceMotion ? nil : .easeInOut(duration: 0.28)
+                    )
+                ) { phase in
+                    if case let .success(image) = phase {
+                        image
+                            .resizable()
+                            .scaledToFill()
+                            .blur(radius: 34)
+                            .scaleEffect(1.2)
+                            .transition(.opacity)
+                    }
+                }
+
+                Rectangle()
+                    .fill(.thinMaterial)
+            }
+        }
+        .clipped()
+        .accessibilityHidden(true)
     }
 }

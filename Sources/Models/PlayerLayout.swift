@@ -35,11 +35,11 @@ enum PlayerLayout: String, CaseIterable, Identifiable, Sendable {
     var popoverSize: CGSize {
         switch self {
         case .compactHorizontal:
-            CGSize(width: 390, height: 154)
+            CGSize(width: 390, height: 144)
         case .standard:
-            CGSize(width: 350, height: 274)
+            CGSize(width: 350, height: 286)
         case .artworkVertical:
-            CGSize(width: 310, height: 466)
+            CGSize(width: 310, height: 438)
         }
     }
 }

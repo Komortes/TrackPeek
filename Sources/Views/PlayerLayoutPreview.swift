@@ -33,18 +33,30 @@ struct PlayerLayoutPreview: View {
             }
 
         case .standard:
-            VStack(spacing: 7) {
+            VStack(spacing: 6) {
                 HStack(spacing: 9) {
                     artwork(size: 48)
                     textLines
                 }
-                progress
-                controls
+                VStack(spacing: 4) {
+                    progress
+                    controls
+                }
+                .padding(5)
+                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 7))
             }
 
         case .artworkVertical:
-            VStack(spacing: 6) {
-                artwork(size: 52)
+            VStack(spacing: 5) {
+                ZStack(alignment: .bottom) {
+                    artwork(size: 54)
+                    controls
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(.black.opacity(0.42), in: Capsule())
+                        .foregroundStyle(.white)
+                        .offset(y: -4)
+                }
                 textLines
                 progress
             }

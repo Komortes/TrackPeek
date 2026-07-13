@@ -4,11 +4,13 @@ struct TrackInfoView: View {
     let track: SpotifyTrack
     let showsAlbum: Bool
     let titleLineLimit: Int
+    var isCentered = false
+    var isProminent = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: isCentered ? .center : .leading, spacing: 3) {
             Text(track.title)
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(size: isProminent ? 17 : 15, weight: .semibold))
                 .lineLimit(titleLineLimit)
                 .truncationMode(.tail)
                 .layoutPriority(1)
@@ -31,6 +33,7 @@ struct TrackInfoView: View {
                     .help(album)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .multilineTextAlignment(isCentered ? .center : .leading)
+        .frame(maxWidth: .infinity, alignment: isCentered ? .center : .leading)
     }
 }

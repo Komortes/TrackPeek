@@ -6,6 +6,8 @@ struct SettingsView: View {
     @AppStorage("showAlbumName") private var showsAlbum = true
     @AppStorage("showPlaybackStatus") private var showsPlaybackStatus = true
     @AppStorage("showArtworkShadow") private var showsArtworkShadow = true
+    @AppStorage(PopoverBackgroundStyle.storageKey)
+    private var backgroundStyleRawValue = PopoverBackgroundStyle.fallback.rawValue
     @AppStorage("displayMode") private var selectedModeRawValue = DisplayMode.fallback.rawValue
 
     private var playerLayout: PlayerLayout {
@@ -16,31 +18,43 @@ struct SettingsView: View {
         DisplayMode(rawValue: selectedModeRawValue) ?? .fallback
     }
 
+    private var backgroundStyle: Binding<PopoverBackgroundStyle> {
+        Binding(
+            get: {
+                PopoverBackgroundStyle(rawValue: backgroundStyleRawValue) ?? .fallback
+            },
+            set: { backgroundStyleRawValue = $0.rawValue }
+        )
+    }
+
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 28) {
+            VStack(alignment: .leading, spacing: 24) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("TrackPeek")
+                        .font(.title2.weight(.semibold))
+
+                    Text("Настройте вид плеера и поверхность, в которой он появляется.")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                }
+
                 appearanceSection
-
-                Divider()
-
                 displayModeSection
             }
             .padding(24)
         }
-        .frame(width: 760, height: 620)
+        .frame(width: 720, height: 610)
     }
 
     private var appearanceSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 14) {
             sectionHeader(
-                title: "Внешний вид",
-                subtitle: "Выберите компоновку popover и второстепенные детали. Изменения применяются сразу."
+                title: "Popover",
+                subtitle: "Компоновка и детали компактного плеера."
             )
 
             VStack(alignment: .leading, spacing: 10) {
-                Text("Компоновка плеера")
-                    .font(.headline)
-
                 HStack(alignment: .top, spacing: 12) {
                     ForEach(PlayerLayout.allCases) { layout in
                         playerLayoutCard(layout)
@@ -48,22 +62,64 @@ struct SettingsView: View {
                 }
             }
 
-            VStack(alignment: .leading, spacing: 12) {
-                Toggle("Показывать название альбома", isOn: $showsAlbum)
-                Toggle("Показывать статус Spotify", isOn: $showsPlaybackStatus)
-                Toggle("Добавлять тень обложки", isOn: $showsArtworkShadow)
+            VStack(spacing: 0) {
+                settingRow(
+                    title: "Фон",
+                    subtitle: "Системный материал или цвета текущей обложки."
+                ) {
+                    Picker("Фон", selection: backgroundStyle) {
+                        ForEach(PopoverBackgroundStyle.allCases) { style in
+                            Text(style.title).tag(style)
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(width: 170)
+                }
+
+                Divider().padding(.leading, 14)
+
+                settingRow(
+                    title: "Название альбома",
+                    subtitle: "Показывать дополнительную строку под исполнителем."
+                ) {
+                    Toggle("Название альбома", isOn: $showsAlbum)
+                        .labelsHidden()
+                }
+
+                Divider().padding(.leading, 14)
+
+                settingRow(
+                    title: "Статус Spotify",
+                    subtitle: "Небольшой индикатор воспроизведения или паузы."
+                ) {
+                    Toggle("Статус Spotify", isOn: $showsPlaybackStatus)
+                        .labelsHidden()
+                }
+
+                Divider().padding(.leading, 14)
+
+                settingRow(
+                    title: "Тень обложки",
+                    subtitle: "Добавляет глубину, не меняя саму обложку."
+                ) {
+                    Toggle("Тень обложки", isOn: $showsArtworkShadow)
+                        .labelsHidden()
+                }
             }
             .toggleStyle(.switch)
-            .padding(16)
-            .background(.quaternary.opacity(0.55), in: RoundedRectangle(cornerRadius: 12))
+            .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 13, style: .continuous)
+                    .stroke(.primary.opacity(0.08), lineWidth: 1)
+            }
         }
     }
 
     private var displayModeSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 14) {
             sectionHeader(
-                title: "Поверхность приложения",
-                subtitle: "Определяет, где TrackPeek показывает текущий трек."
+                title: "Режим отображения",
+                subtitle: "Где TrackPeek будет показывать текущий трек."
             )
 
             HStack(alignment: .top, spacing: 12) {
@@ -73,7 +129,7 @@ struct SettingsView: View {
             }
 
             Label(
-                "Сейчас доступен Menu Bar. Notch и Floating Widget будут добавлены отдельными этапами.",
+                "Сейчас работает Menu Bar. Notch и Floating Widget подключим следующими этапами.",
                 systemImage: "info.circle"
             )
             .font(.caption)
@@ -84,12 +140,35 @@ struct SettingsView: View {
     private func sectionHeader(title: String, subtitle: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title)
-                .font(.title2.weight(.semibold))
+                .font(.headline)
 
             Text(subtitle)
-                .font(.callout)
+                .font(.caption)
                 .foregroundStyle(.secondary)
         }
+    }
+
+    private func settingRow<Control: View>(
+        title: String,
+        subtitle: String,
+        @ViewBuilder control: () -> Control
+    ) -> some View {
+        HStack(spacing: 16) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(size: 13, weight: .medium))
+
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer(minLength: 20)
+
+            control()
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
     }
 
     private func playerLayoutCard(_ layout: PlayerLayout) -> some View {
@@ -117,10 +196,10 @@ struct SettingsView: View {
                     .lineLimit(2)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(12)
-            .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 14))
+            .padding(11)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
             .overlay {
-                RoundedRectangle(cornerRadius: 14)
+                RoundedRectangle(cornerRadius: 13, style: .continuous)
                     .stroke(
                         playerLayout == layout ? Color.accentColor : Color.primary.opacity(0.08),
                         lineWidth: playerLayout == layout ? 2 : 1
@@ -164,9 +243,9 @@ struct SettingsView: View {
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(mode.isAvailable ? Color.green : Color.secondary)
             }
-            .frame(maxWidth: .infinity, minHeight: 116, alignment: .topLeading)
+            .frame(maxWidth: .infinity, minHeight: 108, alignment: .topLeading)
             .padding(12)
-            .background(.quaternary.opacity(0.45), in: RoundedRectangle(cornerRadius: 12))
+            .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: 12)
                     .stroke(

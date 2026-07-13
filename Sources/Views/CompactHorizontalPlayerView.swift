@@ -6,52 +6,58 @@ struct CompactHorizontalPlayerView: View {
     let options: PlayerPresentationOptions
 
     var body: some View {
-        VStack(spacing: 8) {
-            PlayerHeaderView(
-                track: track,
-                showsPlaybackStatus: options.showsPlaybackStatus,
-                onRefresh: model.refresh
-            )
-
-            HStack(spacing: 12) {
+        HStack(spacing: 12) {
+            ZStack(alignment: .topLeading) {
                 TrackArtworkView(
                     url: track.artworkURL,
-                    size: 82,
-                    cornerRadius: 11,
+                    size: 112,
+                    cornerRadius: 13,
                     showsShadow: options.showsArtworkShadow
                 )
 
-                VStack(spacing: 8) {
-                    HStack(spacing: 8) {
-                        TrackInfoView(
-                            track: track,
-                            showsAlbum: false,
-                            titleLineLimit: 1
-                        )
-
-                        PlaybackControlsView(
-                            isPlaying: track.isPlaying,
-                            onPrevious: model.previousTrack,
-                            onPlayPause: model.togglePlayback,
-                            onNext: model.nextTrack,
-                            spacing: 6
-                        )
-                        .fixedSize()
-                    }
-
-                    PlaybackProgressView(
-                        position: track.position,
-                        duration: track.duration,
-                        isPlaying: track.isPlaying,
-                        snapshotDate: model.snapshotDate,
-                        onSeek: model.seek(to:),
-                        usesCompactTime: true
-                    )
+                if options.showsPlaybackStatus {
+                    Circle()
+                        .fill(track.isPlaying ? Color.green : Color.secondary)
+                        .frame(width: 7, height: 7)
+                        .padding(7)
+                        .background(.regularMaterial, in: Circle())
+                        .padding(7)
+                        .help(track.isPlaying ? "Spotify воспроизводит трек" : "Spotify на паузе")
                 }
+            }
+
+            VStack(spacing: 6) {
+                HStack(alignment: .top, spacing: 6) {
+                    TrackInfoView(
+                        track: track,
+                        showsAlbum: false,
+                        titleLineLimit: 1
+                    )
+
+                    PlayerMoreMenu(track: track, onRefresh: model.refresh)
+                }
+
+                PlaybackProgressView(
+                    position: track.position,
+                    duration: track.duration,
+                    isPlaying: track.isPlaying,
+                    snapshotDate: model.snapshotDate,
+                    onSeek: model.seek(to:),
+                    usesCompactTime: true
+                )
+
+                PlaybackControlsView(
+                    isPlaying: track.isPlaying,
+                    onPrevious: model.previousTrack,
+                    onPlayPause: model.togglePlayback,
+                    onNext: model.nextTrack,
+                    spacing: 10
+                )
                 .frame(maxWidth: .infinity)
             }
+            .frame(maxWidth: .infinity)
         }
         .padding(.horizontal, 14)
-        .padding(.vertical, 10)
+        .padding(.vertical, 12)
     }
 }

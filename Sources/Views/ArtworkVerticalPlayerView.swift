@@ -6,24 +6,15 @@ struct ArtworkVerticalPlayerView: View {
     let options: PlayerPresentationOptions
 
     var body: some View {
-        VStack(spacing: 12) {
-            PlayerHeaderView(
-                track: track,
-                showsPlaybackStatus: options.showsPlaybackStatus,
-                onRefresh: model.refresh
-            )
-
-            TrackArtworkView(
-                url: track.artworkURL,
-                size: 240,
-                cornerRadius: 14,
-                showsShadow: options.showsArtworkShadow
-            )
+        VStack(spacing: 10) {
+            artworkHero
 
             TrackInfoView(
                 track: track,
                 showsAlbum: options.showsAlbum,
-                titleLineLimit: 2
+                titleLineLimit: 2,
+                isCentered: true,
+                isProminent: true
             )
 
             PlaybackProgressView(
@@ -34,14 +25,54 @@ struct ArtworkVerticalPlayerView: View {
                 onSeek: model.seek(to:)
             )
 
-            PlaybackControlsView(
-                isPlaying: track.isPlaying,
-                onPrevious: model.previousTrack,
-                onPlayPause: model.togglePlayback,
-                onNext: model.nextTrack
-            )
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 12)
+        .padding(14)
+    }
+
+    private var artworkHero: some View {
+        ZStack {
+            TrackArtworkView(
+                url: track.artworkURL,
+                size: 274,
+                cornerRadius: 17,
+                showsShadow: options.showsArtworkShadow
+            )
+
+            VStack {
+                HStack {
+                    if options.showsPlaybackStatus {
+                        PlayerStatusBadge(isPlaying: track.isPlaying)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 7)
+                            .background(.regularMaterial, in: Capsule())
+                    }
+
+                    Spacer()
+
+                    PlayerMoreMenu(track: track, onRefresh: model.refresh)
+                        .padding(4)
+                        .background(.regularMaterial, in: Circle())
+                }
+
+                Spacer()
+
+                PlaybackControlsView(
+                    isPlaying: track.isPlaying,
+                    onPrevious: model.previousTrack,
+                    onPlayPause: model.togglePlayback,
+                    onNext: model.nextTrack,
+                    spacing: 20,
+                    appearance: .overArtwork
+                )
+                .padding(.horizontal, 18)
+                .padding(.vertical, 7)
+                .background(.black.opacity(0.46), in: Capsule())
+                .overlay {
+                    Capsule()
+                        .stroke(.white.opacity(0.12), lineWidth: 1)
+                }
+            }
+            .padding(12)
+        }
     }
 }
