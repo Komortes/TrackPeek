@@ -150,9 +150,12 @@ enum NotchPreferences {
 }
 
 enum NotchMotion {
-    static let resizeDuration = 0.22
-    static let contentDuration = 0.18
-    static let hoverExitGrace = 0.12
+    static let resizeDuration = 0.28
+    static let contentDuration = 0.26
+    static let playbackDuration = 0.24
+    static let controlDuration = 0.14
+    static let equalizerDuration = 0.28
+    static let hoverExitGrace = 0.14
 }
 
 enum NotchExpansionPolicy {

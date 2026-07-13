@@ -56,12 +56,12 @@ struct NotchPlayerView: View {
         ZStack {
             compactContent
                 .opacity(isExpanded ? 0 : 1)
-                .offset(y: isExpanded ? -3 : 0)
+                .scaleEffect(isExpanded ? 0.985 : 1, anchor: .top)
                 .allowsHitTesting(!isExpanded)
 
             expandedContent
                 .opacity(isExpanded ? 1 : 0)
-                .offset(y: isExpanded ? 0 : -4)
+                .scaleEffect(isExpanded ? 1 : 0.985, anchor: .top)
                 .allowsHitTesting(isExpanded)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -74,7 +74,7 @@ struct NotchPlayerView: View {
         .animation(
             reduceMotion
                 ? nil
-                : .timingCurve(0.23, 1, 0.32, 1, duration: NotchMotion.contentDuration),
+                : .smooth(duration: NotchMotion.contentDuration, extraBounce: 0),
             value: isExpanded
         )
         .onChange(of: pointerState.isInside) { _, isInside in
@@ -135,7 +135,9 @@ struct NotchPlayerView: View {
             }
         }
         .animation(
-            reduceMotion ? nil : .easeOut(duration: 0.28),
+            reduceMotion
+                ? nil
+                : .smooth(duration: NotchMotion.equalizerDuration, extraBounce: 0),
             value: artworkPalette
         )
     }
