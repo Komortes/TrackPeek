@@ -9,33 +9,37 @@ protocol SpotifyPlaybackProviding {
     func seek(to position: TimeInterval) throws
 }
 
-@MainActor
-final class SpotifyAppleScriptClient: SpotifyPlaybackProviding {
-    enum Error: LocalizedError {
-        case spotifyNotRunning
-        case scriptFailed(String)
-        case invalidResponse
+enum SpotifyPlaybackError: LocalizedError {
+    case spotifyNotRunning
+    case scriptFailed(String)
+    case invalidResponse
 
-        var errorDescription: String? {
-            switch self {
-            case .spotifyNotRunning:
-                "Spotify не запущен."
-            case let .scriptFailed(message):
-                "Spotify недоступен: \(message)"
-            case .invalidResponse:
-                "Spotify вернул неожиданный ответ."
-            }
+    var errorDescription: String? {
+        switch self {
+        case .spotifyNotRunning:
+            "Spotify не запущен."
+        case let .scriptFailed(message):
+            "Spotify недоступен: \(message)"
+        case .invalidResponse:
+            "Spotify вернул неожиданный ответ."
         }
     }
+}
 
+@MainActor
+final class SpotifyAppleScriptClient: SpotifyPlaybackProviding {
     func fetchCurrentTrack() throws -> SpotifyTrack {
         guard isSpotifyRunning else {
-            throw Error.spotifyNotRunning
+            throw SpotifyPlaybackError.spotifyNotRunning
         }
 
         let descriptor = try execute(
             """
             tell application "Spotify"
+                if player state is stopped then
+                    return {"", "", "", "0", "0", "", player state as text}
+                end if
+
                 set activeTrack to current track
                 set trackAlbum to album of activeTrack
                 set trackArtworkURL to artwork url of activeTrack
@@ -53,13 +57,13 @@ final class SpotifyAppleScriptClient: SpotifyPlaybackProviding {
         do {
             return try SpotifyTrackParser.parse(values)
         } catch {
-            throw Error.invalidResponse
+            throw SpotifyPlaybackError.invalidResponse
         }
     }
 
     func playPause() throws {
         guard isSpotifyRunning else {
-            throw Error.spotifyNotRunning
+            throw SpotifyPlaybackError.spotifyNotRunning
         }
 
         _ = try execute("tell application \"Spotify\" to playpause")
@@ -67,7 +71,7 @@ final class SpotifyAppleScriptClient: SpotifyPlaybackProviding {
 
     func nextTrack() throws {
         guard isSpotifyRunning else {
-            throw Error.spotifyNotRunning
+            throw SpotifyPlaybackError.spotifyNotRunning
         }
 
         _ = try execute("tell application \"Spotify\" to next track")
@@ -75,7 +79,7 @@ final class SpotifyAppleScriptClient: SpotifyPlaybackProviding {
 
     func previousTrack() throws {
         guard isSpotifyRunning else {
-            throw Error.spotifyNotRunning
+            throw SpotifyPlaybackError.spotifyNotRunning
         }
 
         _ = try execute("tell application \"Spotify\" to previous track")
@@ -83,7 +87,7 @@ final class SpotifyAppleScriptClient: SpotifyPlaybackProviding {
 
     func seek(to position: TimeInterval) throws {
         guard isSpotifyRunning else {
-            throw Error.spotifyNotRunning
+            throw SpotifyPlaybackError.spotifyNotRunning
         }
 
         let seconds = max(position, 0)
@@ -105,7 +109,7 @@ final class SpotifyAppleScriptClient: SpotifyPlaybackProviding {
 
     private func execute(_ source: String) throws -> NSAppleEventDescriptor {
         guard let script = NSAppleScript(source: source) else {
-            throw Error.scriptFailed("не удалось создать AppleScript")
+            throw SpotifyPlaybackError.scriptFailed("не удалось создать AppleScript")
         }
 
         var errorInfo: NSDictionary?
@@ -114,7 +118,7 @@ final class SpotifyAppleScriptClient: SpotifyPlaybackProviding {
         if let errorInfo {
             let message = errorInfo["NSAppleScriptErrorMessage"] as? String
                 ?? "неизвестная ошибка AppleScript"
-            throw Error.scriptFailed(message)
+            throw SpotifyPlaybackError.scriptFailed(message)
         }
 
         return result

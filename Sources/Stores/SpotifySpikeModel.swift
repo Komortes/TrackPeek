@@ -9,6 +9,7 @@ final class SpotifySpikeModel {
     private(set) var track: SpotifyTrack?
     private(set) var statusText = "Обновление…"
     private(set) var snapshotDate = Date()
+    private(set) var availability: PlaybackAvailability = .loading
 
     init(provider: any SpotifyPlaybackProviding = SpotifyAppleScriptClient()) {
         self.provider = provider
@@ -17,11 +18,25 @@ final class SpotifySpikeModel {
     func refresh() {
         do {
             let track = try provider.fetchCurrentTrack()
+
+            guard !track.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                self.track = nil
+                availability = .nothingPlaying
+                statusText = "Ничего не воспроизводится"
+                return
+            }
+
             self.track = track
             snapshotDate = Date()
+            availability = .ready
             statusText = track.isPlaying ? "Играет" : "На паузе"
+        } catch SpotifyPlaybackError.spotifyNotRunning {
+            track = nil
+            availability = .spotifyNotRunning
+            statusText = SpotifyPlaybackError.spotifyNotRunning.localizedDescription
         } catch {
             track = nil
+            availability = .unavailable
             statusText = error.localizedDescription
         }
     }

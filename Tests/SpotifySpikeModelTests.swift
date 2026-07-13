@@ -5,6 +5,19 @@ import Testing
 @MainActor
 @Suite("Spotify spike model")
 struct SpotifySpikeModelTests {
+    @Test("starts in the loading state")
+    func startsLoading() {
+        let provider = FakeSpotifyProvider(
+            result: .success(
+                SpotifyTrack(title: "Reckoner", artist: "Radiohead", isPlaying: true)
+            )
+        )
+
+        let model = SpotifySpikeModel(provider: provider)
+
+        #expect(model.availability == .loading)
+    }
+
     @Test("refresh exposes the current track")
     func refreshExposesCurrentTrack() {
         let provider = FakeSpotifyProvider(
@@ -18,6 +31,7 @@ struct SpotifySpikeModelTests {
 
         #expect(model.track?.title == "Reckoner")
         #expect(model.statusText == "Играет")
+        #expect(model.availability == .ready)
     }
 
     @Test("refresh exposes provider errors")
@@ -29,6 +43,35 @@ struct SpotifySpikeModelTests {
 
         #expect(model.track == nil)
         #expect(model.statusText == "Spotify не запущен.")
+        #expect(model.availability == .unavailable)
+    }
+
+    @Test("distinguishes Spotify not running")
+    func distinguishesSpotifyNotRunning() {
+        let provider = FakeSpotifyProvider(
+            result: .failure(SpotifyPlaybackError.spotifyNotRunning)
+        )
+        let model = SpotifySpikeModel(provider: provider)
+
+        model.refresh()
+
+        #expect(model.track == nil)
+        #expect(model.availability == .spotifyNotRunning)
+    }
+
+    @Test("treats an empty stopped snapshot as nothing playing")
+    func treatsStoppedSnapshotAsNothingPlaying() {
+        let provider = FakeSpotifyProvider(
+            result: .success(
+                SpotifyTrack(title: "", artist: "", isPlaying: false)
+            )
+        )
+        let model = SpotifySpikeModel(provider: provider)
+
+        model.refresh()
+
+        #expect(model.track == nil)
+        #expect(model.availability == .nothingPlaying)
     }
 
     @Test("next track refreshes the playback snapshot")
