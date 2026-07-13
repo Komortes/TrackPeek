@@ -6,11 +6,12 @@ enum DisplayMode: String, CaseIterable, Identifiable, Sendable {
     case floatingWidget
 
     static let fallback: DisplayMode = .menuBar
+    static let storageKey = "displayMode"
 
     var id: String { rawValue }
 
     var isAvailable: Bool {
-        self == .menuBar
+        self != .floatingWidget
     }
 
     var title: String {
