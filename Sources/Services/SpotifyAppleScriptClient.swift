@@ -33,12 +33,12 @@ final class SpotifyAppleScriptClient: SpotifyPlaybackProviding {
         let descriptor = try execute(
             """
             tell application "Spotify"
-                return {name of current track, artist of current track, player state as text}
+                return {name of current track, artist of current track, album of current track, (duration of current track) as text, (player position) as text, artwork url of current track, player state as text}
             end tell
             """
         )
 
-        let values = (1 ... 3).compactMap { descriptor.atIndex($0)?.stringValue }
+        let values = (1 ... 7).compactMap { descriptor.atIndex($0)?.stringValue }
 
         do {
             return try SpotifyTrackParser.parse(values)
