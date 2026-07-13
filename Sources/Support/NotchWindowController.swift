@@ -1,6 +1,13 @@
 import AppKit
+import Observation
 import QuartzCore
 import SwiftUI
+
+@MainActor
+@Observable
+final class NotchPointerState {
+    var isInside = false
+}
 
 @MainActor
 final class NotchWindowController: NSObject {
@@ -136,6 +143,7 @@ final class NotchWindowController: NSObject {
 @MainActor
 private final class NotchPanelHost {
     private let panel: NotchPanel
+    private let pointerState = NotchPointerState()
     private let screen: NSScreen
     private var isExpanded = false
 
@@ -151,13 +159,15 @@ private final class NotchPanelHost {
         configurePanel()
         updateLayout(animated: false)
 
-        panel.contentView = NSHostingView(
+        panel.contentView = NotchTrackingHostingView(
             rootView: NotchPlayerView(
                 model: model,
+                pointerState: pointerState,
                 onExpansionChange: { [weak self] expanded in
                     self?.setExpanded(expanded)
                 }
-            )
+            ),
+            pointerState: pointerState
         )
     }
 
@@ -176,7 +186,7 @@ private final class NotchPanelHost {
     private func configurePanel() {
         panel.backgroundColor = .clear
         panel.isOpaque = false
-        panel.hasShadow = true
+        panel.hasShadow = false
         panel.hidesOnDeactivate = false
         panel.isReleasedWhenClosed = false
         panel.isMovable = false
@@ -216,15 +226,61 @@ private final class NotchPanelHost {
         }
 
         NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.3
+            context.duration = NotchMotion.resizeDuration
             context.timingFunction = CAMediaTimingFunction(
-                controlPoints: 0.2,
-                0.78,
-                0.24,
+                controlPoints: 0.23,
+                1,
+                0.32,
                 1
             )
             panel.animator().setFrame(frame, display: true)
         }
+    }
+}
+
+@MainActor
+private final class NotchTrackingHostingView<Content: View>: NSHostingView<Content> {
+    private let pointerState: NotchPointerState
+    private var notchTrackingArea: NSTrackingArea?
+
+    init(rootView: Content, pointerState: NotchPointerState) {
+        self.pointerState = pointerState
+        super.init(rootView: rootView)
+    }
+
+    @available(*, unavailable)
+    required init(rootView: Content) {
+        fatalError("Use init(rootView:pointerState:)")
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+
+        if let notchTrackingArea {
+            removeTrackingArea(notchTrackingArea)
+        }
+
+        let trackingArea = NSTrackingArea(
+            rect: .zero,
+            options: [.mouseEnteredAndExited, .activeAlways, .inVisibleRect],
+            owner: self,
+            userInfo: nil
+        )
+        notchTrackingArea = trackingArea
+        addTrackingArea(trackingArea)
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        pointerState.isInside = true
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        pointerState.isInside = false
     }
 }
 

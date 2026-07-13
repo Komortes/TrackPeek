@@ -143,10 +143,16 @@ enum NotchPreferences {
 
     static func expandedSize(width: Double, heightAdjustment: Double) -> CGSize {
         CGSize(
-            width: max(clampedWidth(width) + 96, 390),
-            height: 188 + clampedHeightAdjustment(heightAdjustment)
+            width: max(clampedWidth(width) + 112, 420),
+            height: 176 + clampedHeightAdjustment(heightAdjustment)
         )
     }
+}
+
+enum NotchMotion {
+    static let resizeDuration = 0.22
+    static let contentDuration = 0.18
+    static let hoverExitGrace = 0.12
 }
 
 enum NotchExpansionPolicy {

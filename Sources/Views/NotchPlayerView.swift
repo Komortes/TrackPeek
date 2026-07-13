@@ -3,6 +3,7 @@ import SwiftUI
 
 struct NotchPlayerView: View {
     let model: SpotifySpikeModel
+    let pointerState: NotchPointerState
     let onExpansionChange: (Bool) -> Void
 
     @AppStorage(NotchPreferences.hoverEnabledKey)
@@ -27,7 +28,6 @@ struct NotchPlayerView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var hoverReady = false
-    @State private var isHovering = false
     @State private var isPinned = false
     @State private var notificationVisible = false
     @State private var hoverTask: Task<Void, Never>?
@@ -52,49 +52,34 @@ struct NotchPlayerView: View {
     }
 
     var body: some View {
-        Group {
-            if isExpanded {
-                expandedContent
-                    .transition(
-                        .asymmetric(
-                            insertion: .opacity.combined(with: .scale(scale: 0.96, anchor: .top)),
-                            removal: .opacity
-                        )
-                    )
-            } else {
-                compactContent
-                    .transition(.opacity)
-            }
+        ZStack {
+            compactContent
+                .opacity(isExpanded ? 0 : 1)
+                .offset(y: isExpanded ? -3 : 0)
+                .allowsHitTesting(!isExpanded)
+
+            expandedContent
+                .opacity(isExpanded ? 1 : 0)
+                .offset(y: isExpanded ? 0 : -4)
+                .allowsHitTesting(isExpanded)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background {
-            UnevenRoundedRectangle(
-                topLeadingRadius: 0,
-                bottomLeadingRadius: isExpanded ? 22 : 12,
-                bottomTrailingRadius: isExpanded ? 22 : 12,
-                topTrailingRadius: 0,
-                style: .continuous
-            )
-            .fill(Color.black.opacity(0.97))
-            .shadow(color: .black.opacity(isExpanded ? 0.34 : 0.2), radius: 18, y: 8)
+            notchShape
+                .fill(Color.black.opacity(0.97))
         }
-        .overlay(alignment: .bottom) {
-            UnevenRoundedRectangle(
-                topLeadingRadius: 0,
-                bottomLeadingRadius: isExpanded ? 22 : 12,
-                bottomTrailingRadius: isExpanded ? 22 : 12,
-                topTrailingRadius: 0,
-                style: .continuous
-            )
-            .stroke(.white.opacity(isExpanded ? 0.1 : 0.06), lineWidth: 1)
-        }
+        .clipShape(notchShape)
         .contentShape(Rectangle())
         .environment(\.colorScheme, .dark)
         .animation(
-            reduceMotion ? nil : .spring(duration: 0.34, bounce: 0.12),
+            reduceMotion
+                ? nil
+                : .timingCurve(0.23, 1, 0.32, 1, duration: NotchMotion.contentDuration),
             value: isExpanded
         )
-        .onHover(perform: handleHover)
+        .onChange(of: pointerState.isInside) { _, isInside in
+            handleHover(isInside)
+        }
         .onChange(of: isExpanded) { wasExpanded, expanded in
             onExpansionChange(expanded)
 
@@ -108,11 +93,22 @@ struct NotchPlayerView: View {
         .onChange(of: trackIdentity, handleTrackChange)
         .onAppear {
             onExpansionChange(false)
+            handleHover(pointerState.isInside)
         }
         .onDisappear {
             hoverTask?.cancel()
             notificationTask?.cancel()
         }
+    }
+
+    private var notchShape: UnevenRoundedRectangle {
+        UnevenRoundedRectangle(
+            topLeadingRadius: 0,
+            bottomLeadingRadius: isExpanded ? 22 : 12,
+            bottomTrailingRadius: isExpanded ? 22 : 12,
+            topTrailingRadius: 0,
+            style: .continuous
+        )
     }
 
     @ViewBuilder
@@ -255,7 +251,6 @@ struct NotchPlayerView: View {
     }
 
     private func handleHover(_ hovering: Bool) {
-        isHovering = hovering
         hoverTask?.cancel()
 
         guard hoverEnabled else {
@@ -264,14 +259,20 @@ struct NotchPlayerView: View {
         }
 
         guard hovering else {
-            hoverReady = false
+            hoverTask = Task { @MainActor in
+                try? await Task.sleep(
+                    for: .milliseconds(Int64(NotchMotion.hoverExitGrace * 1_000))
+                )
+                guard !Task.isCancelled, !pointerState.isInside else { return }
+                hoverReady = false
+            }
             return
         }
 
         let delay = NotchPreferences.clampedHoverDelay(hoverDelay)
         hoverTask = Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(Int64(delay * 1_000)))
-            guard !Task.isCancelled, isHovering else { return }
+            guard !Task.isCancelled, pointerState.isInside else { return }
             hoverReady = true
         }
     }

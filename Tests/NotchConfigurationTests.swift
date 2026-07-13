@@ -26,7 +26,14 @@ struct NotchConfigurationTests {
         let expanded = NotchPreferences.expandedSize(width: 320, heightAdjustment: 4)
 
         #expect(compact == CGSize(width: 320, height: 40))
-        #expect(expanded == CGSize(width: 416, height: 192))
+        #expect(expanded == CGSize(width: 432, height: 180))
+    }
+
+    @Test("uses one short interruptible motion contract")
+    func usesShortMotionContract() {
+        #expect(NotchMotion.resizeDuration == 0.22)
+        #expect(NotchMotion.contentDuration == 0.18)
+        #expect(NotchMotion.hoverExitGrace == 0.12)
     }
 
     @Test("song information visibility follows playback state")
