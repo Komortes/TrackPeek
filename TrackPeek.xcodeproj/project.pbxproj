@@ -9,8 +9,10 @@
 /* Begin PBXBuildFile section */
 		06628BE4AF83E08E4C014F13 /* SpotifyTrack.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD20BDE0536416FD2E5027E8 /* SpotifyTrack.swift */; };
 		27258DD3BD493164A8A3F177 /* SpotifyTrackParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EF5A723EFD6F834403E060A /* SpotifyTrackParserTests.swift */; };
+		303525109FD5E22CB1650754 /* DisplayModeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AEE2828C90080275021F97D /* DisplayModeTests.swift */; };
 		5483BC429E6D1053D247B987 /* SpotifyAppleScriptClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B05DC7EA94592E5EFEAE1B4C /* SpotifyAppleScriptClient.swift */; };
 		59FF79536A31C39DF66929EF /* TrackPeekApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EB8B3A7EA66CB48B32DC836 /* TrackPeekApp.swift */; };
+		5EBFE448316D9261A6F6C2CA /* DisplayMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5423E7B6B182EEF62F4B5BFB /* DisplayMode.swift */; };
 		8B418592E4B3B5E8A18EC483 /* SpotifySpikeModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 609CB9E1102FD1828A45504A /* SpotifySpikeModelTests.swift */; };
 		AAA28A2E84B8C81CBAF3B84A /* SpotifySpikeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3038E7F01249006EC47AA41 /* SpotifySpikeView.swift */; };
 		D0D1877AC7712F2D89CD035A /* SpotifySpikeModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A47F67E2514C38F7C379BD2 /* SpotifySpikeModel.swift */; };
@@ -30,7 +32,9 @@
 		1A47F67E2514C38F7C379BD2 /* SpotifySpikeModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifySpikeModel.swift; sourceTree = "<group>"; };
 		344095CFCE94AECD10CBDEBB /* TrackPeek.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TrackPeek.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3EB8B3A7EA66CB48B32DC836 /* TrackPeekApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackPeekApp.swift; sourceTree = "<group>"; };
+		5423E7B6B182EEF62F4B5BFB /* DisplayMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayMode.swift; sourceTree = "<group>"; };
 		609CB9E1102FD1828A45504A /* SpotifySpikeModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifySpikeModelTests.swift; sourceTree = "<group>"; };
+		7AEE2828C90080275021F97D /* DisplayModeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayModeTests.swift; sourceTree = "<group>"; };
 		7EF5A723EFD6F834403E060A /* SpotifyTrackParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyTrackParserTests.swift; sourceTree = "<group>"; };
 		9A4C06534FB79978AF93A235 /* TrackPeekTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TrackPeekTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AD20BDE0536416FD2E5027E8 /* SpotifyTrack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyTrack.swift; sourceTree = "<group>"; };
@@ -42,6 +46,7 @@
 		21CAC22B9C1B8EAB75544365 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				5423E7B6B182EEF62F4B5BFB /* DisplayMode.swift */,
 				AD20BDE0536416FD2E5027E8 /* SpotifyTrack.swift */,
 			);
 			path = Models;
@@ -50,6 +55,7 @@
 		2EA68A0EBB7FAF74B71F80A7 /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				7AEE2828C90080275021F97D /* DisplayModeTests.swift */,
 				609CB9E1102FD1828A45504A /* SpotifySpikeModelTests.swift */,
 				7EF5A723EFD6F834403E060A /* SpotifyTrackParserTests.swift */,
 			);
@@ -187,6 +193,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				303525109FD5E22CB1650754 /* DisplayModeTests.swift in Sources */,
 				8B418592E4B3B5E8A18EC483 /* SpotifySpikeModelTests.swift in Sources */,
 				27258DD3BD493164A8A3F177 /* SpotifyTrackParserTests.swift in Sources */,
 			);
@@ -196,6 +203,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5EBFE448316D9261A6F6C2CA /* DisplayMode.swift in Sources */,
 				5483BC429E6D1053D247B987 /* SpotifyAppleScriptClient.swift in Sources */,
 				D0D1877AC7712F2D89CD035A /* SpotifySpikeModel.swift in Sources */,
 				AAA28A2E84B8C81CBAF3B84A /* SpotifySpikeView.swift in Sources */,
