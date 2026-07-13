@@ -33,14 +33,10 @@ struct NotchConfigurationTests {
     func usesShortMotionContract() {
         #expect(NotchMotion.resizeDuration == 0.28)
         #expect(NotchMotion.contentDuration == 0.26)
-        #expect(NotchMotion.playbackDuration == 0.24)
-        #expect(NotchMotion.controlDuration == 0.14)
-        #expect(NotchMotion.equalizerDuration == 0.28)
         #expect(NotchMotion.hoverExitGrace == 0.14)
 
         #expect(NotchMotion.contentDuration <= NotchMotion.resizeDuration)
         #expect(NotchMotion.resizeDuration <= 0.3)
-        #expect(NotchMotion.equalizerDuration <= 0.3)
     }
 
     @Test("song information visibility follows playback state")

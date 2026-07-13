@@ -4,6 +4,8 @@ struct PlaybackControlButtonStyle: ButtonStyle {
     let isPrimary: Bool
     var isHovered = false
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .frame(
@@ -28,7 +30,22 @@ struct PlaybackControlButtonStyle: ButtonStyle {
                 radius: 5,
                 y: 2
             )
-            .scaleEffect(configuration.isPressed ? 0.95 : (isHovered ? 1.04 : 1))
-            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+            .scaleEffect(
+                reduceMotion
+                    ? 1
+                    : (configuration.isPressed ? 0.97 : (isHovered ? 1.025 : 1))
+            )
+            .animation(
+                reduceMotion
+                    ? nil
+                    : .smooth(duration: PlayerMotion.controlDuration, extraBounce: 0),
+                value: configuration.isPressed
+            )
+            .animation(
+                reduceMotion
+                    ? nil
+                    : .easeInOut(duration: PlayerMotion.controlDuration),
+                value: isHovered
+            )
     }
 }

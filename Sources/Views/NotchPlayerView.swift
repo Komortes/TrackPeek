@@ -137,7 +137,7 @@ struct NotchPlayerView: View {
         .animation(
             reduceMotion
                 ? nil
-                : .smooth(duration: NotchMotion.equalizerDuration, extraBounce: 0),
+                : .smooth(duration: PlayerMotion.equalizerDuration, extraBounce: 0),
             value: artworkPalette
         )
     }
@@ -223,8 +223,15 @@ struct NotchPlayerView: View {
                         Text(track.isPlaying ? "ИГРАЕТ" : "ПАУЗА")
                             .font(.system(size: 8, weight: .bold, design: .rounded))
                             .tracking(0.7)
+                            .contentTransition(.opacity)
                     }
                     .foregroundStyle(.secondary)
+                    .animation(
+                        reduceMotion
+                            ? nil
+                            : .smooth(duration: PlayerMotion.playbackDuration, extraBounce: 0),
+                        value: track.isPlaying
+                    )
                 }
                 .frame(width: 82)
 

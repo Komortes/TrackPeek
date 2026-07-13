@@ -10,39 +10,57 @@ struct ArtworkEqualizerView: View {
     private let barCount = 7
 
     var body: some View {
-        TimelineView(
-            .animation(
-                minimumInterval: 1 / 18,
-                paused: !isPlaying || reduceMotion
-            )
-        ) { context in
-            GeometryReader { proxy in
-                HStack(alignment: .bottom, spacing: 2) {
-                    ForEach(0 ..< barCount, id: \.self) { index in
-                        Capsule(style: .continuous)
-                            .fill(color(for: index))
-                            .frame(maxWidth: .infinity)
-                            .frame(
-                                height: barHeight(
-                                    at: index,
-                                    date: context.date,
-                                    availableHeight: proxy.size.height
-                                )
-                            )
-                    }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+        ZStack(alignment: .bottom) {
+            equalizerBars(date: .distantPast, isActive: false)
+                .opacity(isPlaying && !reduceMotion ? 0 : 1)
+
+            TimelineView(
+                .animation(
+                    minimumInterval: 1 / 24,
+                    paused: !isPlaying || reduceMotion
+                )
+            ) { context in
+                equalizerBars(date: context.date, isActive: true)
             }
+            .opacity(isPlaying && !reduceMotion ? 1 : 0)
         }
+        .animation(
+            reduceMotion
+                ? nil
+                : .smooth(duration: PlayerMotion.equalizerDuration, extraBounce: 0),
+            value: isPlaying
+        )
         .accessibilityHidden(true)
+    }
+
+    private func equalizerBars(date: Date, isActive: Bool) -> some View {
+        GeometryReader { proxy in
+            HStack(alignment: .bottom, spacing: 2) {
+                ForEach(0 ..< barCount, id: \.self) { index in
+                    Capsule(style: .continuous)
+                        .fill(color(for: index, isActive: isActive))
+                        .frame(maxWidth: .infinity)
+                        .frame(
+                            height: barHeight(
+                                at: index,
+                                date: date,
+                                availableHeight: proxy.size.height,
+                                isActive: isActive
+                            )
+                        )
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+        }
     }
 
     private func barHeight(
         at index: Int,
         date: Date,
-        availableHeight: CGFloat
+        availableHeight: CGFloat,
+        isActive: Bool
     ) -> CGFloat {
-        guard isPlaying, !reduceMotion else {
+        guard isActive else {
             let restingPattern = [0.22, 0.31, 0.25, 0.36, 0.27, 0.32, 0.23]
             return max(3, availableHeight * restingPattern[index])
         }
@@ -56,14 +74,14 @@ struct ArtworkEqualizerView: View {
         return max(3, availableHeight * min(energy, 0.94))
     }
 
-    private func color(for index: Int) -> Color {
+    private func color(for index: Int, isActive: Bool) -> Color {
         guard isColored else {
-            return .white.opacity(isPlaying ? 0.88 : 0.48)
+            return .white.opacity(isActive ? 0.88 : 0.48)
         }
 
         return palette.colors[index % palette.colors.count]
             .swiftUIColor
-            .opacity(isPlaying ? 0.96 : 0.58)
+            .opacity(isActive ? 0.96 : 0.58)
     }
 }
 

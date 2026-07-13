@@ -77,4 +77,13 @@ struct PlayerLayoutTests {
             )
         }
     }
+
+    @Test("player state changes use short coordinated motion")
+    func playerStateMotionStaysCoordinated() {
+        #expect(PlayerMotion.playbackDuration == 0.24)
+        #expect(PlayerMotion.controlDuration == 0.14)
+        #expect(PlayerMotion.equalizerDuration == 0.28)
+        #expect(PlayerMotion.controlDuration < PlayerMotion.playbackDuration)
+        #expect(PlayerMotion.equalizerDuration <= 0.3)
+    }
 }

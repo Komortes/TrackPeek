@@ -4,6 +4,12 @@ struct PlayerPresentationOptions: Equatable, Sendable {
     let showsArtworkShadow: Bool
 }
 
+enum PlayerMotion {
+    static let playbackDuration = 0.24
+    static let controlDuration = 0.14
+    static let equalizerDuration = 0.28
+}
+
 enum ArtworkSizePreference {
     static let storageKey = "artworkSize"
     static let fallback = 250.0

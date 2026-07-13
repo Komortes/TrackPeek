@@ -13,6 +13,7 @@ struct PlaybackProgressView: View {
     @State private var dragPosition: TimeInterval?
     @State private var isDragging = false
     @State private var isHovering = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         TimelineView(
@@ -106,8 +107,15 @@ struct PlaybackProgressView: View {
                     .shadow(color: .black.opacity(0.22), radius: 3, y: 1)
                     .offset(x: max((proxy.size.width - 10) * fraction, 0))
                     .opacity(isHovering || isDragging ? 1 : 0)
-                    .scaleEffect(isHovering || isDragging ? 1 : 0.72)
-                    .animation(.easeOut(duration: 0.12), value: isDragging)
+                    .scaleEffect(
+                        reduceMotion || isHovering || isDragging ? 1 : 0.72
+                    )
+                    .animation(
+                        reduceMotion
+                            ? nil
+                            : .smooth(duration: PlayerMotion.controlDuration, extraBounce: 0),
+                        value: isDragging
+                    )
             }
             .frame(maxHeight: .infinity)
             .contentShape(Rectangle())
@@ -133,8 +141,12 @@ struct PlaybackProgressView: View {
                     }
             )
             .onHover { hovering in
-                withAnimation(.easeOut(duration: 0.14)) {
+                if reduceMotion {
                     isHovering = hovering
+                } else {
+                    withAnimation(.easeInOut(duration: PlayerMotion.controlDuration)) {
+                        isHovering = hovering
+                    }
                 }
             }
             .help("Перетащите для перемотки")

@@ -7,6 +7,8 @@ struct PlaybackControlsView: View {
     let onNext: () -> Void
     var spacing: CGFloat = 16
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
         HStack(spacing: spacing) {
             control(
@@ -20,7 +22,18 @@ struct PlaybackControlsView: View {
                 symbol: isPlaying ? "pause.fill" : "play.fill",
                 label: isPlaying ? "Пауза" : "Воспроизвести",
                 isPrimary: true,
-                action: onPlayPause
+                action: {
+                    guard !reduceMotion else {
+                        onPlayPause()
+                        return
+                    }
+
+                    withAnimation(
+                        .smooth(duration: PlayerMotion.playbackDuration, extraBounce: 0)
+                    ) {
+                        onPlayPause()
+                    }
+                }
             )
 
             control(
@@ -54,12 +67,19 @@ private struct PlaybackControlButton: View {
     let action: () -> Void
 
     @State private var isHovered = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: isPrimary ? 18 : 15, weight: .semibold))
-                .contentTransition(.opacity)
+                .contentTransition(.symbolEffect(.replace))
+                .animation(
+                    reduceMotion
+                        ? nil
+                        : .smooth(duration: PlayerMotion.playbackDuration, extraBounce: 0),
+                    value: symbol
+                )
         }
         .buttonStyle(
             PlaybackControlButtonStyle(
@@ -68,8 +88,12 @@ private struct PlaybackControlButton: View {
             )
         )
         .onHover { hovering in
-            withAnimation(.easeOut(duration: 0.14)) {
+            if reduceMotion {
                 isHovered = hovering
+            } else {
+                withAnimation(.easeInOut(duration: PlayerMotion.controlDuration)) {
+                    isHovered = hovering
+                }
             }
         }
         .help(label)
