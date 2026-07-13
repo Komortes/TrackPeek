@@ -7,19 +7,53 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		1976B58F94EC486B0F4419FF /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7ADE6DE3D1A57F2685EBC69 /* main.swift */; };
+		06628BE4AF83E08E4C014F13 /* SpotifyTrack.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD20BDE0536416FD2E5027E8 /* SpotifyTrack.swift */; };
+		27258DD3BD493164A8A3F177 /* SpotifyTrackParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EF5A723EFD6F834403E060A /* SpotifyTrackParserTests.swift */; };
+		5483BC429E6D1053D247B987 /* SpotifyAppleScriptClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B05DC7EA94592E5EFEAE1B4C /* SpotifyAppleScriptClient.swift */; };
+		59FF79536A31C39DF66929EF /* TrackPeekApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EB8B3A7EA66CB48B32DC836 /* TrackPeekApp.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		62574962F378DC518AABDD8C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = EBC05B20E4A47D72C07A7A41 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7E0DF78703E9B753924C079F;
+			remoteInfo = TrackPeek;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		344095CFCE94AECD10CBDEBB /* TrackPeek.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TrackPeek.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		B7ADE6DE3D1A57F2685EBC69 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		3EB8B3A7EA66CB48B32DC836 /* TrackPeekApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackPeekApp.swift; sourceTree = "<group>"; };
+		7EF5A723EFD6F834403E060A /* SpotifyTrackParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyTrackParserTests.swift; sourceTree = "<group>"; };
+		9A4C06534FB79978AF93A235 /* TrackPeekTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TrackPeekTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AD20BDE0536416FD2E5027E8 /* SpotifyTrack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyTrack.swift; sourceTree = "<group>"; };
+		B05DC7EA94592E5EFEAE1B4C /* SpotifyAppleScriptClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyAppleScriptClient.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
+		21CAC22B9C1B8EAB75544365 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				AD20BDE0536416FD2E5027E8 /* SpotifyTrack.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		2EA68A0EBB7FAF74B71F80A7 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				7EF5A723EFD6F834403E060A /* SpotifyTrackParserTests.swift */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
 		3BEC46899D145247D4F146B8 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 				344095CFCE94AECD10CBDEBB /* TrackPeek.app */,
+				9A4C06534FB79978AF93A235 /* TrackPeekTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -27,7 +61,9 @@
 		8C5D8BABEBA73413F55F62A4 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
-				B7ADE6DE3D1A57F2685EBC69 /* main.swift */,
+				3EB8B3A7EA66CB48B32DC836 /* TrackPeekApp.swift */,
+				21CAC22B9C1B8EAB75544365 /* Models */,
+				943762F836434F7360ABCAF6 /* Services */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -36,13 +72,40 @@
 			isa = PBXGroup;
 			children = (
 				8C5D8BABEBA73413F55F62A4 /* Sources */,
+				2EA68A0EBB7FAF74B71F80A7 /* Tests */,
 				3BEC46899D145247D4F146B8 /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		943762F836434F7360ABCAF6 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				B05DC7EA94592E5EFEAE1B4C /* SpotifyAppleScriptClient.swift */,
+			);
+			path = Services;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		16F151A58E3F89843816A95A /* TrackPeekTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 592F00F1B858018156DDC69C /* Build configuration list for PBXNativeTarget "TrackPeekTests" */;
+			buildPhases = (
+				07821912B1AFF7E80AA61654 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				1BC2B5ADE3CCE54B88D06C48 /* PBXTargetDependency */,
+			);
+			name = TrackPeekTests;
+			packageProductDependencies = (
+			);
+			productName = TrackPeekTests;
+			productReference = 9A4C06534FB79978AF93A235 /* TrackPeekTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		7E0DF78703E9B753924C079F /* TrackPeek */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 691C354D7EB2696940820A6D /* Build configuration list for PBXNativeTarget "TrackPeek" */;
@@ -89,20 +152,39 @@
 			projectRoot = "";
 			targets = (
 				7E0DF78703E9B753924C079F /* TrackPeek */,
+				16F151A58E3F89843816A95A /* TrackPeekTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXSourcesBuildPhase section */
+		07821912B1AFF7E80AA61654 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				27258DD3BD493164A8A3F177 /* SpotifyTrackParserTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		62106FBB354F091906915782 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				1976B58F94EC486B0F4419FF /* main.swift in Sources */,
+				5483BC429E6D1053D247B987 /* SpotifyAppleScriptClient.swift in Sources */,
+				06628BE4AF83E08E4C014F13 /* SpotifyTrack.swift in Sources */,
+				59FF79536A31C39DF66929EF /* TrackPeekApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		1BC2B5ADE3CCE54B88D06C48 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7E0DF78703E9B753924C079F /* TrackPeek */;
+			targetProxy = 62574962F378DC518AABDD8C /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		4AEA5D12330B9EC6A8CA7086 /* Release */ = {
@@ -197,6 +279,40 @@
 			};
 			name = Release;
 		};
+		CA097C4A43AE20CF6BD91261 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.trackpeek.TrackPeekTests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TrackPeek.app/Contents/MacOS/TrackPeek";
+			};
+			name = Release;
+		};
+		D70F2B842A93EA21F7AC194E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.trackpeek.TrackPeekTests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TrackPeek.app/Contents/MacOS/TrackPeek";
+			};
+			name = Debug;
+		};
 		DE87BF0BB7CFBFE65D86DBBC /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -263,6 +379,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		592F00F1B858018156DDC69C /* Build configuration list for PBXNativeTarget "TrackPeekTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D70F2B842A93EA21F7AC194E /* Debug */,
+				CA097C4A43AE20CF6BD91261 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		691C354D7EB2696940820A6D /* Build configuration list for PBXNativeTarget "TrackPeek" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

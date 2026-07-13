@@ -22,6 +22,18 @@ targets:
         CODE_SIGN_STYLE: Automatic
         ENABLE_HARDENED_RUNTIME: YES
 
+  TrackPeekTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: Tests
+    dependencies:
+      - target: TrackPeek
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.trackpeek.TrackPeekTests
+        GENERATE_INFOPLIST_FILE: YES
+
 schemes:
   TrackPeek:
     build:
@@ -31,3 +43,5 @@ schemes:
       config: Debug
     test:
       config: Debug
+      targets:
+        - TrackPeekTests
