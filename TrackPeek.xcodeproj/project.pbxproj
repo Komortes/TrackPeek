@@ -24,6 +24,7 @@
 		59FF79536A31C39DF66929EF /* TrackPeekApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EB8B3A7EA66CB48B32DC836 /* TrackPeekApp.swift */; };
 		5D57701DFFFC89A2CD2A5069 /* PlayerMoreMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89B56790FCCC5C5B3225EDE9 /* PlayerMoreMenu.swift */; };
 		5EBFE448316D9261A6F6C2CA /* DisplayMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5423E7B6B182EEF62F4B5BFB /* DisplayMode.swift */; };
+		67ABB99D96F5C664B21A689B /* NotchSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0304905077E9A00A53F645CA /* NotchSettingsView.swift */; };
 		69629BCF9600A0CEBCE322E3 /* PlaybackProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D0266152B3C12AA6E3A2974 /* PlaybackProgressView.swift */; };
 		7619BDBC8B430E99D3170D6C /* PlayerPresentationOptions.swift in Sources */ = {isa = PBXBuildFile; fileRef = F72A0A219630C5DB27BE8D4C /* PlayerPresentationOptions.swift */; };
 		7BC974C98330B7CD6FDFB49E /* PlayerHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37B595BE3D2A9D862D892381 /* PlayerHeaderView.swift */; };
@@ -55,6 +56,7 @@
 
 /* Begin PBXFileReference section */
 		00835C9149248F59E71391B0 /* NotchConfigurationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchConfigurationTests.swift; sourceTree = "<group>"; };
+		0304905077E9A00A53F645CA /* NotchSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchSettingsView.swift; sourceTree = "<group>"; };
 		11657A06E06E013BB1AFBDD3 /* NotchWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchWindowController.swift; sourceTree = "<group>"; };
 		1A47F67E2514C38F7C379BD2 /* SpotifySpikeModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifySpikeModel.swift; sourceTree = "<group>"; };
 		22D20BAD45ADCB7BF41E719F /* NotchConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchConfiguration.swift; sourceTree = "<group>"; };
@@ -145,6 +147,7 @@
 				4F3E7D8A59B5448360AFC1C8 /* ArtworkVerticalPlayerView.swift */,
 				51F98CDF26F841562F2AC26B /* CompactHorizontalPlayerView.swift */,
 				A62E1EDD09A95D23FDBDE67B /* NotchPlayerView.swift */,
+				0304905077E9A00A53F645CA /* NotchSettingsView.swift */,
 				3B276A7EB0CE68ABCCEE091A /* PlaybackControlButtonStyle.swift */,
 				39B5075EEB88D0B888831E42 /* PlaybackControlsView.swift */,
 				9D0266152B3C12AA6E3A2974 /* PlaybackProgressView.swift */,
@@ -295,6 +298,7 @@
 				5EBFE448316D9261A6F6C2CA /* DisplayMode.swift in Sources */,
 				CD8465FC4274BFEC50138FA3 /* NotchConfiguration.swift in Sources */,
 				4B7ABAE2FBDA9D21044F6E2A /* NotchPlayerView.swift in Sources */,
+				67ABB99D96F5C664B21A689B /* NotchSettingsView.swift in Sources */,
 				39A23D940D9E83CBB78324E3 /* NotchWindowController.swift in Sources */,
 				90BAD3D30034C4AE3878ABCC /* PlaybackAvailability.swift in Sources */,
 				A9C959DDE49C29200A38C496 /* PlaybackControlButtonStyle.swift in Sources */,

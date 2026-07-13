@@ -2,12 +2,15 @@ import SwiftUI
 
 enum SettingsTab: CaseIterable {
     case general
+    case notch
     case player
 
     var title: String {
         switch self {
         case .general:
             "Основные"
+        case .notch:
+            "Чёлка"
         case .player:
             "Плеер"
         }
@@ -17,6 +20,8 @@ enum SettingsTab: CaseIterable {
         switch self {
         case .general:
             "switch.2"
+        case .notch:
+            "macbook"
         case .player:
             "play.square"
         }
@@ -75,6 +80,14 @@ struct SettingsView: View {
                 )
             }
 
+            NotchSettingsView()
+                .tabItem {
+                    Label(
+                        SettingsTab.notch.title,
+                        systemImage: SettingsTab.notch.symbolName
+                    )
+                }
+
             settingsPage(
                 title: "Плеер",
                 subtitle: "Настройте компоновку, обложку и второстепенные детали."
@@ -88,7 +101,7 @@ struct SettingsView: View {
                 )
             }
         }
-        .frame(width: 720, height: 610)
+        .frame(width: 720, height: 640)
     }
 
     private func settingsPage<Content: View>(
