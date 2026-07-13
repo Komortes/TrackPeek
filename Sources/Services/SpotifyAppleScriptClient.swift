@@ -1,7 +1,13 @@
 import AppKit
 
 @MainActor
-final class SpotifyAppleScriptClient {
+protocol SpotifyPlaybackProviding {
+    func fetchCurrentTrack() throws -> SpotifyTrack
+    func playPause() throws
+}
+
+@MainActor
+final class SpotifyAppleScriptClient: SpotifyPlaybackProviding {
     enum Error: LocalizedError {
         case spotifyNotRunning
         case scriptFailed(String)
