@@ -7,5 +7,9 @@ struct TrackPeekApp: App {
             SpotifySpikeView()
         }
         .menuBarExtraStyle(.window)
+
+        Settings {
+            SettingsView()
+        }
     }
 }

@@ -161,9 +161,12 @@ struct SpotifySpikeView: View {
 
     private var footer: some View {
         HStack {
-            Text("⌘R — обновить")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
+            SettingsLink {
+                Image(systemName: "gearshape")
+            }
+            .buttonStyle(.borderless)
+            .help("Настройки TrackPeek")
+            .accessibilityLabel("Открыть настройки TrackPeek")
 
             Spacer()
 

@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		06628BE4AF83E08E4C014F13 /* SpotifyTrack.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD20BDE0536416FD2E5027E8 /* SpotifyTrack.swift */; };
+		163B88A9CEFDA51FFF6B1DB3 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEC64F5EFDF93DB1170ACA56 /* SettingsView.swift */; };
 		27258DD3BD493164A8A3F177 /* SpotifyTrackParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EF5A723EFD6F834403E060A /* SpotifyTrackParserTests.swift */; };
 		303525109FD5E22CB1650754 /* DisplayModeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AEE2828C90080275021F97D /* DisplayModeTests.swift */; };
 		5483BC429E6D1053D247B987 /* SpotifyAppleScriptClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B05DC7EA94592E5EFEAE1B4C /* SpotifyAppleScriptClient.swift */; };
@@ -40,6 +41,7 @@
 		AD20BDE0536416FD2E5027E8 /* SpotifyTrack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyTrack.swift; sourceTree = "<group>"; };
 		B05DC7EA94592E5EFEAE1B4C /* SpotifyAppleScriptClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyAppleScriptClient.swift; sourceTree = "<group>"; };
 		B3038E7F01249006EC47AA41 /* SpotifySpikeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifySpikeView.swift; sourceTree = "<group>"; };
+		DEC64F5EFDF93DB1170ACA56 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -74,6 +76,7 @@
 		4778CEE53CF1313A1D3ED7DF /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				DEC64F5EFDF93DB1170ACA56 /* SettingsView.swift */,
 				B3038E7F01249006EC47AA41 /* SpotifySpikeView.swift */,
 			);
 			path = Views;
@@ -204,6 +207,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				5EBFE448316D9261A6F6C2CA /* DisplayMode.swift in Sources */,
+				163B88A9CEFDA51FFF6B1DB3 /* SettingsView.swift in Sources */,
 				5483BC429E6D1053D247B987 /* SpotifyAppleScriptClient.swift in Sources */,
 				D0D1877AC7712F2D89CD035A /* SpotifySpikeModel.swift in Sources */,
 				AAA28A2E84B8C81CBAF3B84A /* SpotifySpikeView.swift in Sources */,
