@@ -36,7 +36,7 @@ enum SpotifyTrackParser {
     static func parse(_ values: [String]) throws -> SpotifyTrack {
         guard
             values.count >= 7,
-            let duration = parseTime(values[3]),
+            let durationMilliseconds = parseTime(values[3]),
             let position = parseTime(values[4])
         else {
             throw Error.invalidResponse
@@ -46,7 +46,7 @@ enum SpotifyTrackParser {
             title: values[0],
             artist: values[1],
             album: optionalText(values[2]),
-            duration: max(duration, 0),
+            duration: max(durationMilliseconds / 1_000, 0),
             position: max(position, 0),
             artworkURL: URL(string: values[5]),
             isPlaying: values[6].caseInsensitiveCompare("playing") == .orderedSame

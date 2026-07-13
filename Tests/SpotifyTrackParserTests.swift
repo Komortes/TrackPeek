@@ -10,7 +10,7 @@ struct SpotifyTrackParserTests {
             "Jigsaw Falling Into Place",
             "Radiohead",
             "In Rainbows",
-            "249.25",
+            "249250",
             "62.5",
             "https://i.scdn.co/image/example",
             "playing",
@@ -31,7 +31,7 @@ struct SpotifyTrackParserTests {
             "Local Track",
             "Local Artist",
             "",
-            "180,5",
+            "180500",
             "12,25",
             "",
             "paused",
@@ -42,6 +42,22 @@ struct SpotifyTrackParserTests {
         #expect(track.position == 12.25)
         #expect(track.artworkURL == nil)
         #expect(!track.isPlaying)
+    }
+
+    @Test("normalizes Spotify duration from milliseconds to seconds")
+    func normalizesDurationUnits() throws {
+        let track = try SpotifyTrackParser.parse([
+            "Love Attribute",
+            "Nate Mercereau",
+            "Excellent Traveler",
+            "173834",
+            "42.5",
+            "https://i.scdn.co/image/example",
+            "playing",
+        ])
+
+        #expect(track.duration == 173.834)
+        #expect(track.position == 42.5)
     }
 
     @Test("rejects an incomplete AppleScript response")
