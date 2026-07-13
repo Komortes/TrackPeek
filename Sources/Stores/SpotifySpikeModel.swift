@@ -50,4 +50,27 @@ final class SpotifySpikeModel {
             statusText = error.localizedDescription
         }
     }
+
+    func seek(to requestedPosition: TimeInterval) {
+        guard let track else {
+            return
+        }
+
+        let position = min(max(requestedPosition, 0), track.duration)
+
+        do {
+            try provider.seek(to: position)
+            self.track = SpotifyTrack(
+                title: track.title,
+                artist: track.artist,
+                album: track.album,
+                duration: track.duration,
+                position: position,
+                artworkURL: track.artworkURL,
+                isPlaying: track.isPlaying
+            )
+        } catch {
+            statusText = error.localizedDescription
+        }
+    }
 }

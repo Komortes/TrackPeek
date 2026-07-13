@@ -6,6 +6,7 @@ protocol SpotifyPlaybackProviding {
     func playPause() throws
     func nextTrack() throws
     func previousTrack() throws
+    func seek(to position: TimeInterval) throws
 }
 
 @MainActor
@@ -78,6 +79,22 @@ final class SpotifyAppleScriptClient: SpotifyPlaybackProviding {
         }
 
         _ = try execute("tell application \"Spotify\" to previous track")
+    }
+
+    func seek(to position: TimeInterval) throws {
+        guard isSpotifyRunning else {
+            throw Error.spotifyNotRunning
+        }
+
+        let seconds = max(position, 0)
+        let value = String(
+            format: "%.3f",
+            locale: Locale(identifier: "en_US_POSIX"),
+            seconds
+        )
+        _ = try execute(
+            "tell application \"Spotify\" to set player position to \(value)"
+        )
     }
 
     private var isSpotifyRunning: Bool {

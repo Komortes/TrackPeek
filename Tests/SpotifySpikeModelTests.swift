@@ -62,6 +62,27 @@ struct SpotifySpikeModelTests {
 
         #expect(model.track?.title == "Nude")
     }
+
+    @Test("seek clamps the requested position to the track duration")
+    func seekClampsToDuration() {
+        let provider = FakeSpotifyProvider(
+            result: .success(
+                SpotifyTrack(
+                    title: "Reckoner",
+                    artist: "Radiohead",
+                    duration: 180,
+                    position: 30,
+                    isPlaying: true
+                )
+            )
+        )
+        let model = SpotifySpikeModel(provider: provider)
+        model.refresh()
+
+        model.seek(to: 240)
+
+        #expect(model.track?.position == 180)
+    }
 }
 
 @MainActor
@@ -96,6 +117,24 @@ private final class FakeSpotifyProvider: SpotifyPlaybackProviding {
         if let previousTrackValue {
             result = .success(previousTrackValue)
         }
+    }
+
+    func seek(to position: TimeInterval) throws {
+        guard case let .success(track) = result else {
+            return
+        }
+
+        result = .success(
+            SpotifyTrack(
+                title: track.title,
+                artist: track.artist,
+                album: track.album,
+                duration: track.duration,
+                position: position,
+                artworkURL: track.artworkURL,
+                isPlaying: track.isPlaying
+            )
+        )
     }
 }
 
