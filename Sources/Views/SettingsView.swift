@@ -8,6 +8,8 @@ struct SettingsView: View {
     @AppStorage("showArtworkShadow") private var showsArtworkShadow = true
     @AppStorage(PopoverBackgroundStyle.storageKey)
     private var backgroundStyleRawValue = PopoverBackgroundStyle.fallback.rawValue
+    @AppStorage(ArtworkSizePreference.storageKey)
+    private var artworkSizeValue = ArtworkSizePreference.fallback
     @AppStorage("displayMode") private var selectedModeRawValue = DisplayMode.fallback.rawValue
 
     private var playerLayout: PlayerLayout {
@@ -27,24 +29,58 @@ struct SettingsView: View {
         )
     }
 
+    private var artworkSize: Binding<Double> {
+        Binding(
+            get: { ArtworkSizePreference.clamped(artworkSizeValue) },
+            set: { artworkSizeValue = ArtworkSizePreference.clamped($0) }
+        )
+    }
+
     var body: some View {
+        TabView {
+            settingsPage(
+                title: "Основные",
+                subtitle: "Выберите поверхность TrackPeek и доступный режим отображения."
+            ) {
+                displayModeSection
+            }
+            .tabItem {
+                Label("Основные", systemImage: "switch.2")
+            }
+
+            settingsPage(
+                title: "Плеер",
+                subtitle: "Настройте компоновку, обложку и второстепенные детали."
+            ) {
+                appearanceSection
+            }
+            .tabItem {
+                Label("Плеер", systemImage: "music.note.square")
+            }
+        }
+        .frame(width: 720, height: 610)
+    }
+
+    private func settingsPage<Content: View>(
+        title: String,
+        subtitle: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("TrackPeek")
+                    Text(title)
                         .font(.title2.weight(.semibold))
 
-                    Text("Настройте вид плеера и поверхность, в которой он появляется.")
+                    Text(subtitle)
                         .font(.callout)
                         .foregroundStyle(.secondary)
                 }
 
-                appearanceSection
-                displayModeSection
+                content()
             }
             .padding(24)
         }
-        .frame(width: 720, height: 610)
     }
 
     private var appearanceSection: some View {
@@ -74,6 +110,28 @@ struct SettingsView: View {
                     }
                     .labelsHidden()
                     .frame(width: 170)
+                }
+
+                Divider().padding(.leading, 14)
+
+                settingRow(
+                    title: "Размер обложки",
+                    subtitle: "Масштаб фотографии в режиме Artwork."
+                ) {
+                    HStack(spacing: 10) {
+                        Slider(
+                            value: artworkSize,
+                            in: ArtworkSizePreference.range,
+                            step: ArtworkSizePreference.step
+                        )
+                        .frame(width: 170)
+                        .accessibilityLabel("Размер обложки")
+
+                        Text("\(Int(ArtworkSizePreference.clamped(artworkSizeValue))) px")
+                            .font(.caption.monospacedDigit())
+                            .foregroundStyle(.secondary)
+                            .frame(width: 46, alignment: .trailing)
+                    }
                 }
 
                 Divider().padding(.leading, 14)

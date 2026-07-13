@@ -4,10 +4,37 @@ struct ArtworkVerticalPlayerView: View {
     let model: SpotifySpikeModel
     let track: SpotifyTrack
     let options: PlayerPresentationOptions
+    let artworkSize: CGFloat
 
     var body: some View {
         VStack(spacing: 10) {
-            artworkHero
+            PlayerHeaderView(
+                track: track,
+                showsPlaybackStatus: options.showsPlaybackStatus,
+                onRefresh: model.refresh
+            )
+
+            TrackArtworkView(
+                url: track.artworkURL,
+                size: artworkSize,
+                cornerRadius: 17,
+                showsShadow: options.showsArtworkShadow
+            )
+
+            PlaybackControlsView(
+                isPlaying: track.isPlaying,
+                onPrevious: model.previousTrack,
+                onPlayPause: model.togglePlayback,
+                onNext: model.nextTrack,
+                spacing: 24
+            )
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 6)
+            .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 15, style: .continuous)
+                    .stroke(.primary.opacity(0.07), lineWidth: 1)
+            }
 
             TrackInfoView(
                 track: track,
@@ -24,55 +51,7 @@ struct ArtworkVerticalPlayerView: View {
                 snapshotDate: model.snapshotDate,
                 onSeek: model.seek(to:)
             )
-
         }
         .padding(14)
-    }
-
-    private var artworkHero: some View {
-        ZStack {
-            TrackArtworkView(
-                url: track.artworkURL,
-                size: 274,
-                cornerRadius: 17,
-                showsShadow: options.showsArtworkShadow
-            )
-
-            VStack {
-                HStack {
-                    if options.showsPlaybackStatus {
-                        PlayerStatusBadge(isPlaying: track.isPlaying)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 7)
-                            .background(.regularMaterial, in: Capsule())
-                    }
-
-                    Spacer()
-
-                    PlayerMoreMenu(track: track, onRefresh: model.refresh)
-                        .padding(4)
-                        .background(.regularMaterial, in: Circle())
-                }
-
-                Spacer()
-
-                PlaybackControlsView(
-                    isPlaying: track.isPlaying,
-                    onPrevious: model.previousTrack,
-                    onPlayPause: model.togglePlayback,
-                    onNext: model.nextTrack,
-                    spacing: 20,
-                    appearance: .overArtwork
-                )
-                .padding(.horizontal, 18)
-                .padding(.vertical, 7)
-                .background(.black.opacity(0.46), in: Capsule())
-                .overlay {
-                    Capsule()
-                        .stroke(.white.opacity(0.12), lineWidth: 1)
-                }
-            }
-            .padding(12)
-        }
     }
 }

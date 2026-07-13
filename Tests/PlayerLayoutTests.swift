@@ -26,7 +26,34 @@ struct PlayerLayoutTests {
     func providesDistinctPopoverSizes() {
         #expect(PlayerLayout.compactHorizontal.popoverSize == CGSize(width: 390, height: 144))
         #expect(PlayerLayout.standard.popoverSize == CGSize(width: 350, height: 286))
-        #expect(PlayerLayout.artworkVertical.popoverSize == CGSize(width: 310, height: 438))
+        #expect(PlayerLayout.artworkVertical.popoverSize == CGSize(width: 310, height: 475))
+    }
+
+    @Test("artwork size preference uses safe persisted bounds")
+    func artworkSizePreferenceBounds() {
+        #expect(ArtworkSizePreference.storageKey == "artworkSize")
+        #expect(ArtworkSizePreference.fallback == 250)
+        #expect(ArtworkSizePreference.range == 210 ... 274)
+        #expect(ArtworkSizePreference.step == 2)
+        #expect(ArtworkSizePreference.clamped(180) == 210)
+        #expect(ArtworkSizePreference.clamped(242) == 242)
+        #expect(ArtworkSizePreference.clamped(300) == 274)
+    }
+
+    @Test("artwork layout height follows the selected artwork size")
+    func artworkLayoutHeightFollowsArtworkSize() {
+        #expect(
+            PlayerLayout.artworkVertical.popoverSize(artworkSize: 210)
+                == CGSize(width: 310, height: 435)
+        )
+        #expect(
+            PlayerLayout.artworkVertical.popoverSize(artworkSize: 274)
+                == CGSize(width: 310, height: 499)
+        )
+        #expect(
+            PlayerLayout.standard.popoverSize(artworkSize: 274)
+                == PlayerLayout.standard.popoverSize
+        )
     }
 
     @Test("popover backgrounds have stable persisted values")

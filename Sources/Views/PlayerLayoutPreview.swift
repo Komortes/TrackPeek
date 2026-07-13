@@ -47,16 +47,12 @@ struct PlayerLayoutPreview: View {
             }
 
         case .artworkVertical:
-            VStack(spacing: 5) {
-                ZStack(alignment: .bottom) {
-                    artwork(size: 54)
-                    controls
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 3)
-                        .background(.black.opacity(0.42), in: Capsule())
-                        .foregroundStyle(.white)
-                        .offset(y: -4)
-                }
+            VStack(spacing: 4) {
+                artwork(size: 43)
+                controls
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 3)
+                    .background(.thinMaterial, in: Capsule())
                 textLines
                 progress
             }

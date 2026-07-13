@@ -4,6 +4,17 @@ struct PlayerPresentationOptions: Equatable, Sendable {
     let showsArtworkShadow: Bool
 }
 
+enum ArtworkSizePreference {
+    static let storageKey = "artworkSize"
+    static let fallback = 250.0
+    static let range = 210.0 ... 274.0
+    static let step = 2.0
+
+    static func clamped(_ value: Double) -> Double {
+        min(max(value, range.lowerBound), range.upperBound)
+    }
+}
+
 enum PopoverBackgroundStyle: String, CaseIterable, Identifiable, Sendable {
     case systemMaterial
     case artworkBlur

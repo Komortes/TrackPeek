@@ -11,6 +11,8 @@ struct TrackPeekPopoverView: View {
     @AppStorage("showArtworkShadow") private var showsArtworkShadow = true
     @AppStorage(PopoverBackgroundStyle.storageKey)
     private var backgroundStyleRawValue = PopoverBackgroundStyle.fallback.rawValue
+    @AppStorage(ArtworkSizePreference.storageKey)
+    private var artworkSizeValue = ArtworkSizePreference.fallback
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
@@ -31,6 +33,14 @@ struct TrackPeekPopoverView: View {
         PopoverBackgroundStyle(rawValue: backgroundStyleRawValue) ?? .fallback
     }
 
+    private var artworkSize: Double {
+        ArtworkSizePreference.clamped(artworkSizeValue)
+    }
+
+    private var popoverSize: CGSize {
+        playerLayout.popoverSize(artworkSize: artworkSize)
+    }
+
     var body: some View {
         Group {
             if let track = model.track, model.availability == .ready {
@@ -42,8 +52,8 @@ struct TrackPeekPopoverView: View {
             }
         }
         .frame(
-            width: playerLayout.popoverSize.width,
-            height: playerLayout.popoverSize.height
+            width: popoverSize.width,
+            height: popoverSize.height
         )
         .background {
             PopoverBackground(
@@ -63,6 +73,10 @@ struct TrackPeekPopoverView: View {
         .animation(
             reduceMotion ? nil : .easeInOut(duration: 0.22),
             value: playerLayout
+        )
+        .animation(
+            reduceMotion ? nil : .easeInOut(duration: 0.18),
+            value: artworkSize
         )
         .task {
             while !Task.isCancelled {
@@ -84,7 +98,12 @@ struct TrackPeekPopoverView: View {
         case .standard:
             StandardPlayerView(model: model, track: track, options: options)
         case .artworkVertical:
-            ArtworkVerticalPlayerView(model: model, track: track, options: options)
+            ArtworkVerticalPlayerView(
+                model: model,
+                track: track,
+                options: options,
+                artworkSize: CGFloat(artworkSize)
+            )
         }
     }
 
