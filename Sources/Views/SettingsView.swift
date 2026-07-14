@@ -3,6 +3,7 @@ import SwiftUI
 enum SettingsTab: CaseIterable {
     case general
     case notch
+    case menuBar
     case player
 
     var title: String {
@@ -11,6 +12,8 @@ enum SettingsTab: CaseIterable {
             "Основные"
         case .notch:
             "Чёлка"
+        case .menuBar:
+            "Menu Bar"
         case .player:
             "Плеер"
         }
@@ -22,6 +25,8 @@ enum SettingsTab: CaseIterable {
             "switch.2"
         case .notch:
             "macbook"
+        case .menuBar:
+            "menubar.rectangle"
         case .player:
             "play.square"
         }
@@ -40,6 +45,46 @@ struct SettingsView: View {
     private var artworkSizeValue = ArtworkSizePreference.fallback
     @AppStorage(DisplayMode.storageKey)
     private var selectedModeRawValue = DisplayMode.fallback.rawValue
+
+    @State private var showsResetConfirmation = false
+
+    private static let resettableKeys: [String] = [
+        DisplayMode.storageKey,
+        "showAlbumName",
+        "showPlaybackStatus",
+        "showArtworkShadow",
+        PopoverBackgroundStyle.storageKey,
+        ArtworkSizePreference.storageKey,
+        PlayerLayout.storageKey,
+        NotchPreferences.enabledKey,
+        NotchPreferences.displayTargetKey,
+        NotchPreferences.widthKey,
+        NotchPreferences.heightAdjustmentKey,
+        NotchPreferences.hapticFeedbackKey,
+        NotchPreferences.songInfoVisibilityKey,
+        NotchPreferences.hoverEnabledKey,
+        NotchPreferences.clickEnabledKey,
+        NotchPreferences.hoverDelayKey,
+        NotchPreferences.notificationsEnabledKey,
+        NotchPreferences.notificationDurationKey,
+        NotchPreferences.coloredProgressKey,
+        NotchPreferences.coloredWaveformKey,
+        NotchPreferences.equalizerSensitivityKey,
+        NotchPreferences.outlineShimmerKey,
+        NotchPreferences.outlineWidthKey,
+        NotchPreferences.pulseModeKey,
+        NotchPreferences.colorSourceKey,
+        NotchPreferences.cornerRadiusKey,
+        MenuBarPreferences.controlsEnabledKey,
+        MenuBarPreferences.showsTitleKey,
+        MenuBarPreferences.showsEqualizerKey,
+        MenuBarPreferences.titleWidthKey,
+        MenuBarPreferences.spacingKey,
+    ]
+
+    private var appVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—"
+    }
 
     private var playerLayout: PlayerLayout {
         PlayerLayout(rawValue: playerLayoutRawValue) ?? .fallback
@@ -67,11 +112,12 @@ struct SettingsView: View {
 
     var body: some View {
         TabView {
-            settingsPage(
+            SettingsPage(
                 title: "Основные",
                 subtitle: "Выберите поверхность TrackPeek и доступный режим отображения."
             ) {
                 displayModeSection
+                aboutSection
             }
             .tabItem {
                 Label(
@@ -88,7 +134,15 @@ struct SettingsView: View {
                     )
                 }
 
-            settingsPage(
+            MenuBarSettingsView()
+                .tabItem {
+                    Label(
+                        SettingsTab.menuBar.title,
+                        systemImage: SettingsTab.menuBar.symbolName
+                    )
+                }
+
+            SettingsPage(
                 title: "Плеер",
                 subtitle: "Настройте компоновку, обложку и второстепенные детали."
             ) {
@@ -104,45 +158,21 @@ struct SettingsView: View {
         .frame(width: 720, height: 640)
     }
 
-    private func settingsPage<Content: View>(
-        title: String,
-        subtitle: String,
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title)
-                        .font(.title2.weight(.semibold))
-
-                    Text(subtitle)
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                }
-
-                content()
-            }
-            .padding(24)
-        }
-    }
-
     private var appearanceSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            sectionHeader(
+            SettingsSectionHeader(
                 title: "Popover",
                 subtitle: "Компоновка и детали компактного плеера."
             )
 
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(alignment: .top, spacing: 12) {
-                    ForEach(PlayerLayout.allCases) { layout in
-                        playerLayoutCard(layout)
-                    }
+            HStack(alignment: .top, spacing: 12) {
+                ForEach(PlayerLayout.allCases) { layout in
+                    playerLayoutCard(layout)
                 }
             }
 
-            VStack(spacing: 0) {
-                settingRow(
+            SettingsGroup {
+                SettingsRow(
                     title: "Фон",
                     subtitle: "Системный материал или цвета текущей обложки."
                 ) {
@@ -155,31 +185,24 @@ struct SettingsView: View {
                     .frame(width: 170)
                 }
 
-                Divider().padding(.leading, 14)
+                SettingsRowDivider()
 
-                settingRow(
+                SettingsRow(
                     title: "Размер обложки",
                     subtitle: "Масштаб фотографии в режиме Artwork."
                 ) {
-                    HStack(spacing: 10) {
-                        Slider(
-                            value: artworkSize,
-                            in: ArtworkSizePreference.range,
-                            step: ArtworkSizePreference.step
-                        )
-                        .frame(width: 170)
-                        .accessibilityLabel("Размер обложки")
-
-                        Text("\(Int(ArtworkSizePreference.clamped(artworkSizeValue))) px")
-                            .font(.caption.monospacedDigit())
-                            .foregroundStyle(.secondary)
-                            .frame(width: 46, alignment: .trailing)
-                    }
+                    SettingsValueSlider(
+                        value: artworkSize,
+                        range: ArtworkSizePreference.range,
+                        step: ArtworkSizePreference.step,
+                        text: "\(Int(ArtworkSizePreference.clamped(artworkSizeValue))) px"
+                    )
+                    .accessibilityLabel("Размер обложки")
                 }
 
-                Divider().padding(.leading, 14)
+                SettingsRowDivider()
 
-                settingRow(
+                SettingsRow(
                     title: "Название альбома",
                     subtitle: "Показывать дополнительную строку под исполнителем."
                 ) {
@@ -187,9 +210,9 @@ struct SettingsView: View {
                         .labelsHidden()
                 }
 
-                Divider().padding(.leading, 14)
+                SettingsRowDivider()
 
-                settingRow(
+                SettingsRow(
                     title: "Статус Spotify",
                     subtitle: "Небольшой индикатор воспроизведения или паузы."
                 ) {
@@ -197,9 +220,9 @@ struct SettingsView: View {
                         .labelsHidden()
                 }
 
-                Divider().padding(.leading, 14)
+                SettingsRowDivider()
 
-                settingRow(
+                SettingsRow(
                     title: "Тень обложки",
                     subtitle: "Добавляет глубину, не меняя саму обложку."
                 ) {
@@ -207,18 +230,12 @@ struct SettingsView: View {
                         .labelsHidden()
                 }
             }
-            .toggleStyle(.switch)
-            .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 13, style: .continuous)
-                    .stroke(.primary.opacity(0.08), lineWidth: 1)
-            }
         }
     }
 
     private var displayModeSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            sectionHeader(
+            SettingsSectionHeader(
                 title: "Режим отображения",
                 subtitle: "Где TrackPeek будет показывать текущий трек."
             )
@@ -238,38 +255,66 @@ struct SettingsView: View {
         }
     }
 
-    private func sectionHeader(title: String, subtitle: String) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-                .font(.headline)
+    private var aboutSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            SettingsSectionHeader(
+                title: "О приложении",
+                subtitle: "Версия и сброс настроек до значений по умолчанию."
+            )
 
-            Text(subtitle)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            HStack(spacing: 14) {
+                Image(systemName: "music.note")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 44, height: 44)
+                    .background(
+                        LinearGradient(
+                            colors: [Color.green, Color.green.opacity(0.7)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        ),
+                        in: RoundedRectangle(cornerRadius: 11, style: .continuous)
+                    )
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("TrackPeek")
+                        .font(.headline)
+
+                    Text("Версия \(appVersion)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Button("Сбросить настройки") {
+                    showsResetConfirmation = true
+                }
+            }
+            .padding(14)
+            .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 13, style: .continuous)
+                    .stroke(.primary.opacity(0.08), lineWidth: 1)
+            }
+        }
+        .confirmationDialog(
+            "Сбросить все настройки TrackPeek?",
+            isPresented: $showsResetConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Сбросить", role: .destructive) { resetAllSettings() }
+            Button("Отмена", role: .cancel) {}
+        } message: {
+            Text("Чёлка, плеер и режим отображения вернутся к значениям по умолчанию.")
         }
     }
 
-    private func settingRow<Control: View>(
-        title: String,
-        subtitle: String,
-        @ViewBuilder control: () -> Control
-    ) -> some View {
-        HStack(spacing: 16) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.system(size: 13, weight: .medium))
-
-                Text(subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Spacer(minLength: 20)
-
-            control()
+    private func resetAllSettings() {
+        let defaults = UserDefaults.standard
+        for key in Self.resettableKeys {
+            defaults.removeObject(forKey: key)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
     }
 
     private func playerLayoutCard(_ layout: PlayerLayout) -> some View {

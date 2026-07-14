@@ -4,17 +4,22 @@ import SwiftUI
 @MainActor
 final class TrackPeekAppDelegate: NSObject, NSApplicationDelegate {
     private var notchWindowController: NotchWindowController?
+    let menuBarControlsController = MenuBarControlsController()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NotchPreferences.registerDefaults()
+        MenuBarPreferences.registerDefaults()
 
         let controller = NotchWindowController()
         notchWindowController = controller
         controller.start()
+
+        menuBarControlsController.start()
     }
 
     func applicationWillTerminate(_ notification: Notification) {
         notchWindowController?.stop()
+        menuBarControlsController.stop()
     }
 }
 
@@ -24,8 +29,10 @@ struct TrackPeekApp: App {
     private var appDelegate
 
     var body: some Scene {
-        MenuBarExtra("TrackPeek", systemImage: "music.note") {
+        MenuBarExtra {
             TrackPeekPopoverView()
+        } label: {
+            MenuBarLabelView(controller: appDelegate.menuBarControlsController)
         }
         .menuBarExtraStyle(.window)
 

@@ -26,12 +26,14 @@ enum SpotifyPlaybackError: LocalizedError {
 }
 
 actor SpotifyAppleScriptClient: SpotifyPlaybackProviding {
-    func fetchCurrentTrack() throws -> SpotifyTrack {
+    private static let executionTimeout: Duration = .seconds(5)
+
+    func fetchCurrentTrack() async throws -> SpotifyTrack {
         guard isSpotifyRunning else {
             throw SpotifyPlaybackError.spotifyNotRunning
         }
 
-        let descriptor = try execute(
+        let descriptor = try await execute(
             """
             tell application "Spotify"
                 if player state is stopped then
@@ -59,31 +61,31 @@ actor SpotifyAppleScriptClient: SpotifyPlaybackProviding {
         }
     }
 
-    func playPause() throws {
+    func playPause() async throws {
         guard isSpotifyRunning else {
             throw SpotifyPlaybackError.spotifyNotRunning
         }
 
-        _ = try execute("tell application \"Spotify\" to playpause")
+        _ = try await execute("tell application \"Spotify\" to playpause")
     }
 
-    func nextTrack() throws {
+    func nextTrack() async throws {
         guard isSpotifyRunning else {
             throw SpotifyPlaybackError.spotifyNotRunning
         }
 
-        _ = try execute("tell application \"Spotify\" to next track")
+        _ = try await execute("tell application \"Spotify\" to next track")
     }
 
-    func previousTrack() throws {
+    func previousTrack() async throws {
         guard isSpotifyRunning else {
             throw SpotifyPlaybackError.spotifyNotRunning
         }
 
-        _ = try execute("tell application \"Spotify\" to previous track")
+        _ = try await execute("tell application \"Spotify\" to previous track")
     }
 
-    func seek(to position: TimeInterval) throws {
+    func seek(to position: TimeInterval) async throws {
         guard isSpotifyRunning else {
             throw SpotifyPlaybackError.spotifyNotRunning
         }
@@ -94,7 +96,7 @@ actor SpotifyAppleScriptClient: SpotifyPlaybackProviding {
             locale: Locale(identifier: "en_US_POSIX"),
             seconds
         )
-        _ = try execute(
+        _ = try await execute(
             "tell application \"Spotify\" to set player position to \(value)"
         )
     }
@@ -105,20 +107,45 @@ actor SpotifyAppleScriptClient: SpotifyPlaybackProviding {
         }
     }
 
-    private func execute(_ source: String) throws -> NSAppleEventDescriptor {
-        guard let script = NSAppleScript(source: source) else {
-            throw SpotifyPlaybackError.scriptFailed("не удалось создать AppleScript")
+    /// Runs the blocking `NSAppleScript` call off the actor's executor so a
+    /// hung/unresponsive Spotify can't stall every other queued command;
+    /// a sibling task races it with a timeout and wins if Spotify never replies.
+    private func execute(_ source: String) async throws -> NSAppleEventDescriptor {
+        let scriptTask = Task.detached(priority: .userInitiated) { () -> UncheckedSendableBox<NSAppleEventDescriptor> in
+            guard let script = NSAppleScript(source: source) else {
+                throw SpotifyPlaybackError.scriptFailed("не удалось создать AppleScript")
+            }
+
+            var errorInfo: NSDictionary?
+            let result = script.executeAndReturnError(&errorInfo)
+
+            if let errorInfo {
+                let message = errorInfo["NSAppleScriptErrorMessage"] as? String
+                    ?? "неизвестная ошибка AppleScript"
+                throw SpotifyPlaybackError.scriptFailed(message)
+            }
+
+            return UncheckedSendableBox(value: result)
         }
 
-        var errorInfo: NSDictionary?
-        let result = script.executeAndReturnError(&errorInfo)
+        return try await withThrowingTaskGroup(of: UncheckedSendableBox<NSAppleEventDescriptor>.self) { group in
+            group.addTask { try await scriptTask.value }
+            group.addTask {
+                try await Task.sleep(for: Self.executionTimeout)
+                throw SpotifyPlaybackError.scriptFailed("Spotify не отвечает")
+            }
 
-        if let errorInfo {
-            let message = errorInfo["NSAppleScriptErrorMessage"] as? String
-                ?? "неизвестная ошибка AppleScript"
-            throw SpotifyPlaybackError.scriptFailed(message)
+            defer { group.cancelAll() }
+            guard let result = try await group.next() else {
+                throw SpotifyPlaybackError.invalidResponse
+            }
+            return result.value
         }
-
-        return result
     }
+}
+
+/// Lets a non-Sendable AppleScript result cross a Task boundary; safe because
+/// the value is produced once and consumed once, never shared concurrently.
+private struct UncheckedSendableBox<Value>: @unchecked Sendable {
+    let value: Value
 }

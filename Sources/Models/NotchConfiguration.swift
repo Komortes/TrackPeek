@@ -65,6 +65,45 @@ enum NotchSongInfoVisibility: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
+enum NotchColorSource: String, CaseIterable, Identifiable, Sendable {
+    case artwork
+    case systemAccent
+
+    static let fallback: NotchColorSource = .artwork
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .artwork:
+            "Обложка (авто)"
+        case .systemAccent:
+            "Акцент системы"
+        }
+    }
+}
+
+enum NotchPulseMode: String, CaseIterable, Identifiable, Sendable {
+    case off
+    case scale
+    case glow
+
+    static let fallback: NotchPulseMode = .off
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .off:
+            "Выключено"
+        case .scale:
+            "Масштаб"
+        case .glow:
+            "Свечение"
+        }
+    }
+}
+
 enum NotchPreferences {
     static let enabledKey = "notchEnabled"
     static let displayTargetKey = "notchDisplayTarget"
@@ -79,6 +118,12 @@ enum NotchPreferences {
     static let notificationDurationKey = "notchNotificationDuration"
     static let coloredProgressKey = "notchColoredProgress"
     static let coloredWaveformKey = "notchColoredWaveform"
+    static let equalizerSensitivityKey = "notchEqualizerSensitivity"
+    static let outlineShimmerKey = "notchOutlineShimmer"
+    static let outlineWidthKey = "notchOutlineWidth"
+    static let pulseModeKey = "notchPulseMode"
+    static let colorSourceKey = "notchColorSource"
+    static let cornerRadiusKey = "notchCornerRadius"
 
     static let enabledFallback = true
     static let widthFallback = 320.0
@@ -99,6 +144,16 @@ enum NotchPreferences {
     static let notificationDurationStep = 0.25
     static let coloredProgressFallback = true
     static let coloredWaveformFallback = true
+    static let equalizerSensitivityFallback = 1.0
+    static let equalizerSensitivityRange = 0.5 ... 2.0
+    static let equalizerSensitivityStep = 0.1
+    static let outlineShimmerFallback = false
+    static let outlineWidthFallback = 1.5
+    static let outlineWidthRange = 1.0 ... 5.0
+    static let outlineWidthStep = 0.5
+    static let cornerRadiusFallback = 12.0
+    static let cornerRadiusRange = 0.0 ... 20.0
+    static let cornerRadiusStep = 1.0
 
     static func registerDefaults(in defaults: UserDefaults = .standard) {
         defaults.register(defaults: [
@@ -115,7 +170,17 @@ enum NotchPreferences {
             notificationDurationKey: notificationDurationFallback,
             coloredProgressKey: coloredProgressFallback,
             coloredWaveformKey: coloredWaveformFallback,
+            equalizerSensitivityKey: equalizerSensitivityFallback,
+            outlineShimmerKey: outlineShimmerFallback,
+            outlineWidthKey: outlineWidthFallback,
+            pulseModeKey: NotchPulseMode.fallback.rawValue,
+            colorSourceKey: NotchColorSource.fallback.rawValue,
+            cornerRadiusKey: cornerRadiusFallback,
         ])
+    }
+
+    static func clampedOutlineWidth(_ value: Double) -> Double {
+        min(max(value, outlineWidthRange.lowerBound), outlineWidthRange.upperBound)
     }
 
     static func clampedWidth(_ value: Double) -> Double {
@@ -132,6 +197,14 @@ enum NotchPreferences {
 
     static func clampedNotificationDuration(_ value: Double) -> Double {
         min(max(value, notificationDurationRange.lowerBound), notificationDurationRange.upperBound)
+    }
+
+    static func clampedEqualizerSensitivity(_ value: Double) -> Double {
+        min(max(value, equalizerSensitivityRange.lowerBound), equalizerSensitivityRange.upperBound)
+    }
+
+    static func clampedCornerRadius(_ value: Double) -> Double {
+        min(max(value, cornerRadiusRange.lowerBound), cornerRadiusRange.upperBound)
     }
 
     static func compactSize(width: Double, heightAdjustment: Double) -> CGSize {

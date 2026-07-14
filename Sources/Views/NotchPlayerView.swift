@@ -25,6 +25,16 @@ struct NotchPlayerView: View {
     private var coloredProgress = NotchPreferences.coloredProgressFallback
     @AppStorage(NotchPreferences.coloredWaveformKey)
     private var coloredWaveform = NotchPreferences.coloredWaveformFallback
+    @AppStorage(NotchPreferences.outlineShimmerKey)
+    private var outlineShimmer = NotchPreferences.outlineShimmerFallback
+    @AppStorage(NotchPreferences.outlineWidthKey)
+    private var outlineWidth = NotchPreferences.outlineWidthFallback
+    @AppStorage(NotchPreferences.pulseModeKey)
+    private var pulseModeRawValue = NotchPulseMode.fallback.rawValue
+    @AppStorage(NotchPreferences.colorSourceKey)
+    private var colorSourceRawValue = NotchColorSource.fallback.rawValue
+    @AppStorage(NotchPreferences.cornerRadiusKey)
+    private var cornerRadius = NotchPreferences.cornerRadiusFallback
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -34,9 +44,51 @@ struct NotchPlayerView: View {
     @State private var artworkPalette = ArtworkPalette.fallback
     @State private var hoverTask: Task<Void, Never>?
     @State private var notificationTask: Task<Void, Never>?
+    @State private var shimmerAngle = Angle.degrees(0)
 
     private var songInfoVisibility: NotchSongInfoVisibility {
         NotchSongInfoVisibility(rawValue: songInfoVisibilityRawValue) ?? .fallback
+    }
+
+    private var colorSource: NotchColorSource {
+        NotchColorSource(rawValue: colorSourceRawValue) ?? .fallback
+    }
+
+    private var pulseMode: NotchPulseMode {
+        NotchPulseMode(rawValue: pulseModeRawValue) ?? .fallback
+    }
+
+    private struct PaletteRequest: Equatable {
+        let url: URL?
+        let source: NotchColorSource
+    }
+
+    private var paletteRequest: PaletteRequest {
+        PaletteRequest(url: model.track?.artworkURL, source: colorSource)
+    }
+
+    private var audioLevel: Double {
+        guard
+            !reduceMotion,
+            let track = model.track,
+            track.isPlaying,
+            model.availability == .ready
+        else {
+            return 0
+        }
+
+        let level = audioMonitor.spectrum.magnitudeSquared / Double(AudioSpectrum.bandCount)
+        return min(max(level, 0), 1)
+    }
+
+    private var pulseScale: CGFloat {
+        guard pulseMode == .scale else { return 1 }
+        return 1 + CGFloat(audioLevel) * 0.025
+    }
+
+    private var glowOpacity: Double {
+        guard pulseMode == .glow else { return 0 }
+        return 0.18 + audioLevel * 0.5
     }
 
     private var isExpanded: Bool {
@@ -80,10 +132,52 @@ struct NotchPlayerView: View {
                 notchBackground
             }
             .clipShape(notchShape(revealProgress: revealProgress))
+            .background {
+                if pulseMode == .glow {
+                    notchShape(revealProgress: revealProgress)
+                        .fill(artworkPalette.primary.swiftUIColor)
+                        .blur(radius: 10)
+                        .opacity(glowOpacity)
+                        .animation(
+                            reduceMotion
+                                ? nil
+                                : .linear(duration: PlayerMotion.spectrumFrameDuration),
+                            value: glowOpacity
+                        )
+                }
+            }
+            .overlay {
+                if outlineShimmer {
+                    // Stroking the exact same shape used for `.clipShape` keeps the
+                    // corners perfectly aligned; the top edge (flush with the
+                    // screen bezel) is then masked away so only the sides and
+                    // bottom read as an outline, with even margins all around.
+                    notchShape(revealProgress: revealProgress)
+                        .stroke(
+                            shimmerGradient,
+                            lineWidth: NotchPreferences.clampedOutlineWidth(outlineWidth)
+                        )
+                        .blur(radius: 1.2)
+                        .mask(alignment: .top) {
+                            VStack(spacing: 0) {
+                                Color.clear.frame(height: 3)
+                                Color.black
+                            }
+                        }
+                }
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .scaleEffect(pulseScale, anchor: .top)
+        .animation(
+            reduceMotion ? nil : .linear(duration: PlayerMotion.spectrumFrameDuration),
+            value: pulseScale
+        )
         .contentShape(Rectangle())
         .environment(\.colorScheme, .dark)
+        .playerContextMenu(track: model.track) {
+            Task { await model.refresh() }
+        }
         .onChange(of: pointerState.isInside) { _, isInside in
             handleHover(isInside)
         }
@@ -98,15 +192,26 @@ struct NotchPlayerView: View {
             }
         }
         .onChange(of: trackIdentity, handleTrackChange)
-        .task(id: model.track?.artworkURL) {
-            artworkPalette = .fallback
-            artworkPalette = await ArtworkPaletteLoader.shared.palette(
-                for: model.track?.artworkURL
-            )
+        .task(id: paletteRequest) {
+            switch colorSource {
+            case .artwork:
+                artworkPalette = .fallback
+                artworkPalette = await ArtworkPaletteLoader.shared.palette(
+                    for: model.track?.artworkURL
+                )
+            case .systemAccent:
+                artworkPalette = .systemAccent
+            }
         }
         .onAppear {
             onExpansionChange(false)
             handleHover(pointerState.isInside)
+
+            if !reduceMotion {
+                withAnimation(.linear(duration: 6).repeatForever(autoreverses: false)) {
+                    shimmerAngle = .degrees(360)
+                }
+            }
         }
         .onDisappear {
             hoverTask?.cancel()
@@ -114,8 +219,25 @@ struct NotchPlayerView: View {
         }
     }
 
+    private var shimmerGradient: AngularGradient {
+        AngularGradient(
+            colors: [
+                artworkPalette.primary.swiftUIColor,
+                artworkPalette.secondary.swiftUIColor,
+                artworkPalette.tertiary.swiftUIColor,
+                artworkPalette.primary.swiftUIColor,
+            ],
+            center: .center,
+            angle: shimmerAngle
+        )
+    }
+
+    private func cornerRadius(revealProgress: Double) -> Double {
+        NotchPreferences.clampedCornerRadius(cornerRadius) + 10 * revealProgress
+    }
+
     private func notchShape(revealProgress: Double) -> UnevenRoundedRectangle {
-        let radius = 12 + 10 * revealProgress
+        let radius = cornerRadius(revealProgress: revealProgress)
         return UnevenRoundedRectangle(
             topLeadingRadius: 0,
             bottomLeadingRadius: radius,
@@ -215,6 +337,19 @@ struct NotchPlayerView: View {
 
     @ViewBuilder
     private func expandedContent(in containerSize: CGSize) -> some View {
+        Group {
+            expandedContentBody(in: containerSize)
+        }
+        .animation(
+            reduceMotion
+                ? nil
+                : .smooth(duration: PlayerMotion.playbackDuration, extraBounce: 0),
+            value: model.availability
+        )
+    }
+
+    @ViewBuilder
+    private func expandedContentBody(in containerSize: CGSize) -> some View {
         if let track = model.track, model.availability == .ready {
             let isNarrow = containerSize.width < 390
             let artworkSize = NotchResponsiveLayout.artworkSize(in: containerSize)
@@ -323,6 +458,9 @@ struct NotchPlayerView: View {
             .padding(.horizontal, isNarrow ? 12 : 16)
             .padding(.top, 13)
             .padding(.bottom, 12)
+            .transition(
+                .opacity.combined(with: .scale(scale: 0.97, anchor: .top))
+            )
         } else {
             VStack(spacing: 12) {
                 Image(systemName: "music.note")
@@ -338,6 +476,9 @@ struct NotchPlayerView: View {
                     .buttonStyle(.borderedProminent)
             }
             .padding(20)
+            .transition(
+                .opacity.combined(with: .scale(scale: 0.97, anchor: .top))
+            )
         }
     }
 

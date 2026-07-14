@@ -30,6 +30,18 @@ struct NotchSettingsView: View {
     private var coloredProgress = NotchPreferences.coloredProgressFallback
     @AppStorage(NotchPreferences.coloredWaveformKey)
     private var coloredWaveform = NotchPreferences.coloredWaveformFallback
+    @AppStorage(NotchPreferences.equalizerSensitivityKey)
+    private var equalizerSensitivity = NotchPreferences.equalizerSensitivityFallback
+    @AppStorage(NotchPreferences.outlineShimmerKey)
+    private var outlineShimmer = NotchPreferences.outlineShimmerFallback
+    @AppStorage(NotchPreferences.outlineWidthKey)
+    private var outlineWidth = NotchPreferences.outlineWidthFallback
+    @AppStorage(NotchPreferences.pulseModeKey)
+    private var pulseModeRawValue = NotchPulseMode.fallback.rawValue
+    @AppStorage(NotchPreferences.colorSourceKey)
+    private var colorSourceRawValue = NotchColorSource.fallback.rawValue
+    @AppStorage(NotchPreferences.cornerRadiusKey)
+    private var cornerRadius = NotchPreferences.cornerRadiusFallback
 
     private var selectedMode: DisplayMode {
         DisplayMode(rawValue: selectedModeRawValue) ?? .fallback
@@ -81,25 +93,53 @@ struct NotchSettingsView: View {
         )
     }
 
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Чёлка")
-                        .font(.title2.weight(.semibold))
+    private var notchCornerRadius: Binding<Double> {
+        Binding(
+            get: { NotchPreferences.clampedCornerRadius(cornerRadius) },
+            set: { cornerRadius = NotchPreferences.clampedCornerRadius($0) }
+        )
+    }
 
-                    Text("Компактный плеер у верхнего края экрана, который раскрывается по вашему сценарию.")
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                }
+    private var notchOutlineWidth: Binding<Double> {
+        Binding(
+            get: { NotchPreferences.clampedOutlineWidth(outlineWidth) },
+            set: { outlineWidth = NotchPreferences.clampedOutlineWidth($0) }
+        )
+    }
 
-                activationCard
-                generalSection
-                interactionSection
-                notificationSection
-                appearanceSection
+    private var pulseMode: Binding<NotchPulseMode> {
+        Binding(
+            get: { NotchPulseMode(rawValue: pulseModeRawValue) ?? .fallback },
+            set: { pulseModeRawValue = $0.rawValue }
+        )
+    }
+
+    private var notchEqualizerSensitivity: Binding<Double> {
+        Binding(
+            get: { NotchPreferences.clampedEqualizerSensitivity(equalizerSensitivity) },
+            set: {
+                equalizerSensitivity = NotchPreferences.clampedEqualizerSensitivity($0)
             }
-            .padding(24)
+        )
+    }
+
+    private var colorSource: Binding<NotchColorSource> {
+        Binding(
+            get: { NotchColorSource(rawValue: colorSourceRawValue) ?? .fallback },
+            set: { colorSourceRawValue = $0.rawValue }
+        )
+    }
+
+    var body: some View {
+        SettingsPage(
+            title: "Чёлка",
+            subtitle: "Компактный плеер у верхнего края экрана, который раскрывается по вашему сценарию."
+        ) {
+            activationCard
+            generalSection
+            interactionSection
+            notificationSection
+            appearanceSection
         }
     }
 
@@ -140,12 +180,13 @@ struct NotchSettingsView: View {
     }
 
     private var generalSection: some View {
-        settingsSection(
+        SettingsSection(
             title: "Основные",
-            subtitle: "Включение, экран и системная обратная связь."
+            subtitle: "Включение, экран и системная обратная связь.",
+            symbolName: "gearshape"
         ) {
-            settingsGroup {
-                settingRow(
+            SettingsGroup {
+                SettingsRow(
                     title: "Показывать чёлку",
                     subtitle: "Быстро скрывает панель, сохраняя остальные параметры."
                 ) {
@@ -153,9 +194,9 @@ struct NotchSettingsView: View {
                         .labelsHidden()
                 }
 
-                rowDivider
+                SettingsRowDivider()
 
-                settingRow(
+                SettingsRow(
                     title: "Показывать на",
                     subtitle: "Можно выбрать основной, встроенный или все экраны."
                 ) {
@@ -170,9 +211,9 @@ struct NotchSettingsView: View {
                     .frame(width: 330)
                 }
 
-                rowDivider
+                SettingsRowDivider()
 
-                settingRow(
+                SettingsRow(
                     title: "Тактильный отклик",
                     subtitle: "Лёгкий системный отклик при раскрытии панели."
                 ) {
@@ -184,12 +225,13 @@ struct NotchSettingsView: View {
     }
 
     private var interactionSection: some View {
-        settingsSection(
+        SettingsSection(
             title: "Раскрытие",
-            subtitle: "Настройте, как компактная панель превращается в плеер."
+            subtitle: "Настройте, как компактная панель превращается в плеер.",
+            symbolName: "hand.tap"
         ) {
-            settingsGroup {
-                settingRow(
+            SettingsGroup {
+                SettingsRow(
                     title: "По наведению",
                     subtitle: "Раскрывать плеер, когда указатель задержался на панели."
                 ) {
@@ -197,13 +239,13 @@ struct NotchSettingsView: View {
                         .labelsHidden()
                 }
 
-                rowDivider
+                SettingsRowDivider()
 
-                settingRow(
+                SettingsRow(
                     title: "Задержка наведения",
                     subtitle: "Небольшая пауза защищает от случайных раскрытий."
                 ) {
-                    valueSlider(
+                    SettingsValueSlider(
                         value: notchHoverDelay,
                         range: NotchPreferences.hoverDelayRange,
                         step: NotchPreferences.hoverDelayStep,
@@ -212,9 +254,9 @@ struct NotchSettingsView: View {
                     .disabled(!hoverEnabled)
                 }
 
-                rowDivider
+                SettingsRowDivider()
 
-                settingRow(
+                SettingsRow(
                     title: "По нажатию",
                     subtitle: "Нажатие фиксирует раскрытый плеер до сворачивания."
                 ) {
@@ -226,12 +268,13 @@ struct NotchSettingsView: View {
     }
 
     private var notificationSection: some View {
-        settingsSection(
+        SettingsSection(
             title: "Смена трека",
-            subtitle: "Панель может ненадолго раскрыться при начале новой песни."
+            subtitle: "Панель может ненадолго раскрыться при начале новой песни.",
+            symbolName: "bell.badge"
         ) {
-            settingsGroup {
-                settingRow(
+            SettingsGroup {
+                SettingsRow(
                     title: "Показывать новый трек",
                     subtitle: "Автоматически раскрывать чёлку при смене композиции."
                 ) {
@@ -239,13 +282,13 @@ struct NotchSettingsView: View {
                         .labelsHidden()
                 }
 
-                rowDivider
+                SettingsRowDivider()
 
-                settingRow(
+                SettingsRow(
                     title: "Длительность",
                     subtitle: "Сколько времени держать уведомление раскрытым."
                 ) {
-                    valueSlider(
+                    SettingsValueSlider(
                         value: notchNotificationDuration,
                         range: NotchPreferences.notificationDurationRange,
                         step: NotchPreferences.notificationDurationStep,
@@ -261,16 +304,19 @@ struct NotchSettingsView: View {
     }
 
     private var appearanceSection: some View {
-        settingsSection(
+        SettingsSection(
             title: "Внешний вид",
-            subtitle: "Размеры компактного состояния и акценты плеера."
+            subtitle: "Размеры компактного состояния и акценты плеера.",
+            symbolName: "paintpalette"
         ) {
-            settingsGroup {
-                settingRow(
+            notchSizePreview
+
+            SettingsGroup {
+                SettingsRow(
                     title: "Ширина",
                     subtitle: "Ширина закрытой панели; раскрытая сохраняет пропорции."
                 ) {
-                    valueSlider(
+                    SettingsValueSlider(
                         value: notchWidth,
                         range: NotchPreferences.widthRange,
                         step: NotchPreferences.widthStep,
@@ -278,13 +324,13 @@ struct NotchSettingsView: View {
                     )
                 }
 
-                rowDivider
+                SettingsRowDivider()
 
-                settingRow(
+                SettingsRow(
                     title: "Коррекция высоты",
                     subtitle: "Подстройка под геометрию верхней части экрана."
                 ) {
-                    valueSlider(
+                    SettingsValueSlider(
                         value: notchHeightAdjustment,
                         range: NotchPreferences.heightAdjustmentRange,
                         step: NotchPreferences.heightAdjustmentStep,
@@ -295,9 +341,23 @@ struct NotchSettingsView: View {
                     )
                 }
 
-                rowDivider
+                SettingsRowDivider()
 
-                settingRow(
+                SettingsRow(
+                    title: "Скругление",
+                    subtitle: "Радиус углов панели в закрытом состоянии."
+                ) {
+                    SettingsValueSlider(
+                        value: notchCornerRadius,
+                        range: NotchPreferences.cornerRadiusRange,
+                        step: NotchPreferences.cornerRadiusStep,
+                        text: "\(Int(NotchPreferences.clampedCornerRadius(cornerRadius))) px"
+                    )
+                }
+
+                SettingsRowDivider()
+
+                SettingsRow(
                     title: "Название в закрытом виде",
                     subtitle: "Определяет, когда показывать текущую композицию."
                 ) {
@@ -310,9 +370,9 @@ struct NotchSettingsView: View {
                     .frame(width: 210)
                 }
 
-                rowDivider
+                SettingsRowDivider()
 
-                settingRow(
+                SettingsRow(
                     title: "Цветной прогресс",
                     subtitle: "Голубой акцент на полосе воспроизведения."
                 ) {
@@ -320,92 +380,136 @@ struct NotchSettingsView: View {
                         .labelsHidden()
                 }
 
-                rowDivider
+                SettingsRowDivider()
 
-                settingRow(
+                SettingsRow(
                     title: "Цветная волна",
                     subtitle: "Подсвечивать живой индикатор воспроизведения."
                 ) {
                     Toggle("Цветная волна", isOn: $coloredWaveform)
                         .labelsHidden()
                 }
+
+                SettingsRowDivider()
+
+                SettingsRow(
+                    title: "Источник цвета",
+                    subtitle: "Откуда берутся акцентные цвета панели."
+                ) {
+                    Picker("Источник цвета", selection: colorSource) {
+                        ForEach(NotchColorSource.allCases) { source in
+                            Text(source.title).tag(source)
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(width: 190)
+                }
+
+                SettingsRowDivider()
+
+                SettingsRow(
+                    title: "Переливающийся контур",
+                    subtitle: "Боковая и нижняя грань панели плавно меняют цвет по палитре."
+                ) {
+                    Toggle("Переливающийся контур", isOn: $outlineShimmer)
+                        .labelsHidden()
+                }
+
+                SettingsRowDivider()
+
+                SettingsRow(
+                    title: "Толщина контура",
+                    subtitle: "Размер переливающейся обводки."
+                ) {
+                    SettingsValueSlider(
+                        value: notchOutlineWidth,
+                        range: NotchPreferences.outlineWidthRange,
+                        step: NotchPreferences.outlineWidthStep,
+                        text: String(
+                            format: "%.1f px",
+                            NotchPreferences.clampedOutlineWidth(outlineWidth)
+                        )
+                    )
+                }
+                .disabled(!outlineShimmer)
+
+                SettingsRowDivider()
+
+                SettingsRow(
+                    title: "Пульсация",
+                    subtitle: "Реакция панели на громкость: масштаб или свечение контура."
+                ) {
+                    Picker("Пульсация", selection: pulseMode) {
+                        ForEach(NotchPulseMode.allCases) { mode in
+                            Text(mode.title).tag(mode)
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(width: 150)
+                }
+
+                SettingsRowDivider()
+
+                SettingsRow(
+                    title: "Чувствительность эквалайзера",
+                    subtitle: "Насколько активно бары реагируют на звук."
+                ) {
+                    SettingsValueSlider(
+                        value: notchEqualizerSensitivity,
+                        range: NotchPreferences.equalizerSensitivityRange,
+                        step: NotchPreferences.equalizerSensitivityStep,
+                        text: String(
+                            format: "%.1f×",
+                            NotchPreferences.clampedEqualizerSensitivity(equalizerSensitivity)
+                        )
+                    )
+                }
             }
         }
     }
 
-    private func settingsSection<Content: View>(
-        title: String,
-        subtitle: String,
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.headline)
+    private var notchSizePreview: some View {
+        let compact = NotchPreferences.compactSize(
+            width: NotchPreferences.clampedWidth(width),
+            heightAdjustment: NotchPreferences.clampedHeightAdjustment(heightAdjustment)
+        )
+        let scale = 0.6
+        let previewWidth = compact.width * scale
+        let previewHeight = max(16, compact.height * scale + 14)
+        let previewRadius = NotchPreferences.clampedCornerRadius(cornerRadius) * scale
 
-                Text(subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+        return VStack(spacing: 8) {
+            ZStack(alignment: .top) {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(Color.primary.opacity(0.05))
+                    .frame(height: 60)
+
+                UnevenRoundedRectangle(
+                    topLeadingRadius: 0,
+                    bottomLeadingRadius: previewRadius,
+                    bottomTrailingRadius: previewRadius,
+                    topTrailingRadius: 0,
+                    style: .continuous
+                )
+                .fill(Color.black)
+                .frame(width: previewWidth, height: previewHeight)
+                .animation(.easeInOut(duration: 0.18), value: previewWidth)
+                .animation(.easeInOut(duration: 0.18), value: previewHeight)
+                .animation(.easeInOut(duration: 0.18), value: previewRadius)
             }
+            .frame(maxWidth: .infinity)
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
 
-            content()
+            Text("Живой предпросмотр компактного состояния")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
         }
-    }
-
-    private func settingsGroup<Content: View>(
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        VStack(spacing: 0) {
-            content()
-        }
-        .toggleStyle(.switch)
+        .padding(12)
         .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 13, style: .continuous)
                 .stroke(.primary.opacity(0.08), lineWidth: 1)
         }
-    }
-
-    private func settingRow<Control: View>(
-        title: String,
-        subtitle: String,
-        @ViewBuilder control: () -> Control
-    ) -> some View {
-        HStack(spacing: 16) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.system(size: 13, weight: .medium))
-
-                Text(subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Spacer(minLength: 16)
-            control()
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-    }
-
-    private var rowDivider: some View {
-        Divider().padding(.leading, 14)
-    }
-
-    private func valueSlider(
-        value: Binding<Double>,
-        range: ClosedRange<Double>,
-        step: Double,
-        text: String
-    ) -> some View {
-        HStack(spacing: 10) {
-            Slider(value: value, in: range, step: step)
-                .frame(width: 170)
-
-            Text(text)
-                .font(.caption.monospacedDigit())
-                .foregroundStyle(.secondary)
-                .frame(width: 58, alignment: .trailing)
-        }
+        .accessibilityHidden(true)
     }
 }

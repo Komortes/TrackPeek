@@ -37,6 +37,7 @@ final class NotchWindowController: NSObject {
         NotificationCenter.default.removeObserver(self)
         refreshTask?.cancel()
         refreshTask = nil
+        audioMonitor.stop()
         removeAllPanels()
     }
 

@@ -66,6 +66,7 @@ struct TrackPeekPopoverView: View {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .stroke(Color(nsColor: .separatorColor).opacity(0.4), lineWidth: 1)
         }
+        .playerContextMenu(track: model.track, onRefresh: requestRefresh)
         .animation(
             reduceMotion ? nil : .easeOut(duration: 0.2),
             value: model.track?.title

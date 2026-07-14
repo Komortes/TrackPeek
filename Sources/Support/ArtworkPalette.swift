@@ -56,6 +56,25 @@ struct ArtworkPalette: Equatable, Sendable {
     var colors: [ArtworkColor] {
         [primary, secondary, tertiary]
     }
+
+    @MainActor
+    static var systemAccent: ArtworkPalette {
+        let accent = NSColor.controlAccentColor.usingColorSpace(.deviceRGB)
+            ?? NSColor(red: 0.35, green: 0.78, blue: 0.98, alpha: 1)
+        let base = ArtworkColor(
+            red: accent.redComponent,
+            green: accent.greenComponent,
+            blue: accent.blueComponent
+        )
+        let white = ArtworkColor(red: 1, green: 1, blue: 1)
+        let black = ArtworkColor(red: 0, green: 0, blue: 0)
+
+        return ArtworkPalette(
+            primary: base,
+            secondary: base.mixed(with: white, amount: 0.35),
+            tertiary: base.mixed(with: black, amount: 0.25)
+        )
+    }
 }
 
 enum ArtworkPaletteExtractor {

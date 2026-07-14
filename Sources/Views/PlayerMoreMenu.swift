@@ -1,12 +1,14 @@
 import AppKit
 import SwiftUI
 
-struct PlayerMoreMenu: View {
+/// The action list shared by the "…" menu button and every right-click context
+/// menu, so all surfaces (popover, notch) expose the same actions consistently.
+struct PlayerActionsMenuItems: View {
     let track: SpotifyTrack?
     let onRefresh: () -> Void
 
     var body: some View {
-        Menu {
+        Group {
             Button("Открыть Spotify", systemImage: "arrow.up.right.square") {
                 openSpotify()
             }
@@ -35,17 +37,7 @@ struct PlayerMoreMenu: View {
             Button("Завершить TrackPeek", systemImage: "power") {
                 NSApplication.shared.terminate(nil)
             }
-        } label: {
-            Image(systemName: "ellipsis")
-                .font(.system(size: 13, weight: .semibold))
-                .frame(width: 26, height: 22)
-                .contentShape(Rectangle())
         }
-        .menuStyle(.borderlessButton)
-        .menuIndicator(.hidden)
-        .fixedSize()
-        .help("Дополнительные действия")
-        .accessibilityLabel("Дополнительные действия")
     }
 
     private func copy(_ value: String) {
@@ -64,5 +56,45 @@ struct PlayerMoreMenu: View {
             at: url,
             configuration: NSWorkspace.OpenConfiguration()
         )
+    }
+}
+
+struct PlayerMoreMenu: View {
+    let track: SpotifyTrack?
+    let onRefresh: () -> Void
+
+    var body: some View {
+        Menu {
+            PlayerActionsMenuItems(track: track, onRefresh: onRefresh)
+        } label: {
+            Image(systemName: "ellipsis")
+                .font(.system(size: 13, weight: .semibold))
+                .frame(width: 26, height: 22)
+                .contentShape(Rectangle())
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .help("Дополнительные действия")
+        .accessibilityLabel("Дополнительные действия")
+    }
+}
+
+/// Attaches the same right-click actions as `PlayerMoreMenu` directly to a
+/// surface, so users don't have to hunt for the small "…" button.
+struct PlayerContextMenuModifier: ViewModifier {
+    let track: SpotifyTrack?
+    let onRefresh: () -> Void
+
+    func body(content: Content) -> some View {
+        content.contextMenu {
+            PlayerActionsMenuItems(track: track, onRefresh: onRefresh)
+        }
+    }
+}
+
+extension View {
+    func playerContextMenu(track: SpotifyTrack?, onRefresh: @escaping () -> Void) -> some View {
+        modifier(PlayerContextMenuModifier(track: track, onRefresh: onRefresh))
     }
 }

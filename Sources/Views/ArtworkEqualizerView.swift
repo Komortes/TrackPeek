@@ -44,11 +44,20 @@ struct ArtworkEqualizerView: View {
     let isColored: Bool
     let palette: ArtworkPalette
 
+    @AppStorage(NotchPreferences.equalizerSensitivityKey)
+    private var equalizerSensitivity = NotchPreferences.equalizerSensitivityFallback
+
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var targetSpectrum: AudioSpectrum {
         guard isPlaying, isVisible, !reduceMotion else { return .resting }
-        return audioMonitor.spectrum
+        let spectrum = audioMonitor.spectrum
+
+        let sensitivity = NotchPreferences.clampedEqualizerSensitivity(equalizerSensitivity)
+        guard sensitivity != 1 else { return spectrum }
+
+        let scaledValues = (0 ..< AudioSpectrum.bandCount).map { spectrum[$0] * sensitivity }
+        return AudioSpectrum(values: scaledValues)
     }
 
     private var fillStyle: LinearGradient {

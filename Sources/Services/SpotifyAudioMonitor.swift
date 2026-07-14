@@ -24,8 +24,8 @@ private final class SpotifyAudioAnalyzerEngine: @unchecked Sendable {
                 repeating: .milliseconds(33),
                 leeway: .milliseconds(4)
             )
-            source.setEventHandler { [self] in
-                sample(onSpectrum: onSpectrum)
+            source.setEventHandler { [weak self] in
+                self?.sample(onSpectrum: onSpectrum)
             }
             self.source = source
             source.resume()
