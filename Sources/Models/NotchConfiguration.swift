@@ -225,6 +225,7 @@ enum NotchPreferences {
 enum NotchResponsiveLayout {
     private static let revealStartHeight = 96.0
     private static let revealEndHeight = 160.0
+    private static let compactOutlineOpacity = 0.24
 
     static func artworkSize(in containerSize: CGSize) -> CGFloat {
         let horizontalLimit = containerSize.width * 0.18
@@ -235,6 +236,21 @@ enum NotchResponsiveLayout {
     static func revealProgress(forHeight height: CGFloat) -> Double {
         let progress = (height - revealStartHeight) / (revealEndHeight - revealStartHeight)
         return min(max(progress, 0), 1)
+    }
+
+    static func bottomCornerRadius(
+        preferredRadius: Double,
+        revealProgress: Double,
+        height: CGFloat
+    ) -> CGFloat {
+        let progress = min(max(revealProgress, 0), 1)
+        let radius = NotchPreferences.clampedCornerRadius(preferredRadius) + 10 * progress
+        return min(CGFloat(radius), max(0, height / 2))
+    }
+
+    static func baseOutlineOpacity(revealProgress: Double) -> Double {
+        let progress = min(max(revealProgress, 0), 1)
+        return compactOutlineOpacity * (1 - progress)
     }
 }
 

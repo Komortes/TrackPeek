@@ -53,6 +53,19 @@ struct NotchConfigurationTests {
         #expect(NotchResponsiveLayout.revealProgress(forHeight: 176) == 1)
     }
 
+    @Test("keeps compact notch bottom edge rounded and visibly outlined")
+    func keepsCompactNotchChromeVisible() {
+        let radius = NotchResponsiveLayout.bottomCornerRadius(
+            preferredRadius: 20,
+            revealProgress: 0,
+            height: 36
+        )
+
+        #expect(radius == 18)
+        #expect(NotchResponsiveLayout.baseOutlineOpacity(revealProgress: 0) > 0)
+        #expect(NotchResponsiveLayout.baseOutlineOpacity(revealProgress: 1) == 0)
+    }
+
     @Test("uses one measured panel motion contract")
     func usesMeasuredPanelMotionContract() {
         #expect(NotchMotion.resizeDuration == 0.36)

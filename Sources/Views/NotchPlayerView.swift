@@ -131,10 +131,10 @@ struct NotchPlayerView: View {
             .background {
                 notchBackground
             }
-            .clipShape(notchShape(revealProgress: revealProgress))
+            .clipShape(notchShape(revealProgress: revealProgress, height: proxy.size.height))
             .background {
                 if pulseMode == .glow {
-                    notchShape(revealProgress: revealProgress)
+                    notchShape(revealProgress: revealProgress, height: proxy.size.height)
                         .fill(artworkPalette.primary.swiftUIColor)
                         .blur(radius: 10)
                         .opacity(glowOpacity)
@@ -144,26 +144,38 @@ struct NotchPlayerView: View {
                                 : .linear(duration: PlayerMotion.spectrumFrameDuration),
                             value: glowOpacity
                         )
+                        .allowsHitTesting(false)
                 }
             }
             .overlay {
-                if outlineShimmer {
-                    // Stroking the exact same shape used for `.clipShape` keeps the
-                    // corners perfectly aligned; the top edge (flush with the
-                    // screen bezel) is then masked away so only the sides and
-                    // bottom read as an outline, with even margins all around.
-                    notchShape(revealProgress: revealProgress)
-                        .stroke(
-                            shimmerGradient,
-                            lineWidth: NotchPreferences.clampedOutlineWidth(outlineWidth)
+                ZStack {
+                    notchShape(revealProgress: revealProgress, height: proxy.size.height)
+                        .strokeBorder(
+                            baseOutlineGradient,
+                            lineWidth: 1
                         )
-                        .blur(radius: 1.2)
-                        .mask(alignment: .top) {
-                            VStack(spacing: 0) {
-                                Color.clear.frame(height: 3)
-                                Color.black
-                            }
-                        }
+                        .opacity(
+                            NotchResponsiveLayout.baseOutlineOpacity(
+                                revealProgress: revealProgress
+                            )
+                        )
+                        .mask(lowerEdgeMask)
+                        .allowsHitTesting(false)
+
+                    if outlineShimmer {
+                        // `strokeBorder` stays inside the panel while the mask
+                        // removes the bezel-facing top edge. Keeping this effect
+                        // separate from the static compact outline means disabling
+                        // shimmer no longer removes the visible lower silhouette.
+                        notchShape(revealProgress: revealProgress, height: proxy.size.height)
+                            .strokeBorder(
+                                shimmerGradient,
+                                lineWidth: NotchPreferences.clampedOutlineWidth(outlineWidth)
+                            )
+                            .mask(lowerEdgeMask)
+                            .blur(radius: 0.6)
+                            .allowsHitTesting(false)
+                    }
                 }
             }
         }
@@ -232,12 +244,35 @@ struct NotchPlayerView: View {
         )
     }
 
-    private func cornerRadius(revealProgress: Double) -> Double {
-        NotchPreferences.clampedCornerRadius(cornerRadius) + 10 * revealProgress
+    private var baseOutlineGradient: LinearGradient {
+        LinearGradient(
+            colors: [
+                Color.white.opacity(0.35),
+                artworkPalette.secondary.swiftUIColor,
+                artworkPalette.primary.swiftUIColor,
+            ],
+            startPoint: .top,
+            endPoint: .bottomTrailing
+        )
     }
 
-    private func notchShape(revealProgress: Double) -> UnevenRoundedRectangle {
-        let radius = cornerRadius(revealProgress: revealProgress)
+    private var lowerEdgeMask: LinearGradient {
+        LinearGradient(
+            stops: [
+                .init(color: .clear, location: 0),
+                .init(color: .black, location: 0.14),
+            ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+    }
+
+    private func notchShape(revealProgress: Double, height: CGFloat) -> UnevenRoundedRectangle {
+        let radius = NotchResponsiveLayout.bottomCornerRadius(
+            preferredRadius: cornerRadius,
+            revealProgress: revealProgress,
+            height: height
+        )
         return UnevenRoundedRectangle(
             topLeadingRadius: 0,
             bottomLeadingRadius: radius,
