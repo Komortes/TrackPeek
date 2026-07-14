@@ -26,7 +26,31 @@ struct NotchConfigurationTests {
         let expanded = NotchPreferences.expandedSize(width: 320, heightAdjustment: 4)
 
         #expect(compact == CGSize(width: 320, height: 40))
-        #expect(expanded == CGSize(width: 432, height: 180))
+        #expect(expanded == CGSize(width: 416, height: 180))
+        #expect(
+            NotchPreferences.expandedSize(width: 240, heightAdjustment: 0)
+                == CGSize(width: 352, height: 176)
+        )
+    }
+
+    @Test("adapts artwork to narrow and transient panel sizes")
+    func adaptsArtworkToPanelSize() {
+        let narrowArtworkSize = NotchResponsiveLayout.artworkSize(
+            in: CGSize(width: 352, height: 176)
+        )
+
+        #expect(abs(narrowArtworkSize - 63.36) < 0.001)
+        #expect(
+            NotchResponsiveLayout.artworkSize(in: CGSize(width: 240, height: 80))
+                == 32
+        )
+    }
+
+    @Test("reveals expanded content only after it fits")
+    func revealsExpandedContentAfterItFits() {
+        #expect(NotchResponsiveLayout.revealProgress(forHeight: 80) == 0)
+        #expect(NotchResponsiveLayout.revealProgress(forHeight: 120) > 0)
+        #expect(NotchResponsiveLayout.revealProgress(forHeight: 176) == 1)
     }
 
     @Test("uses one short interruptible motion contract")

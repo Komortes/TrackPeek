@@ -53,16 +53,28 @@ struct NotchPlayerView: View {
     }
 
     var body: some View {
-        ZStack {
-            compactContent
-                .opacity(isExpanded ? 0 : 1)
-                .scaleEffect(isExpanded ? 0.985 : 1, anchor: .top)
-                .allowsHitTesting(!isExpanded)
+        GeometryReader { proxy in
+            let revealProgress = NotchResponsiveLayout.revealProgress(
+                forHeight: proxy.size.height
+            )
 
-            expandedContent
-                .opacity(isExpanded ? 1 : 0)
-                .scaleEffect(isExpanded ? 1 : 0.985, anchor: .top)
-                .allowsHitTesting(isExpanded)
+            ZStack(alignment: .top) {
+                compactContent
+                    .frame(
+                        maxWidth: .infinity,
+                        minHeight: min(proxy.size.height, 44),
+                        maxHeight: min(proxy.size.height, 44)
+                    )
+                    .opacity(max(0, 1 - revealProgress * 1.35))
+                    .scaleEffect(1 - revealProgress * 0.015, anchor: .top)
+                    .allowsHitTesting(!isExpanded)
+
+                expandedContent(in: proxy.size)
+                    .opacity(revealProgress)
+                    .scaleEffect(0.985 + revealProgress * 0.015, anchor: .top)
+                    .allowsHitTesting(isExpanded && revealProgress > 0.8)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background {
@@ -204,14 +216,17 @@ struct NotchPlayerView: View {
     }
 
     @ViewBuilder
-    private var expandedContent: some View {
+    private func expandedContent(in containerSize: CGSize) -> some View {
         if let track = model.track, model.availability == .ready {
-            HStack(alignment: .center, spacing: 15) {
+            let isNarrow = containerSize.width < 390
+            let artworkSize = NotchResponsiveLayout.artworkSize(in: containerSize)
+
+            HStack(alignment: .center, spacing: isNarrow ? 12 : 15) {
                 VStack(spacing: 7) {
                     TrackArtworkView(
                         url: track.artworkURL,
-                        size: 78,
-                        cornerRadius: 15,
+                        size: artworkSize,
+                        cornerRadius: min(15, artworkSize * 0.19),
                         showsShadow: true
                     )
 
@@ -233,7 +248,7 @@ struct NotchPlayerView: View {
                         value: track.isPlaying
                     )
                 }
-                .frame(width: 82)
+                .frame(width: artworkSize + 4)
 
                 VStack(alignment: .leading, spacing: 0) {
                     HStack(alignment: .top, spacing: 10) {
@@ -247,7 +262,7 @@ struct NotchPlayerView: View {
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)
 
-                            if let album = track.album, !album.isEmpty {
+                            if !isNarrow, let album = track.album, !album.isEmpty {
                                 Text(album)
                                     .font(.system(size: 9.5, weight: .medium, design: .rounded))
                                     .foregroundStyle(.tertiary)
@@ -290,7 +305,7 @@ struct NotchPlayerView: View {
                             onPrevious: model.previousTrack,
                             onPlayPause: model.togglePlayback,
                             onNext: model.nextTrack,
-                            spacing: 10
+                            spacing: isNarrow ? 7 : 10
                         )
                         .tint(artworkPalette.primary.swiftUIColor)
 
@@ -301,11 +316,11 @@ struct NotchPlayerView: View {
                             isColored: coloredWaveform,
                             palette: artworkPalette
                         )
-                        .frame(width: 48, height: 24)
+                        .frame(width: isNarrow ? 36 : 48, height: 24)
                     }
                 }
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, isNarrow ? 12 : 16)
             .padding(.top, 13)
             .padding(.bottom, 12)
         } else {

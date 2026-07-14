@@ -143,9 +143,25 @@ enum NotchPreferences {
 
     static func expandedSize(width: Double, heightAdjustment: Double) -> CGSize {
         CGSize(
-            width: max(clampedWidth(width) + 112, 420),
+            width: max(clampedWidth(width) + 96, 352),
             height: 176 + clampedHeightAdjustment(heightAdjustment)
         )
+    }
+}
+
+enum NotchResponsiveLayout {
+    private static let revealStartHeight = 96.0
+    private static let revealEndHeight = 160.0
+
+    static func artworkSize(in containerSize: CGSize) -> CGFloat {
+        let horizontalLimit = containerSize.width * 0.18
+        let verticalLimit = max(32, containerSize.height - 72)
+        return min(78, max(32, min(horizontalLimit, verticalLimit)))
+    }
+
+    static func revealProgress(forHeight height: CGFloat) -> Double {
+        let progress = (height - revealStartHeight) / (revealEndHeight - revealStartHeight)
+        return min(max(progress, 0), 1)
     }
 }
 
