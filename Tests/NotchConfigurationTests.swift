@@ -64,6 +64,8 @@ struct NotchConfigurationTests {
         #expect(radius == 18)
         #expect(NotchResponsiveLayout.baseOutlineOpacity(revealProgress: 0) > 0)
         #expect(NotchResponsiveLayout.baseOutlineOpacity(revealProgress: 1) == 0)
+        #expect(NotchResponsiveLayout.outlineInset(revealProgress: 0) == 1)
+        #expect(NotchResponsiveLayout.outlineInset(revealProgress: 1) == 0)
     }
 
     @Test("uses one measured panel motion contract")

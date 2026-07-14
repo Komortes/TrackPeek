@@ -150,6 +150,11 @@ struct NotchPlayerView: View {
             .overlay {
                 ZStack {
                     notchShape(revealProgress: revealProgress, height: proxy.size.height)
+                        .inset(
+                            by: NotchResponsiveLayout.outlineInset(
+                                revealProgress: revealProgress
+                            )
+                        )
                         .strokeBorder(
                             baseOutlineGradient,
                             lineWidth: 1
@@ -168,6 +173,11 @@ struct NotchPlayerView: View {
                         // separate from the static compact outline means disabling
                         // shimmer no longer removes the visible lower silhouette.
                         notchShape(revealProgress: revealProgress, height: proxy.size.height)
+                            .inset(
+                                by: NotchResponsiveLayout.outlineInset(
+                                    revealProgress: revealProgress
+                                )
+                            )
                             .strokeBorder(
                                 shimmerGradient,
                                 lineWidth: NotchPreferences.clampedOutlineWidth(outlineWidth)

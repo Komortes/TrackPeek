@@ -252,6 +252,11 @@ enum NotchResponsiveLayout {
         let progress = min(max(revealProgress, 0), 1)
         return compactOutlineOpacity * (1 - progress)
     }
+
+    static func outlineInset(revealProgress: Double) -> CGFloat {
+        let progress = min(max(revealProgress, 0), 1)
+        return 1 - CGFloat(progress)
+    }
 }
 
 enum NotchMotion {
