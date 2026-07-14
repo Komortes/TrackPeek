@@ -166,8 +166,7 @@ enum NotchResponsiveLayout {
 }
 
 enum NotchMotion {
-    static let resizeDuration = 0.28
-    static let contentDuration = 0.26
+    static let resizeDuration = 0.36
     static let hoverExitGrace = 0.14
 }
 

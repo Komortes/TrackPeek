@@ -1,12 +1,11 @@
 import AppKit
 
-@MainActor
-protocol SpotifyPlaybackProviding {
-    func fetchCurrentTrack() throws -> SpotifyTrack
-    func playPause() throws
-    func nextTrack() throws
-    func previousTrack() throws
-    func seek(to position: TimeInterval) throws
+protocol SpotifyPlaybackProviding: Sendable {
+    func fetchCurrentTrack() async throws -> SpotifyTrack
+    func playPause() async throws
+    func nextTrack() async throws
+    func previousTrack() async throws
+    func seek(to position: TimeInterval) async throws
 }
 
 enum SpotifyPlaybackError: LocalizedError {
@@ -26,8 +25,7 @@ enum SpotifyPlaybackError: LocalizedError {
     }
 }
 
-@MainActor
-final class SpotifyAppleScriptClient: SpotifyPlaybackProviding {
+actor SpotifyAppleScriptClient: SpotifyPlaybackProviding {
     func fetchCurrentTrack() throws -> SpotifyTrack {
         guard isSpotifyRunning else {
             throw SpotifyPlaybackError.spotifyNotRunning

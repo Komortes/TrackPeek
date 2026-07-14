@@ -10,7 +10,7 @@ struct StandardPlayerView: View {
             PlayerHeaderView(
                 track: track,
                 showsPlaybackStatus: options.showsPlaybackStatus,
-                onRefresh: model.refresh
+                onRefresh: { Task { await model.refresh() } }
             )
 
             HStack(spacing: 16) {
@@ -34,14 +34,14 @@ struct StandardPlayerView: View {
                     duration: track.duration,
                     isPlaying: track.isPlaying,
                     snapshotDate: model.snapshotDate,
-                    onSeek: model.seek(to:)
+                    onSeek: { position in Task { await model.seek(to: position) } }
                 )
 
                 PlaybackControlsView(
                     isPlaying: track.isPlaying,
-                    onPrevious: model.previousTrack,
-                    onPlayPause: model.togglePlayback,
-                    onNext: model.nextTrack,
+                    onPrevious: { Task { await model.previousTrack() } },
+                    onPlayPause: { Task { await model.togglePlayback() } },
+                    onNext: { Task { await model.nextTrack() } },
                     spacing: 22
                 )
             }

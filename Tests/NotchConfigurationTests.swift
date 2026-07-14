@@ -53,14 +53,12 @@ struct NotchConfigurationTests {
         #expect(NotchResponsiveLayout.revealProgress(forHeight: 176) == 1)
     }
 
-    @Test("uses one short interruptible motion contract")
-    func usesShortMotionContract() {
-        #expect(NotchMotion.resizeDuration == 0.28)
-        #expect(NotchMotion.contentDuration == 0.26)
+    @Test("uses one measured panel motion contract")
+    func usesMeasuredPanelMotionContract() {
+        #expect(NotchMotion.resizeDuration == 0.36)
         #expect(NotchMotion.hoverExitGrace == 0.14)
 
-        #expect(NotchMotion.contentDuration <= NotchMotion.resizeDuration)
-        #expect(NotchMotion.resizeDuration <= 0.3)
+        #expect(NotchMotion.resizeDuration < 0.4)
     }
 
     @Test("song information visibility follows playback state")

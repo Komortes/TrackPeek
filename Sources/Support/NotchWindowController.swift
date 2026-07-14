@@ -12,6 +12,7 @@ final class NotchPointerState {
 @MainActor
 final class NotchWindowController: NSObject {
     private let model = SpotifySpikeModel()
+    private let audioMonitor = SpotifyAudioMonitor()
     private var panelHosts: [Int: NotchPanelHost] = [:]
     private var refreshTask: Task<Void, Never>?
 
@@ -83,7 +84,11 @@ final class NotchWindowController: NSObject {
                 host.updateLayout()
                 host.show()
             } else {
-                let host = NotchPanelHost(screen: screen, model: model)
+                let host = NotchPanelHost(
+                    screen: screen,
+                    model: model,
+                    audioMonitor: audioMonitor
+                )
                 panelHosts[identifier] = host
                 host.show()
             }
@@ -118,15 +123,18 @@ final class NotchWindowController: NSObject {
         guard !panelHosts.isEmpty else {
             refreshTask?.cancel()
             refreshTask = nil
+            audioMonitor.stop()
             return
         }
+
+        audioMonitor.start()
 
         guard refreshTask == nil else { return }
 
         refreshTask = Task { @MainActor [weak self] in
             while !Task.isCancelled {
                 guard let self else { return }
-                model.refresh()
+                await model.refresh()
 
                 let interval = model.track?.isPlaying == true ? 2.0 : 4.0
                 try? await Task.sleep(for: .milliseconds(Int64(interval * 1_000)))
@@ -147,7 +155,11 @@ private final class NotchPanelHost {
     private let screen: NSScreen
     private var isExpanded = false
 
-    init(screen: NSScreen, model: SpotifySpikeModel) {
+    init(
+        screen: NSScreen,
+        model: SpotifySpikeModel,
+        audioMonitor: SpotifyAudioMonitor
+    ) {
         self.screen = screen
         panel = NotchPanel(
             contentRect: .zero,
@@ -162,6 +174,7 @@ private final class NotchPanelHost {
         panel.contentView = NotchTrackingHostingView(
             rootView: NotchPlayerView(
                 model: model,
+                audioMonitor: audioMonitor,
                 pointerState: pointerState,
                 onExpansionChange: { [weak self] expanded in
                     self?.setExpanded(expanded)

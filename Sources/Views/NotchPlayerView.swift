@@ -3,6 +3,7 @@ import SwiftUI
 
 struct NotchPlayerView: View {
     let model: SpotifySpikeModel
+    let audioMonitor: SpotifyAudioMonitor
     let pointerState: NotchPointerState
     let onExpansionChange: (Bool) -> Void
 
@@ -75,20 +76,14 @@ struct NotchPlayerView: View {
                     .allowsHitTesting(isExpanded && revealProgress > 0.8)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .background {
+                notchBackground
+            }
+            .clipShape(notchShape(revealProgress: revealProgress))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background {
-            notchBackground
-        }
-        .clipShape(notchShape)
         .contentShape(Rectangle())
         .environment(\.colorScheme, .dark)
-        .animation(
-            reduceMotion
-                ? nil
-                : .smooth(duration: NotchMotion.contentDuration, extraBounce: 0),
-            value: isExpanded
-        )
         .onChange(of: pointerState.isInside) { _, isInside in
             handleHover(isInside)
         }
@@ -119,11 +114,12 @@ struct NotchPlayerView: View {
         }
     }
 
-    private var notchShape: UnevenRoundedRectangle {
-        UnevenRoundedRectangle(
+    private func notchShape(revealProgress: Double) -> UnevenRoundedRectangle {
+        let radius = 12 + 10 * revealProgress
+        return UnevenRoundedRectangle(
             topLeadingRadius: 0,
-            bottomLeadingRadius: isExpanded ? 22 : 12,
-            bottomTrailingRadius: isExpanded ? 22 : 12,
+            bottomLeadingRadius: radius,
+            bottomTrailingRadius: radius,
             topTrailingRadius: 0,
             style: .continuous
         )
@@ -182,7 +178,9 @@ struct NotchPlayerView: View {
                 }
 
                 ArtworkEqualizerView(
+                    audioMonitor: audioMonitor,
                     isPlaying: track.isPlaying,
+                    isVisible: !isExpanded,
                     isColored: coloredWaveform,
                     palette: artworkPalette
                 )
@@ -293,7 +291,7 @@ struct NotchPlayerView: View {
                         duration: track.duration,
                         isPlaying: track.isPlaying,
                         snapshotDate: model.snapshotDate,
-                        onSeek: model.seek(to:),
+                        onSeek: { position in Task { await model.seek(to: position) } },
                         tint: coloredProgress ? artworkPalette.primary.swiftUIColor : .white
                     )
 
@@ -302,9 +300,9 @@ struct NotchPlayerView: View {
                     HStack(spacing: 12) {
                         PlaybackControlsView(
                             isPlaying: track.isPlaying,
-                            onPrevious: model.previousTrack,
-                            onPlayPause: model.togglePlayback,
-                            onNext: model.nextTrack,
+                            onPrevious: { Task { await model.previousTrack() } },
+                            onPlayPause: { Task { await model.togglePlayback() } },
+                            onNext: { Task { await model.nextTrack() } },
                             spacing: isNarrow ? 7 : 10
                         )
                         .tint(artworkPalette.primary.swiftUIColor)
@@ -312,7 +310,9 @@ struct NotchPlayerView: View {
                         Spacer(minLength: 8)
 
                         ArtworkEqualizerView(
+                            audioMonitor: audioMonitor,
                             isPlaying: track.isPlaying,
+                            isVisible: isExpanded,
                             isColored: coloredWaveform,
                             palette: artworkPalette
                         )
@@ -332,7 +332,9 @@ struct NotchPlayerView: View {
                 Text(model.statusText)
                     .font(.callout.weight(.medium))
 
-                Button("Обновить", action: model.refresh)
+                Button("Обновить") {
+                    Task { await model.refresh() }
+                }
                     .buttonStyle(.borderedProminent)
             }
             .padding(20)

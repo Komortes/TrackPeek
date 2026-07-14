@@ -15,9 +15,9 @@ final class SpotifySpikeModel {
         self.provider = provider
     }
 
-    func refresh() {
+    func refresh() async {
         do {
-            let track = try provider.fetchCurrentTrack()
+            let track = try await provider.fetchCurrentTrack()
 
             guard !track.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
                 self.track = nil
@@ -41,34 +41,34 @@ final class SpotifySpikeModel {
         }
     }
 
-    func togglePlayback() {
+    func togglePlayback() async {
         do {
-            try provider.playPause()
-            refresh()
+            try await provider.playPause()
+            await refresh()
         } catch {
             statusText = error.localizedDescription
         }
     }
 
-    func nextTrack() {
+    func nextTrack() async {
         do {
-            try provider.nextTrack()
-            refresh()
+            try await provider.nextTrack()
+            await refresh()
         } catch {
             statusText = error.localizedDescription
         }
     }
 
-    func previousTrack() {
+    func previousTrack() async {
         do {
-            try provider.previousTrack()
-            refresh()
+            try await provider.previousTrack()
+            await refresh()
         } catch {
             statusText = error.localizedDescription
         }
     }
 
-    func seek(to requestedPosition: TimeInterval) {
+    func seek(to requestedPosition: TimeInterval) async {
         guard let track else {
             return
         }
@@ -76,7 +76,7 @@ final class SpotifySpikeModel {
         let position = min(max(requestedPosition, 0), track.duration)
 
         do {
-            try provider.seek(to: position)
+            try await provider.seek(to: position)
             self.track = SpotifyTrack(
                 title: track.title,
                 artist: track.artist,

@@ -80,7 +80,7 @@ struct TrackPeekPopoverView: View {
         )
         .task {
             while !Task.isCancelled {
-                model.refresh()
+                await model.refresh()
 
                 let interval = model.track?.isPlaying == true
                     ? Duration.seconds(2)
@@ -112,15 +112,19 @@ struct TrackPeekPopoverView: View {
             PlayerHeaderView(
                 track: nil,
                 showsPlaybackStatus: showsPlaybackStatus,
-                onRefresh: model.refresh
+                onRefresh: requestRefresh
             )
 
             PlayerStateView(
                 availability: model.availability,
-                onRetry: model.refresh
+                onRetry: requestRefresh
             )
         }
         .padding(playerLayout == .artworkVertical ? 20 : 14)
+    }
+
+    private func requestRefresh() {
+        Task { await model.refresh() }
     }
 }
 

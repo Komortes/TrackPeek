@@ -34,7 +34,10 @@ struct CompactHorizontalPlayerView: View {
                         titleLineLimit: 1
                     )
 
-                    PlayerMoreMenu(track: track, onRefresh: model.refresh)
+                    PlayerMoreMenu(
+                        track: track,
+                        onRefresh: { Task { await model.refresh() } }
+                    )
                 }
 
                 PlaybackProgressView(
@@ -42,15 +45,15 @@ struct CompactHorizontalPlayerView: View {
                     duration: track.duration,
                     isPlaying: track.isPlaying,
                     snapshotDate: model.snapshotDate,
-                    onSeek: model.seek(to:),
+                    onSeek: { position in Task { await model.seek(to: position) } },
                     usesCompactTime: true
                 )
 
                 PlaybackControlsView(
                     isPlaying: track.isPlaying,
-                    onPrevious: model.previousTrack,
-                    onPlayPause: model.togglePlayback,
-                    onNext: model.nextTrack,
+                    onPrevious: { Task { await model.previousTrack() } },
+                    onPlayPause: { Task { await model.togglePlayback() } },
+                    onNext: { Task { await model.nextTrack() } },
                     spacing: 10
                 )
                 .frame(maxWidth: .infinity)

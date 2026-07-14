@@ -1,87 +1,89 @@
 import SwiftUI
 
+extension AudioSpectrum: VectorArithmetic {}
+
+private struct EqualizerShape: Shape {
+    var spectrum: AudioSpectrum
+
+    var animatableData: AudioSpectrum {
+        get { spectrum }
+        set { spectrum = newValue }
+    }
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let spacing = min(1, rect.width * 0.018)
+        let barWidth = max(
+            1,
+            (rect.width - spacing * CGFloat(AudioSpectrum.bandCount - 1))
+                / CGFloat(AudioSpectrum.bandCount)
+        )
+
+        for index in 0 ..< AudioSpectrum.bandCount {
+            let height = max(2.5, rect.height * spectrum[index])
+            let barRect = CGRect(
+                x: CGFloat(index) * (barWidth + spacing),
+                y: rect.maxY - height,
+                width: barWidth,
+                height: height
+            )
+            path.addRoundedRect(
+                in: barRect,
+                cornerSize: CGSize(width: barWidth / 2, height: barWidth / 2)
+            )
+        }
+
+        return path
+    }
+}
+
 struct ArtworkEqualizerView: View {
+    let audioMonitor: SpotifyAudioMonitor
     let isPlaying: Bool
+    let isVisible: Bool
     let isColored: Bool
     let palette: ArtworkPalette
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private let barCount = 7
+    private var targetSpectrum: AudioSpectrum {
+        guard isPlaying, isVisible, !reduceMotion else { return .resting }
+        return audioMonitor.spectrum
+    }
+
+    private var fillStyle: LinearGradient {
+        let colors: [Color]
+        if isColored {
+            colors = palette.colors.map { $0.swiftUIColor.opacity(0.96) }
+        } else {
+            colors = [.white.opacity(isPlaying ? 0.9 : 0.52)]
+        }
+
+        return LinearGradient(
+            colors: colors,
+            startPoint: .leading,
+            endPoint: .trailing
+        )
+    }
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            equalizerBars(date: .distantPast, isActive: false)
-                .opacity(isPlaying && !reduceMotion ? 0 : 1)
-
-            TimelineView(
-                .animation(
-                    minimumInterval: 1 / 24,
-                    paused: !isPlaying || reduceMotion
-                )
-            ) { context in
-                equalizerBars(date: context.date, isActive: true)
-            }
-            .opacity(isPlaying && !reduceMotion ? 1 : 0)
-        }
-        .animation(
-            reduceMotion
-                ? nil
-                : .smooth(duration: PlayerMotion.equalizerDuration, extraBounce: 0),
-            value: isPlaying
-        )
-        .accessibilityHidden(true)
-    }
-
-    private func equalizerBars(date: Date, isActive: Bool) -> some View {
-        GeometryReader { proxy in
-            HStack(alignment: .bottom, spacing: 2) {
-                ForEach(0 ..< barCount, id: \.self) { index in
-                    Capsule(style: .continuous)
-                        .fill(color(for: index, isActive: isActive))
-                        .frame(maxWidth: .infinity)
-                        .frame(
-                            height: barHeight(
-                                at: index,
-                                date: date,
-                                availableHeight: proxy.size.height,
-                                isActive: isActive
-                            )
-                        )
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-        }
-    }
-
-    private func barHeight(
-        at index: Int,
-        date: Date,
-        availableHeight: CGFloat,
-        isActive: Bool
-    ) -> CGFloat {
-        guard isActive else {
-            let restingPattern = [0.22, 0.31, 0.25, 0.36, 0.27, 0.32, 0.23]
-            return max(3, availableHeight * restingPattern[index])
-        }
-
-        let time = date.timeIntervalSinceReferenceDate
-        let phase = time * (2.6 + Double(index % 3) * 0.34) + Double(index) * 0.86
-        let secondaryPhase = time * 1.37 + Double(index) * 1.41
-        let energy = 0.28
-            + abs(sin(phase)) * 0.48
-            + abs(cos(secondaryPhase)) * 0.16
-        return max(3, availableHeight * min(energy, 0.94))
-    }
-
-    private func color(for index: Int, isActive: Bool) -> Color {
-        guard isColored else {
-            return .white.opacity(isActive ? 0.88 : 0.48)
-        }
-
-        return palette.colors[index % palette.colors.count]
-            .swiftUIColor
-            .opacity(isActive ? 0.96 : 0.58)
+        EqualizerShape(spectrum: targetSpectrum)
+            .fill(fillStyle)
+            .animation(
+                reduceMotion
+                    ? nil
+                    : (isPlaying
+                        ? .linear(duration: PlayerMotion.spectrumFrameDuration)
+                        : .smooth(duration: PlayerMotion.equalizerDuration, extraBounce: 0)),
+                value: targetSpectrum
+            )
+            .animation(
+                reduceMotion
+                    ? nil
+                    : .smooth(duration: PlayerMotion.equalizerDuration, extraBounce: 0),
+                value: palette
+            )
+            .accessibilityHidden(true)
     }
 }
 

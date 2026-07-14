@@ -8,6 +8,7 @@ enum PlayerMotion {
     static let playbackDuration = 0.24
     static let controlDuration = 0.14
     static let equalizerDuration = 0.28
+    static let spectrumFrameDuration = 0.05
 }
 
 enum ArtworkSizePreference {

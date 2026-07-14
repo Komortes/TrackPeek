@@ -11,7 +11,7 @@ struct ArtworkVerticalPlayerView: View {
             PlayerHeaderView(
                 track: track,
                 showsPlaybackStatus: options.showsPlaybackStatus,
-                onRefresh: model.refresh
+                onRefresh: { Task { await model.refresh() } }
             )
 
             TrackArtworkView(
@@ -23,9 +23,9 @@ struct ArtworkVerticalPlayerView: View {
 
             PlaybackControlsView(
                 isPlaying: track.isPlaying,
-                onPrevious: model.previousTrack,
-                onPlayPause: model.togglePlayback,
-                onNext: model.nextTrack,
+                onPrevious: { Task { await model.previousTrack() } },
+                onPlayPause: { Task { await model.togglePlayback() } },
+                onNext: { Task { await model.nextTrack() } },
                 spacing: 24
             )
             .frame(maxWidth: .infinity)
@@ -49,7 +49,7 @@ struct ArtworkVerticalPlayerView: View {
                 duration: track.duration,
                 isPlaying: track.isPlaying,
                 snapshotDate: model.snapshotDate,
-                onSeek: model.seek(to:)
+                onSeek: { position in Task { await model.seek(to: position) } }
             )
         }
         .padding(14)

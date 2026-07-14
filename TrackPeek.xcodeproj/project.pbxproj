@@ -20,19 +20,24 @@
 		445145F47A64634A47805154 /* ArtworkVerticalPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E7D8A59B5448360AFC1C8 /* ArtworkVerticalPlayerView.swift */; };
 		4B7ABAE2FBDA9D21044F6E2A /* NotchPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A62E1EDD09A95D23FDBDE67B /* NotchPlayerView.swift */; };
 		5483BC429E6D1053D247B987 /* SpotifyAppleScriptClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B05DC7EA94592E5EFEAE1B4C /* SpotifyAppleScriptClient.swift */; };
+		54B2B7D3106459286CFF2676 /* SpotifyAudioMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 786A2708E9F4668B035A479D /* SpotifyAudioMonitor.swift */; };
 		5862CB538A03AC0B1960C32E /* PlaybackTimeFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA6231D0880977C3FB9EFB10 /* PlaybackTimeFormatterTests.swift */; };
 		59FF79536A31C39DF66929EF /* TrackPeekApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EB8B3A7EA66CB48B32DC836 /* TrackPeekApp.swift */; };
 		5D57701DFFFC89A2CD2A5069 /* PlayerMoreMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89B56790FCCC5C5B3225EDE9 /* PlayerMoreMenu.swift */; };
 		5EBFE448316D9261A6F6C2CA /* DisplayMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5423E7B6B182EEF62F4B5BFB /* DisplayMode.swift */; };
 		5FE950BEA4106801AF8CE97B /* ArtworkPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89688A253F967111DC7C1EFA /* ArtworkPalette.swift */; };
+		64E1D69AF843728996E82D70 /* TPAudioLevelAnalyzer.mm in Sources */ = {isa = PBXBuildFile; fileRef = 7DB311001A26BFC02CBCCECF /* TPAudioLevelAnalyzer.mm */; };
 		67ABB99D96F5C664B21A689B /* NotchSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0304905077E9A00A53F645CA /* NotchSettingsView.swift */; };
 		69629BCF9600A0CEBCE322E3 /* PlaybackProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D0266152B3C12AA6E3A2974 /* PlaybackProgressView.swift */; };
+		69C4B652E72B997051EC4B69 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D4D893941C5BFC215806CFD1 /* CoreAudio.framework */; };
+		6BB7553B6616CFC880862714 /* AudioSpectrum.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E5A106A66139EF6481FCB4C /* AudioSpectrum.swift */; };
 		7619BDBC8B430E99D3170D6C /* PlayerPresentationOptions.swift in Sources */ = {isa = PBXBuildFile; fileRef = F72A0A219630C5DB27BE8D4C /* PlayerPresentationOptions.swift */; };
 		7BC974C98330B7CD6FDFB49E /* PlayerHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37B595BE3D2A9D862D892381 /* PlayerHeaderView.swift */; };
 		7E4EA3AAC9BF99CE29887307 /* PlayerLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5771612BAA69D0D6A82827E9 /* PlayerLayoutTests.swift */; };
 		8B418592E4B3B5E8A18EC483 /* SpotifySpikeModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 609CB9E1102FD1828A45504A /* SpotifySpikeModelTests.swift */; };
 		90BAD3D30034C4AE3878ABCC /* PlaybackAvailability.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A48D3F9F6E402F483F062AC /* PlaybackAvailability.swift */; };
 		92F16DF92496377E8BB451EF /* NotchConfigurationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00835C9149248F59E71391B0 /* NotchConfigurationTests.swift */; };
+		972BCF260E35167E2A864A65 /* AudioSpectrumTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C4E08596060F3BDFCF80C9F /* AudioSpectrumTests.swift */; };
 		9950167554F0AF9D0CDDE9B5 /* TrackPeekPopoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3772FE1A4355B17E8E736E36 /* TrackPeekPopoverView.swift */; };
 		A9C959DDE49C29200A38C496 /* PlaybackControlButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B276A7EB0CE68ABCCEE091A /* PlaybackControlButtonStyle.swift */; };
 		AD4AAC220B0BDD54E9EA7832 /* ArtworkPaletteTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70E7BE8E732C82A286DEA68B /* ArtworkPaletteTests.swift */; };
@@ -60,9 +65,12 @@
 /* Begin PBXFileReference section */
 		00835C9149248F59E71391B0 /* NotchConfigurationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchConfigurationTests.swift; sourceTree = "<group>"; };
 		0304905077E9A00A53F645CA /* NotchSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchSettingsView.swift; sourceTree = "<group>"; };
+		0F532C0FB2D41F5A3C5B621D /* TPAudioLevelAnalyzer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TPAudioLevelAnalyzer.h; sourceTree = "<group>"; };
 		11657A06E06E013BB1AFBDD3 /* NotchWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchWindowController.swift; sourceTree = "<group>"; };
 		1A47F67E2514C38F7C379BD2 /* SpotifySpikeModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifySpikeModel.swift; sourceTree = "<group>"; };
+		1E5A106A66139EF6481FCB4C /* AudioSpectrum.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioSpectrum.swift; sourceTree = "<group>"; };
 		22D20BAD45ADCB7BF41E719F /* NotchConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchConfiguration.swift; sourceTree = "<group>"; };
+		337CCB8186BB9BDF6636214D /* TrackPeek-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "TrackPeek-Bridging-Header.h"; sourceTree = "<group>"; };
 		344095CFCE94AECD10CBDEBB /* TrackPeek.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TrackPeek.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3772FE1A4355B17E8E736E36 /* TrackPeekPopoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackPeekPopoverView.swift; sourceTree = "<group>"; };
 		37B595BE3D2A9D862D892381 /* PlayerHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerHeaderView.swift; sourceTree = "<group>"; };
@@ -82,11 +90,14 @@
 		6DCB9F0DDF8C2AC5DD9162D5 /* TrackInfoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackInfoView.swift; sourceTree = "<group>"; };
 		70E7BE8E732C82A286DEA68B /* ArtworkPaletteTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtworkPaletteTests.swift; sourceTree = "<group>"; };
 		71D1A7507387C86A93D183EA /* PlaybackPositionResolverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackPositionResolverTests.swift; sourceTree = "<group>"; };
+		786A2708E9F4668B035A479D /* SpotifyAudioMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyAudioMonitor.swift; sourceTree = "<group>"; };
 		7AEE2828C90080275021F97D /* DisplayModeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayModeTests.swift; sourceTree = "<group>"; };
+		7DB311001A26BFC02CBCCECF /* TPAudioLevelAnalyzer.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = TPAudioLevelAnalyzer.mm; sourceTree = "<group>"; };
 		7EF5A723EFD6F834403E060A /* SpotifyTrackParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyTrackParserTests.swift; sourceTree = "<group>"; };
 		89688A253F967111DC7C1EFA /* ArtworkPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtworkPalette.swift; sourceTree = "<group>"; };
 		89B56790FCCC5C5B3225EDE9 /* PlayerMoreMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerMoreMenu.swift; sourceTree = "<group>"; };
 		9A4C06534FB79978AF93A235 /* TrackPeekTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TrackPeekTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		9C4E08596060F3BDFCF80C9F /* AudioSpectrumTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioSpectrumTests.swift; sourceTree = "<group>"; };
 		9D0266152B3C12AA6E3A2974 /* PlaybackProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackProgressView.swift; sourceTree = "<group>"; };
 		A60BDEFA06755220CD27BE49 /* PlayerLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerLayout.swift; sourceTree = "<group>"; };
 		A62E1EDD09A95D23FDBDE67B /* NotchPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchPlayerView.swift; sourceTree = "<group>"; };
@@ -94,13 +105,34 @@
 		B05DC7EA94592E5EFEAE1B4C /* SpotifyAppleScriptClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyAppleScriptClient.swift; sourceTree = "<group>"; };
 		CE80AAE93C3830FB44B5F29A /* PlayerLayoutPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerLayoutPreview.swift; sourceTree = "<group>"; };
 		CEF37978D26CC9F7BE1BF5CA /* PlayerStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerStateView.swift; sourceTree = "<group>"; };
+		D4D893941C5BFC215806CFD1 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
 		D56A9B2AD3CCDA6C617D765F /* TrackArtworkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackArtworkView.swift; sourceTree = "<group>"; };
 		DA6231D0880977C3FB9EFB10 /* PlaybackTimeFormatterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackTimeFormatterTests.swift; sourceTree = "<group>"; };
 		DEC64F5EFDF93DB1170ACA56 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		F55E19ACF769720342C96D39 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		F72A0A219630C5DB27BE8D4C /* PlayerPresentationOptions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerPresentationOptions.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFrameworksBuildPhase section */
+		44D44A8A3921D74B5D41917D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				69C4B652E72B997051EC4B69 /* CoreAudio.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
 /* Begin PBXGroup section */
+		16C7D9B1AA9A411653AD02A9 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				D4D893941C5BFC215806CFD1 /* CoreAudio.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		2036CF9382A7AF15A013988D /* Support */ = {
 			isa = PBXGroup;
 			children = (
@@ -108,6 +140,9 @@
 				11657A06E06E013BB1AFBDD3 /* NotchWindowController.swift */,
 				5E547F9C4694829A785C6D7B /* PlaybackPositionResolver.swift */,
 				3C576D384961DD6F57134E3D /* PlaybackTimeFormatter.swift */,
+				0F532C0FB2D41F5A3C5B621D /* TPAudioLevelAnalyzer.h */,
+				7DB311001A26BFC02CBCCECF /* TPAudioLevelAnalyzer.mm */,
+				337CCB8186BB9BDF6636214D /* TrackPeek-Bridging-Header.h */,
 			);
 			path = Support;
 			sourceTree = "<group>";
@@ -115,6 +150,7 @@
 		21CAC22B9C1B8EAB75544365 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				1E5A106A66139EF6481FCB4C /* AudioSpectrum.swift */,
 				5423E7B6B182EEF62F4B5BFB /* DisplayMode.swift */,
 				22D20BAD45ADCB7BF41E719F /* NotchConfiguration.swift */,
 				6A48D3F9F6E402F483F062AC /* PlaybackAvailability.swift */,
@@ -129,6 +165,7 @@
 			isa = PBXGroup;
 			children = (
 				70E7BE8E732C82A286DEA68B /* ArtworkPaletteTests.swift */,
+				9C4E08596060F3BDFCF80C9F /* AudioSpectrumTests.swift */,
 				7AEE2828C90080275021F97D /* DisplayModeTests.swift */,
 				00835C9149248F59E71391B0 /* NotchConfigurationTests.swift */,
 				71D1A7507387C86A93D183EA /* PlaybackPositionResolverTests.swift */,
@@ -184,6 +221,7 @@
 		8C5D8BABEBA73413F55F62A4 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				F55E19ACF769720342C96D39 /* Info.plist */,
 				3EB8B3A7EA66CB48B32DC836 /* TrackPeekApp.swift */,
 				21CAC22B9C1B8EAB75544365 /* Models */,
 				943762F836434F7360ABCAF6 /* Services */,
@@ -199,6 +237,7 @@
 			children = (
 				8C5D8BABEBA73413F55F62A4 /* Sources */,
 				2EA68A0EBB7FAF74B71F80A7 /* Tests */,
+				16C7D9B1AA9A411653AD02A9 /* Frameworks */,
 				3BEC46899D145247D4F146B8 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -207,6 +246,7 @@
 			isa = PBXGroup;
 			children = (
 				B05DC7EA94592E5EFEAE1B4C /* SpotifyAppleScriptClient.swift */,
+				786A2708E9F4668B035A479D /* SpotifyAudioMonitor.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -237,6 +277,7 @@
 			buildConfigurationList = 691C354D7EB2696940820A6D /* Build configuration list for PBXNativeTarget "TrackPeek" */;
 			buildPhases = (
 				62106FBB354F091906915782 /* Sources */,
+				44D44A8A3921D74B5D41917D /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -289,6 +330,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AD4AAC220B0BDD54E9EA7832 /* ArtworkPaletteTests.swift in Sources */,
+				972BCF260E35167E2A864A65 /* AudioSpectrumTests.swift in Sources */,
 				303525109FD5E22CB1650754 /* DisplayModeTests.swift in Sources */,
 				92F16DF92496377E8BB451EF /* NotchConfigurationTests.swift in Sources */,
 				23C00D6AF44832BCD3CD4AF4 /* PlaybackPositionResolverTests.swift in Sources */,
@@ -306,6 +348,7 @@
 				C0A378802DD85A5FCF5A96EC /* ArtworkEqualizerView.swift in Sources */,
 				5FE950BEA4106801AF8CE97B /* ArtworkPalette.swift in Sources */,
 				445145F47A64634A47805154 /* ArtworkVerticalPlayerView.swift in Sources */,
+				6BB7553B6616CFC880862714 /* AudioSpectrum.swift in Sources */,
 				F4CFBD58963C9B5B66CC2698 /* CompactHorizontalPlayerView.swift in Sources */,
 				5EBFE448316D9261A6F6C2CA /* DisplayMode.swift in Sources */,
 				CD8465FC4274BFEC50138FA3 /* NotchConfiguration.swift in Sources */,
@@ -326,9 +369,11 @@
 				CC81614617C2D1E3A5B02570 /* PlayerStateView.swift in Sources */,
 				163B88A9CEFDA51FFF6B1DB3 /* SettingsView.swift in Sources */,
 				5483BC429E6D1053D247B987 /* SpotifyAppleScriptClient.swift in Sources */,
+				54B2B7D3106459286CFF2676 /* SpotifyAudioMonitor.swift in Sources */,
 				D0D1877AC7712F2D89CD035A /* SpotifySpikeModel.swift in Sources */,
 				06628BE4AF83E08E4C014F13 /* SpotifyTrack.swift in Sources */,
 				F562620C41D11D7F7FA84BA6 /* StandardPlayerView.swift in Sources */,
+				64E1D69AF843728996E82D70 /* TPAudioLevelAnalyzer.mm in Sources */,
 				39C5063C7F38466FAC3B2A42 /* TrackArtworkView.swift in Sources */,
 				DBB70FE615D2F1BBF59AE2D6 /* TrackInfoView.swift in Sources */,
 				59FF79536A31C39DF66929EF /* TrackPeekApp.swift in Sources */,
@@ -354,15 +399,14 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_LSUIElement = YES;
-				INFOPLIST_KEY_NSAppleEventsUsageDescription = "TrackPeek использует Automation для чтения текущего трека и управления Spotify.";
+				INFOPLIST_FILE = Sources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.trackpeek.TrackPeek;
 				SDKROOT = macosx;
+				SWIFT_OBJC_BRIDGING_HEADER = "Sources/Support/TrackPeek-Bridging-Header.h";
 			};
 			name = Release;
 		};
@@ -373,15 +417,14 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_LSUIElement = YES;
-				INFOPLIST_KEY_NSAppleEventsUsageDescription = "TrackPeek использует Automation для чтения текущего трека и управления Spotify.";
+				INFOPLIST_FILE = Sources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.trackpeek.TrackPeek;
 				SDKROOT = macosx;
+				SWIFT_OBJC_BRIDGING_HEADER = "Sources/Support/TrackPeek-Bridging-Header.h";
 			};
 			name = Debug;
 		};

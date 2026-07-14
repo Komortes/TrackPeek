@@ -19,7 +19,7 @@ struct SpotifySpikeModelTests {
     }
 
     @Test("refresh exposes the current track")
-    func refreshExposesCurrentTrack() {
+    func refreshExposesCurrentTrack() async {
         let provider = FakeSpotifyProvider(
             result: .success(
                 SpotifyTrack(title: "Reckoner", artist: "Radiohead", isPlaying: true)
@@ -27,7 +27,7 @@ struct SpotifySpikeModelTests {
         )
         let model = SpotifySpikeModel(provider: provider)
 
-        model.refresh()
+        await model.refresh()
 
         #expect(model.track?.title == "Reckoner")
         #expect(model.statusText == "Играет")
@@ -35,11 +35,11 @@ struct SpotifySpikeModelTests {
     }
 
     @Test("refresh exposes provider errors")
-    func refreshExposesProviderErrors() {
+    func refreshExposesProviderErrors() async {
         let provider = FakeSpotifyProvider(result: .failure(FakeError.spotifyNotRunning))
         let model = SpotifySpikeModel(provider: provider)
 
-        model.refresh()
+        await model.refresh()
 
         #expect(model.track == nil)
         #expect(model.statusText == "Spotify не запущен.")
@@ -47,20 +47,20 @@ struct SpotifySpikeModelTests {
     }
 
     @Test("distinguishes Spotify not running")
-    func distinguishesSpotifyNotRunning() {
+    func distinguishesSpotifyNotRunning() async {
         let provider = FakeSpotifyProvider(
             result: .failure(SpotifyPlaybackError.spotifyNotRunning)
         )
         let model = SpotifySpikeModel(provider: provider)
 
-        model.refresh()
+        await model.refresh()
 
         #expect(model.track == nil)
         #expect(model.availability == .spotifyNotRunning)
     }
 
     @Test("treats an empty stopped snapshot as nothing playing")
-    func treatsStoppedSnapshotAsNothingPlaying() {
+    func treatsStoppedSnapshotAsNothingPlaying() async {
         let provider = FakeSpotifyProvider(
             result: .success(
                 SpotifyTrack(title: "", artist: "", isPlaying: false)
@@ -68,14 +68,14 @@ struct SpotifySpikeModelTests {
         )
         let model = SpotifySpikeModel(provider: provider)
 
-        model.refresh()
+        await model.refresh()
 
         #expect(model.track == nil)
         #expect(model.availability == .nothingPlaying)
     }
 
     @Test("next track refreshes the playback snapshot")
-    func nextTrackRefreshesSnapshot() {
+    func nextTrackRefreshesSnapshot() async {
         let provider = FakeSpotifyProvider(
             result: .success(
                 SpotifyTrack(title: "Reckoner", artist: "Radiohead", isPlaying: true)
@@ -83,15 +83,15 @@ struct SpotifySpikeModelTests {
             nextTrack: SpotifyTrack(title: "House of Cards", artist: "Radiohead", isPlaying: true)
         )
         let model = SpotifySpikeModel(provider: provider)
-        model.refresh()
+        await model.refresh()
 
-        model.nextTrack()
+        await model.nextTrack()
 
         #expect(model.track?.title == "House of Cards")
     }
 
     @Test("previous track refreshes the playback snapshot")
-    func previousTrackRefreshesSnapshot() {
+    func previousTrackRefreshesSnapshot() async {
         let provider = FakeSpotifyProvider(
             result: .success(
                 SpotifyTrack(title: "Reckoner", artist: "Radiohead", isPlaying: true)
@@ -99,15 +99,15 @@ struct SpotifySpikeModelTests {
             previousTrack: SpotifyTrack(title: "Nude", artist: "Radiohead", isPlaying: true)
         )
         let model = SpotifySpikeModel(provider: provider)
-        model.refresh()
+        await model.refresh()
 
-        model.previousTrack()
+        await model.previousTrack()
 
         #expect(model.track?.title == "Nude")
     }
 
     @Test("seek clamps the requested position to the track duration")
-    func seekClampsToDuration() {
+    func seekClampsToDuration() async {
         let provider = FakeSpotifyProvider(
             result: .success(
                 SpotifyTrack(
@@ -120,16 +120,15 @@ struct SpotifySpikeModelTests {
             )
         )
         let model = SpotifySpikeModel(provider: provider)
-        model.refresh()
+        await model.refresh()
 
-        model.seek(to: 240)
+        await model.seek(to: 240)
 
         #expect(model.track?.position == 180)
     }
 }
 
-@MainActor
-private final class FakeSpotifyProvider: SpotifyPlaybackProviding {
+private actor FakeSpotifyProvider: SpotifyPlaybackProviding {
     private var result: Result<SpotifyTrack, Swift.Error>
     private let nextTrackValue: SpotifyTrack?
     private let previousTrackValue: SpotifyTrack?

@@ -14,12 +14,18 @@ targets:
     platform: macOS
     sources:
       - path: Sources
+    dependencies:
+      - sdk: CoreAudio.framework
+    info:
+      path: Sources/Info.plist
+      properties:
+        LSUIElement: true
+        NSAppleEventsUsageDescription: "TrackPeek использует Automation для чтения текущего трека и управления Spotify."
+        NSAudioCaptureUsageDescription: "TrackPeek анализирует системное аудио Spotify, чтобы эквалайзер двигался в ритм музыки."
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.trackpeek.TrackPeek
-        GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_LSUIElement: YES
-        INFOPLIST_KEY_NSAppleEventsUsageDescription: "TrackPeek использует Automation для чтения текущего трека и управления Spotify."
+        SWIFT_OBJC_BRIDGING_HEADER: Sources/Support/TrackPeek-Bridging-Header.h
         CODE_SIGN_STYLE: Automatic
         ENABLE_HARDENED_RUNTIME: YES
 
