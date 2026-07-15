@@ -66,6 +66,22 @@ struct NotchConfigurationTests {
         #expect(NotchResponsiveLayout.baseOutlineOpacity(revealProgress: 1) == 0)
         #expect(NotchResponsiveLayout.outlineInset(revealProgress: 0) == 1)
         #expect(NotchResponsiveLayout.outlineInset(revealProgress: 1) == 0)
+        #expect(
+            NotchResponsiveLayout.bottomEdgeWidth(
+                containerWidth: 320,
+                cornerRadius: 13,
+                outlineInset: 1
+            ) == 292
+        )
+        #expect(NotchResponsiveLayout.compactEdgeOpacity(revealProgress: 0) == 1)
+        #expect(NotchResponsiveLayout.compactEdgeOpacity(revealProgress: 1) == 0)
+        #expect(
+            NotchResponsiveLayout.bottomEdgeCenterY(
+                containerHeight: 36,
+                lineWidth: 4.5,
+                outlineInset: 1
+            ) == 32.75
+        )
     }
 
     @Test("uses one measured panel motion contract")

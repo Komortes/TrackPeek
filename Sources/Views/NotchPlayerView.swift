@@ -110,6 +110,33 @@ struct NotchPlayerView: View {
             let revealProgress = NotchResponsiveLayout.revealProgress(
                 forHeight: proxy.size.height
             )
+            let outlineInset = NotchResponsiveLayout.outlineInset(
+                revealProgress: revealProgress
+            )
+            let bottomCornerRadius = NotchResponsiveLayout.bottomCornerRadius(
+                preferredRadius: cornerRadius,
+                revealProgress: revealProgress,
+                height: proxy.size.height
+            )
+            let bottomEdgeWidth = NotchResponsiveLayout.bottomEdgeWidth(
+                containerWidth: proxy.size.width,
+                cornerRadius: bottomCornerRadius,
+                outlineInset: outlineInset
+            )
+            let compactEdgeOpacity = NotchResponsiveLayout.compactEdgeOpacity(
+                revealProgress: revealProgress
+            )
+            let shimmerLineWidth = NotchPreferences.clampedOutlineWidth(outlineWidth)
+            let baseEdgeCenterY = NotchResponsiveLayout.bottomEdgeCenterY(
+                containerHeight: proxy.size.height,
+                lineWidth: 1,
+                outlineInset: outlineInset
+            )
+            let shimmerEdgeCenterY = NotchResponsiveLayout.bottomEdgeCenterY(
+                containerHeight: proxy.size.height,
+                lineWidth: shimmerLineWidth,
+                outlineInset: outlineInset
+            )
 
             ZStack(alignment: .top) {
                 compactContent
@@ -150,11 +177,7 @@ struct NotchPlayerView: View {
             .overlay {
                 ZStack {
                     notchShape(revealProgress: revealProgress, height: proxy.size.height)
-                        .inset(
-                            by: NotchResponsiveLayout.outlineInset(
-                                revealProgress: revealProgress
-                            )
-                        )
+                        .inset(by: outlineInset)
                         .strokeBorder(
                             baseOutlineGradient,
                             lineWidth: 1
@@ -167,23 +190,44 @@ struct NotchPlayerView: View {
                         .mask(lowerEdgeMask)
                         .allowsHitTesting(false)
 
+                    // `UnevenRoundedRectangle` can omit its horizontal bottom
+                    // stroke when hosted in the exact 36 pt borderless panel.
+                    // Draw that tangent explicitly one point inside the window.
+                    Capsule(style: .continuous)
+                        .fill(baseOutlineGradient)
+                        .frame(width: bottomEdgeWidth, height: 1)
+                        .position(x: proxy.size.width / 2, y: baseEdgeCenterY)
+                        .opacity(
+                            NotchResponsiveLayout.baseOutlineOpacity(
+                                revealProgress: revealProgress
+                            )
+                        )
+                        .allowsHitTesting(false)
+
                     if outlineShimmer {
                         // `strokeBorder` stays inside the panel while the mask
                         // removes the bezel-facing top edge. Keeping this effect
                         // separate from the static compact outline means disabling
                         // shimmer no longer removes the visible lower silhouette.
                         notchShape(revealProgress: revealProgress, height: proxy.size.height)
-                            .inset(
-                                by: NotchResponsiveLayout.outlineInset(
-                                    revealProgress: revealProgress
-                                )
-                            )
+                            .inset(by: outlineInset)
                             .strokeBorder(
                                 shimmerGradient,
-                                lineWidth: NotchPreferences.clampedOutlineWidth(outlineWidth)
+                                lineWidth: shimmerLineWidth
                             )
                             .mask(lowerEdgeMask)
                             .blur(radius: 0.6)
+                            .allowsHitTesting(false)
+
+                        Capsule(style: .continuous)
+                            .fill(shimmerGradient)
+                            .frame(
+                                width: bottomEdgeWidth,
+                                height: shimmerLineWidth
+                            )
+                            .position(x: proxy.size.width / 2, y: shimmerEdgeCenterY)
+                            .opacity(compactEdgeOpacity)
+                            .blur(radius: 0.35)
                             .allowsHitTesting(false)
                     }
                 }
