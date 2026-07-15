@@ -227,6 +227,11 @@ enum NotchResponsiveLayout {
     private static let revealEndHeight = 160.0
     private static let compactOutlineOpacity = 0.24
 
+    static let compactArtworkSize: CGFloat = 24
+    static let compactEqualizerSize = CGSize(width: 24, height: 16)
+    static let compactHorizontalPadding: CGFloat = 10
+    static let compactEqualizerVerticalOffset: CGFloat = -2
+
     static func artworkSize(in containerSize: CGSize) -> CGFloat {
         let horizontalLimit = containerSize.width * 0.18
         let verticalLimit = max(32, containerSize.height - 72)

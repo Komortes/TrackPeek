@@ -1,3 +1,4 @@
+import AppKit
 import CoreGraphics
 import SwiftUI
 import Testing
@@ -103,6 +104,86 @@ struct NotchConfigurationTests {
         )
     }
 
+    @Test("clips compact glow out of both rounded bottom corners")
+    @MainActor
+    func clipsCompactGlowOutOfRoundedCorners() async {
+        let size = CGSize(width: 320, height: 36)
+        let suiteName = "NotchConfigurationTests.compactGlow.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        defaults.set(NotchPulseMode.glow.rawValue, forKey: NotchPreferences.pulseModeKey)
+        defaults.set(13.0, forKey: NotchPreferences.cornerRadiusKey)
+
+        let model = SpotifySpikeModel(
+            provider: NotchRenderingSpotifyProvider(
+                track: SpotifyTrack(
+                    title: "Test track",
+                    artist: "Test artist",
+                    isPlaying: true
+                )
+            )
+        )
+        await model.refresh()
+
+        let renderedView = ZStack {
+            Color(red: 0, green: 1, blue: 0)
+
+            NotchPlayerView(
+                model: model,
+                audioMonitor: SpotifyAudioMonitor(),
+                pointerState: NotchPointerState(),
+                panelLayoutState: NotchPanelLayoutState(size: size),
+                onExpansionChange: { _ in }
+            )
+            .defaultAppStorage(defaults)
+        }
+        .frame(width: size.width, height: size.height)
+
+        let renderer = ImageRenderer(content: renderedView)
+        renderer.isOpaque = false
+        renderer.scale = 1
+
+        guard let image = renderer.cgImage else {
+            Issue.record("Unable to render the compact notch")
+            return
+        }
+        let bitmap = NSBitmapImageRep(cgImage: image)
+
+        let inset = 2
+        let cornerRows = [inset, bitmap.pixelsHigh - inset - 1]
+        let rowsShowingBackground = cornerRows.filter { y in
+            guard
+                let left = bitmap.colorAt(x: inset, y: y),
+                let right = bitmap.colorAt(x: bitmap.pixelsWide - inset - 1, y: y)
+            else {
+                return false
+            }
+
+            return [left, right].allSatisfy { color in
+                color.greenComponent > 0.98
+                    && color.redComponent < 0.02
+                    && color.blueComponent < 0.02
+            }
+        }
+
+        #expect(rowsShowingBackground.count == 1)
+    }
+
+    @Test("balances compact artwork and equalizer around the center content")
+    func balancesCompactAccessoryPlacement() {
+        #expect(NotchResponsiveLayout.compactArtworkSize == 24)
+        #expect(NotchResponsiveLayout.compactEqualizerSize == CGSize(width: 24, height: 16))
+        #expect(NotchResponsiveLayout.compactHorizontalPadding == 10)
+        #expect(NotchResponsiveLayout.compactEqualizerVerticalOffset == -2)
+        #expect(
+            NotchResponsiveLayout.compactHorizontalPadding
+                + NotchResponsiveLayout.compactArtworkSize / 2
+                == NotchResponsiveLayout.compactHorizontalPadding
+                + NotchResponsiveLayout.compactEqualizerSize.width / 2
+        )
+    }
+
     @Test("tracks only valid visible panel sizes")
     @MainActor
     func tracksOnlyValidVisiblePanelSizes() {
@@ -163,4 +244,18 @@ struct NotchConfigurationTests {
             )
         )
     }
+}
+
+private actor NotchRenderingSpotifyProvider: SpotifyPlaybackProviding {
+    let track: SpotifyTrack
+
+    init(track: SpotifyTrack) {
+        self.track = track
+    }
+
+    func fetchCurrentTrack() -> SpotifyTrack { track }
+    func playPause() {}
+    func nextTrack() {}
+    func previousTrack() {}
+    func seek(to _: TimeInterval) {}
 }

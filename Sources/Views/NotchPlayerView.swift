@@ -224,11 +224,14 @@ struct NotchPlayerView: View {
                     .scaleEffect(0.985 + revealProgress * 0.015, anchor: .top)
                     .allowsHitTesting(isExpanded && revealProgress > 0.8)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .frame(
+                width: proxy.size.width,
+                height: proxy.size.height,
+                alignment: .top
+            )
             .background {
                 notchBackground
             }
-            .clipShape(notchShape(revealProgress: revealProgress, height: proxy.size.height))
             .background {
                 if pulseMode == .glow {
                     notchShape(revealProgress: revealProgress, height: proxy.size.height)
@@ -244,6 +247,12 @@ struct NotchPlayerView: View {
                         .allowsHitTesting(false)
                 }
             }
+            .scaleEffect(pulseScale, anchor: .top)
+            .animation(
+                reduceMotion ? nil : .linear(duration: PlayerMotion.spectrumFrameDuration),
+                value: pulseScale
+            )
+            .clipShape(notchShape(revealProgress: revealProgress, height: proxy.size.height))
             .overlay {
                 ZStack {
                     notchShape(
@@ -288,11 +297,6 @@ struct NotchPlayerView: View {
             width: panelLayoutState.size.width,
             height: panelLayoutState.size.height,
             alignment: .top
-        )
-        .scaleEffect(pulseScale, anchor: .top)
-        .animation(
-            reduceMotion ? nil : .linear(duration: PlayerMotion.spectrumFrameDuration),
-            value: pulseScale
         )
         .contentShape(Rectangle())
         .environment(\.colorScheme, .dark)
@@ -400,7 +404,7 @@ struct NotchPlayerView: View {
             HStack(spacing: 10) {
                 TrackArtworkView(
                     url: track.artworkURL,
-                    size: 24,
+                    size: NotchResponsiveLayout.compactArtworkSize,
                     cornerRadius: 5,
                     showsShadow: false
                 )
@@ -428,9 +432,13 @@ struct NotchPlayerView: View {
                     isColored: coloredWaveform,
                     palette: artworkPalette
                 )
-                .frame(width: 30, height: 18)
+                .frame(
+                    width: NotchResponsiveLayout.compactEqualizerSize.width,
+                    height: NotchResponsiveLayout.compactEqualizerSize.height
+                )
+                .offset(y: NotchResponsiveLayout.compactEqualizerVerticalOffset)
             }
-            .padding(.horizontal, 8)
+            .padding(.horizontal, NotchResponsiveLayout.compactHorizontalPadding)
             .onTapGesture {
                 guard clickEnabled else { return }
                 isPinned.toggle()
