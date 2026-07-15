@@ -252,39 +252,6 @@ enum NotchResponsiveLayout {
         let progress = min(max(revealProgress, 0), 1)
         return compactOutlineOpacity * (1 - progress)
     }
-
-    static func outlineInset(revealProgress: Double) -> CGFloat {
-        let progress = min(max(revealProgress, 0), 1)
-        return 1 - CGFloat(progress)
-    }
-
-    static func bottomEdgeWidth(
-        containerWidth: CGFloat,
-        cornerRadius: CGFloat,
-        outlineInset: CGFloat
-    ) -> CGFloat {
-        max(0, containerWidth - 2 * (cornerRadius + outlineInset))
-    }
-
-    static func compactEdgeOpacity(revealProgress: Double) -> Double {
-        let progress = min(max(revealProgress, 0), 1)
-        return 1 - progress
-    }
-
-    static func bottomEdgeCenterY(
-        containerHeight: CGFloat,
-        lineWidth: CGFloat,
-        outlineInset: CGFloat
-    ) -> CGFloat {
-        guard containerHeight > 0 else { return 0 }
-
-        let safeLineWidth = min(max(lineWidth, 0), containerHeight)
-        let target = containerHeight - max(outlineInset, 0) - safeLineWidth / 2
-        return min(
-            max(target, safeLineWidth / 2),
-            containerHeight - safeLineWidth / 2
-        )
-    }
 }
 
 enum NotchMotion {

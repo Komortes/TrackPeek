@@ -1,10 +1,106 @@
 import AppKit
 import SwiftUI
 
+struct NotchSilhouetteShape: InsettableShape {
+    var bottomCornerRadius: CGFloat
+    private var insetAmount: CGFloat
+    private let includesTopEdge: Bool
+
+    init(
+        bottomCornerRadius: CGFloat,
+        insetAmount: CGFloat = 0,
+        includesTopEdge: Bool = true
+    ) {
+        self.bottomCornerRadius = bottomCornerRadius
+        self.insetAmount = insetAmount
+        self.includesTopEdge = includesTopEdge
+    }
+
+    var animatableData: AnimatablePair<CGFloat, CGFloat> {
+        get { AnimatablePair(bottomCornerRadius, insetAmount) }
+        set {
+            bottomCornerRadius = newValue.first
+            insetAmount = newValue.second
+        }
+    }
+
+    func path(in rect: CGRect) -> Path {
+        let frame = rect.insetBy(dx: insetAmount, dy: insetAmount)
+
+        guard frame.width > 0, frame.height > 0 else {
+            return Path()
+        }
+
+        let radius = min(
+            max(bottomCornerRadius - insetAmount, 0),
+            min(frame.width, frame.height) / 2
+        )
+
+        let topLeading = CGPoint(x: frame.minX, y: frame.minY)
+        let topTrailing = CGPoint(x: frame.maxX, y: frame.minY)
+        let bottomTrailing = CGPoint(x: frame.maxX, y: frame.maxY)
+        let bottomLeading = CGPoint(x: frame.minX, y: frame.maxY)
+
+        var path = Path()
+
+        if includesTopEdge {
+            path.move(to: topLeading)
+            path.addLine(to: topTrailing)
+
+            if radius > 0 {
+                path.addArc(
+                    tangent1End: bottomTrailing,
+                    tangent2End: bottomLeading,
+                    radius: radius
+                )
+                path.addArc(
+                    tangent1End: bottomLeading,
+                    tangent2End: topLeading,
+                    radius: radius
+                )
+            } else {
+                path.addLine(to: bottomTrailing)
+                path.addLine(to: bottomLeading)
+            }
+
+            path.closeSubpath()
+        } else {
+            path.move(to: topLeading)
+
+            if radius > 0 {
+                path.addArc(
+                    tangent1End: bottomLeading,
+                    tangent2End: bottomTrailing,
+                    radius: radius
+                )
+                path.addArc(
+                    tangent1End: bottomTrailing,
+                    tangent2End: topTrailing,
+                    radius: radius
+                )
+            } else {
+                path.addLine(to: bottomLeading)
+                path.addLine(to: bottomTrailing)
+            }
+
+            path.addLine(to: topTrailing)
+        }
+
+        return path
+    }
+
+    func inset(by amount: CGFloat) -> Self {
+        var copy = self
+        copy.insetAmount += amount
+        return copy
+    }
+}
+
 struct NotchPlayerView: View {
     let model: SpotifySpikeModel
     let audioMonitor: SpotifyAudioMonitor
     let pointerState: NotchPointerState
+    let panelLayoutState: NotchPanelLayoutState
     let onExpansionChange: (Bool) -> Void
 
     @AppStorage(NotchPreferences.hoverEnabledKey)
@@ -110,33 +206,7 @@ struct NotchPlayerView: View {
             let revealProgress = NotchResponsiveLayout.revealProgress(
                 forHeight: proxy.size.height
             )
-            let outlineInset = NotchResponsiveLayout.outlineInset(
-                revealProgress: revealProgress
-            )
-            let bottomCornerRadius = NotchResponsiveLayout.bottomCornerRadius(
-                preferredRadius: cornerRadius,
-                revealProgress: revealProgress,
-                height: proxy.size.height
-            )
-            let bottomEdgeWidth = NotchResponsiveLayout.bottomEdgeWidth(
-                containerWidth: proxy.size.width,
-                cornerRadius: bottomCornerRadius,
-                outlineInset: outlineInset
-            )
-            let compactEdgeOpacity = NotchResponsiveLayout.compactEdgeOpacity(
-                revealProgress: revealProgress
-            )
             let shimmerLineWidth = NotchPreferences.clampedOutlineWidth(outlineWidth)
-            let baseEdgeCenterY = NotchResponsiveLayout.bottomEdgeCenterY(
-                containerHeight: proxy.size.height,
-                lineWidth: 1,
-                outlineInset: outlineInset
-            )
-            let shimmerEdgeCenterY = NotchResponsiveLayout.bottomEdgeCenterY(
-                containerHeight: proxy.size.height,
-                lineWidth: shimmerLineWidth,
-                outlineInset: outlineInset
-            )
 
             ZStack(alignment: .top) {
                 compactContent
@@ -176,27 +246,16 @@ struct NotchPlayerView: View {
             }
             .overlay {
                 ZStack {
-                    notchShape(revealProgress: revealProgress, height: proxy.size.height)
-                        .inset(by: outlineInset)
-                        .strokeBorder(
-                            baseOutlineGradient,
+                    notchShape(
+                        revealProgress: revealProgress,
+                        height: proxy.size.height,
+                        includesTopEdge: false
+                    )
+                        .inset(by: 0.5)
+                        .stroke(
+                            Color.white,
                             lineWidth: 1
                         )
-                        .opacity(
-                            NotchResponsiveLayout.baseOutlineOpacity(
-                                revealProgress: revealProgress
-                            )
-                        )
-                        .mask(lowerEdgeMask)
-                        .allowsHitTesting(false)
-
-                    // `UnevenRoundedRectangle` can omit its horizontal bottom
-                    // stroke when hosted in the exact 36 pt borderless panel.
-                    // Draw that tangent explicitly one point inside the window.
-                    Capsule(style: .continuous)
-                        .fill(baseOutlineGradient)
-                        .frame(width: bottomEdgeWidth, height: 1)
-                        .position(x: proxy.size.width / 2, y: baseEdgeCenterY)
                         .opacity(
                             NotchResponsiveLayout.baseOutlineOpacity(
                                 revealProgress: revealProgress
@@ -205,35 +264,31 @@ struct NotchPlayerView: View {
                         .allowsHitTesting(false)
 
                     if outlineShimmer {
-                        // `strokeBorder` stays inside the panel while the mask
-                        // removes the bezel-facing top edge. Keeping this effect
-                        // separate from the static compact outline means disabling
-                        // shimmer no longer removes the visible lower silhouette.
-                        notchShape(revealProgress: revealProgress, height: proxy.size.height)
-                            .inset(by: outlineInset)
-                            .strokeBorder(
+                        // One full-size silhouette keeps the animated gradient in
+                        // the same coordinate space across both corners and bottom.
+                        notchShape(
+                            revealProgress: revealProgress,
+                            height: proxy.size.height,
+                            includesTopEdge: false
+                        )
+                            .inset(by: shimmerLineWidth / 2)
+                            .stroke(
                                 shimmerGradient,
                                 lineWidth: shimmerLineWidth
                             )
-                            .mask(lowerEdgeMask)
                             .blur(radius: 0.6)
-                            .allowsHitTesting(false)
-
-                        Capsule(style: .continuous)
-                            .fill(shimmerGradient)
-                            .frame(
-                                width: bottomEdgeWidth,
-                                height: shimmerLineWidth
-                            )
-                            .position(x: proxy.size.width / 2, y: shimmerEdgeCenterY)
-                            .opacity(compactEdgeOpacity)
-                            .blur(radius: 0.35)
                             .allowsHitTesting(false)
                     }
                 }
+                .frame(width: proxy.size.width, height: proxy.size.height)
+                .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(
+            width: panelLayoutState.size.width,
+            height: panelLayoutState.size.height,
+            alignment: .top
+        )
         .scaleEffect(pulseScale, anchor: .top)
         .animation(
             reduceMotion ? nil : .linear(duration: PlayerMotion.spectrumFrameDuration),
@@ -298,41 +353,19 @@ struct NotchPlayerView: View {
         )
     }
 
-    private var baseOutlineGradient: LinearGradient {
-        LinearGradient(
-            colors: [
-                Color.white.opacity(0.35),
-                artworkPalette.secondary.swiftUIColor,
-                artworkPalette.primary.swiftUIColor,
-            ],
-            startPoint: .top,
-            endPoint: .bottomTrailing
-        )
-    }
-
-    private var lowerEdgeMask: LinearGradient {
-        LinearGradient(
-            stops: [
-                .init(color: .clear, location: 0),
-                .init(color: .black, location: 0.14),
-            ],
-            startPoint: .top,
-            endPoint: .bottom
-        )
-    }
-
-    private func notchShape(revealProgress: Double, height: CGFloat) -> UnevenRoundedRectangle {
+    private func notchShape(
+        revealProgress: Double,
+        height: CGFloat,
+        includesTopEdge: Bool = true
+    ) -> NotchSilhouetteShape {
         let radius = NotchResponsiveLayout.bottomCornerRadius(
             preferredRadius: cornerRadius,
             revealProgress: revealProgress,
             height: height
         )
-        return UnevenRoundedRectangle(
-            topLeadingRadius: 0,
-            bottomLeadingRadius: radius,
-            bottomTrailingRadius: radius,
-            topTrailingRadius: 0,
-            style: .continuous
+        return NotchSilhouetteShape(
+            bottomCornerRadius: radius,
+            includesTopEdge: includesTopEdge
         )
     }
 

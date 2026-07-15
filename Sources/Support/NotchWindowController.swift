@@ -10,6 +10,30 @@ final class NotchPointerState {
 }
 
 @MainActor
+@Observable
+final class NotchPanelLayoutState {
+    private(set) var size: CGSize
+
+    init(size: CGSize) {
+        self.size = size
+    }
+
+    func updateVisibleSize(_ newSize: CGSize) {
+        guard
+            newSize.width.isFinite,
+            newSize.height.isFinite,
+            newSize.width > 0,
+            newSize.height > 0,
+            newSize != size
+        else {
+            return
+        }
+
+        size = newSize
+    }
+}
+
+@MainActor
 final class NotchWindowController: NSObject {
     private let model = SpotifySpikeModel()
     private let audioMonitor = SpotifyAudioMonitor()
@@ -153,6 +177,7 @@ final class NotchWindowController: NSObject {
 private final class NotchPanelHost {
     private let panel: NotchPanel
     private let pointerState = NotchPointerState()
+    private let layoutState: NotchPanelLayoutState
     private let screen: NSScreen
     private var isExpanded = false
 
@@ -162,6 +187,15 @@ private final class NotchPanelHost {
         audioMonitor: SpotifyAudioMonitor
     ) {
         self.screen = screen
+        let defaults = UserDefaults.standard
+        layoutState = NotchPanelLayoutState(
+            size: NotchPreferences.compactSize(
+                width: defaults.double(forKey: NotchPreferences.widthKey),
+                heightAdjustment: defaults.double(
+                    forKey: NotchPreferences.heightAdjustmentKey
+                )
+            )
+        )
         panel = NotchPanel(
             contentRect: .zero,
             styleMask: [.borderless, .nonactivatingPanel],
@@ -177,11 +211,13 @@ private final class NotchPanelHost {
                 model: model,
                 audioMonitor: audioMonitor,
                 pointerState: pointerState,
+                panelLayoutState: layoutState,
                 onExpansionChange: { [weak self] expanded in
                     self?.setExpanded(expanded)
                 }
             ),
-            pointerState: pointerState
+            pointerState: pointerState,
+            layoutState: layoutState
         )
     }
 
@@ -255,21 +291,33 @@ private final class NotchPanelHost {
 @MainActor
 private final class NotchTrackingHostingView<Content: View>: NSHostingView<Content> {
     private let pointerState: NotchPointerState
+    private let layoutState: NotchPanelLayoutState
     private var notchTrackingArea: NSTrackingArea?
 
-    init(rootView: Content, pointerState: NotchPointerState) {
+    init(
+        rootView: Content,
+        pointerState: NotchPointerState,
+        layoutState: NotchPanelLayoutState
+    ) {
         self.pointerState = pointerState
+        self.layoutState = layoutState
         super.init(rootView: rootView)
+        sizingOptions = []
     }
 
     @available(*, unavailable)
     required init(rootView: Content) {
-        fatalError("Use init(rootView:pointerState:)")
+        fatalError("Use init(rootView:pointerState:layoutState:)")
     }
 
     @available(*, unavailable)
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    override func layout() {
+        layoutState.updateVisibleSize(bounds.size)
+        super.layout()
     }
 
     override func updateTrackingAreas() {

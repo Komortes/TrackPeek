@@ -1,4 +1,5 @@
 import CoreGraphics
+import SwiftUI
 import Testing
 @testable import TrackPeek
 
@@ -64,24 +65,56 @@ struct NotchConfigurationTests {
         #expect(radius == 18)
         #expect(NotchResponsiveLayout.baseOutlineOpacity(revealProgress: 0) > 0)
         #expect(NotchResponsiveLayout.baseOutlineOpacity(revealProgress: 1) == 0)
-        #expect(NotchResponsiveLayout.outlineInset(revealProgress: 0) == 1)
-        #expect(NotchResponsiveLayout.outlineInset(revealProgress: 1) == 0)
-        #expect(
-            NotchResponsiveLayout.bottomEdgeWidth(
-                containerWidth: 320,
-                cornerRadius: 13,
-                outlineInset: 1
-            ) == 292
+    }
+
+    @Test("draws the compact notch as one closed rounded silhouette")
+    func drawsCompactNotchAsOneClosedSilhouette() {
+        let bounds = CGRect(x: 0, y: 0, width: 320, height: 36)
+        let lineWidth: CGFloat = 1.5
+        let shape = NotchSilhouetteShape(bottomCornerRadius: 13)
+        let lowerOutlineShape = NotchSilhouetteShape(
+            bottomCornerRadius: 13,
+            includesTopEdge: false
         )
-        #expect(NotchResponsiveLayout.compactEdgeOpacity(revealProgress: 0) == 1)
-        #expect(NotchResponsiveLayout.compactEdgeOpacity(revealProgress: 1) == 0)
-        #expect(
-            NotchResponsiveLayout.bottomEdgeCenterY(
-                containerHeight: 36,
-                lineWidth: 4.5,
-                outlineInset: 1
-            ) == 32.75
+        let silhouette = shape.path(in: bounds)
+        let strokeCenterline = lowerOutlineShape
+            .inset(by: lineWidth / 2)
+            .path(in: bounds)
+
+        let outline = strokeCenterline.cgPath.copy(
+            strokingWithWidth: lineWidth,
+            lineCap: .butt,
+            lineJoin: .round,
+            miterLimit: 10,
+            transform: .identity
         )
+
+        #expect(silhouette.contains(CGPoint(x: bounds.midX, y: bounds.maxY - 0.5)))
+        #expect(!silhouette.contains(CGPoint(x: 0.5, y: bounds.maxY - 0.5)))
+        #expect(
+            outline.contains(
+                CGPoint(x: bounds.midX, y: bounds.maxY - lineWidth / 2)
+            )
+        )
+        #expect(
+            !outline.contains(
+                CGPoint(x: bounds.midX, y: bounds.minY + lineWidth / 2)
+            )
+        )
+    }
+
+    @Test("tracks only valid visible panel sizes")
+    @MainActor
+    func tracksOnlyValidVisiblePanelSizes() {
+        let layoutState = NotchPanelLayoutState(
+            size: CGSize(width: 320, height: 36)
+        )
+
+        layoutState.updateVisibleSize(CGSize(width: 416, height: 176))
+        #expect(layoutState.size == CGSize(width: 416, height: 176))
+
+        layoutState.updateVisibleSize(.zero)
+        #expect(layoutState.size == CGSize(width: 416, height: 176))
     }
 
     @Test("uses one measured panel motion contract")
