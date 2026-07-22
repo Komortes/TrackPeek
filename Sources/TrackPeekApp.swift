@@ -15,6 +15,7 @@ final class TrackPeekAppDelegate: NSObject, NSApplicationDelegate {
         controller.start()
 
         menuBarControlsController.start()
+        _ = SparkleUpdaterController.shared
     }
 
     func applicationWillTerminate(_ notification: Notification) {

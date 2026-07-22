@@ -78,6 +78,51 @@ struct PlayerLayoutTests {
         }
     }
 
+    @Test("focuses settings after requesting them on the next run loop")
+    @MainActor
+    func focusesSettingsAfterPresentingThem() async {
+        var settingsWasRequested = false
+        var focusFollowedSettingsRequest = false
+
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            SettingsWindowPresentation.present(
+                openSettings: {
+                    settingsWasRequested = true
+                },
+                focusSettingsWindow: {
+                    focusFollowedSettingsRequest = settingsWasRequested
+                    continuation.resume()
+                }
+            )
+        }
+
+        #expect(settingsWasRequested)
+        #expect(focusFollowedSettingsRequest)
+    }
+
+    @Test("recognizes only the native titled settings window")
+    @MainActor
+    func recognizesNativeSettingsWindow() {
+        let settingsWindow = NSWindow(
+            contentRect: .zero,
+            styleMask: [.titled, .closable],
+            backing: .buffered,
+            defer: false
+        )
+        let utilityPanel = NSPanel(
+            contentRect: .zero,
+            styleMask: [.borderless],
+            backing: .buffered,
+            defer: false
+        )
+
+        #expect(SettingsWindowPresentation.isSettingsWindow(settingsWindow))
+        #expect(!SettingsWindowPresentation.isSettingsWindow(utilityPanel))
+
+        settingsWindow.close()
+        utilityPanel.close()
+    }
+
     @Test("player state changes use short coordinated motion")
     func playerStateMotionStaysCoordinated() {
         #expect(PlayerMotion.playbackDuration == 0.24)

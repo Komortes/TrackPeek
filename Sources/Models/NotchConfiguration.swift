@@ -224,7 +224,6 @@ enum NotchPreferences {
 
 enum NotchResponsiveLayout {
     private static let revealStartHeight = 96.0
-    private static let revealEndHeight = 160.0
     private static let compactOutlineOpacity = 0.24
 
     static let compactArtworkSize: CGFloat = 24
@@ -238,8 +237,9 @@ enum NotchResponsiveLayout {
         return min(78, max(32, min(horizontalLimit, verticalLimit)))
     }
 
-    static func revealProgress(forHeight height: CGFloat) -> Double {
-        let progress = (height - revealStartHeight) / (revealEndHeight - revealStartHeight)
+    static func revealProgress(forHeight height: CGFloat, expandedHeight: CGFloat = 176) -> Double {
+        guard expandedHeight > revealStartHeight else { return 1 }
+        let progress = (height - revealStartHeight) / (expandedHeight - revealStartHeight)
         return min(max(progress, 0), 1)
     }
 
@@ -260,7 +260,7 @@ enum NotchResponsiveLayout {
 }
 
 enum NotchMotion {
-    static let resizeDuration = 0.36
+    static let resizeDuration = 0.42
     static let hoverExitGrace = 0.14
 }
 

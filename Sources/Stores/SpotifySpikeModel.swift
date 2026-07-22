@@ -11,7 +11,7 @@ final class SpotifySpikeModel {
     private(set) var snapshotDate = Date()
     private(set) var availability: PlaybackAvailability = .loading
 
-    init(provider: any SpotifyPlaybackProviding = SpotifyAppleScriptClient()) {
+    init(provider: any SpotifyPlaybackProviding = PlaybackSourceRouter()) {
         self.provider = provider
     }
 

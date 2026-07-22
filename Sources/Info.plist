@@ -15,14 +15,22 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0</string>
+	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
-	<string>1</string>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSUIElement</key>
 	<true/>
 	<key>NSAppleEventsUsageDescription</key>
-	<string>TrackPeek использует Automation для чтения текущего трека и управления Spotify.</string>
+	<string>TrackPeek использует Automation для чтения текущего трека и управления Spotify или Music.</string>
 	<key>NSAudioCaptureUsageDescription</key>
 	<string>TrackPeek анализирует системное аудио Spotify, чтобы эквалайзер двигался в ритм музыки.</string>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUFeedURL</key>
+	<string>https://github.com/Komortes/TrackPeek/releases/latest/download/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>sWZKEDp9cNT0tBU07drKze1pKrne087vMriQmheJnUs=</string>
+	<key>SUScheduledCheckInterval</key>
+	<integer>86400</integer>
 </dict>
 </plist>

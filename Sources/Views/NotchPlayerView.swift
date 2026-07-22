@@ -131,6 +131,10 @@ struct NotchPlayerView: View {
     private var colorSourceRawValue = NotchColorSource.fallback.rawValue
     @AppStorage(NotchPreferences.cornerRadiusKey)
     private var cornerRadius = NotchPreferences.cornerRadiusFallback
+    @AppStorage(NotchPreferences.widthKey)
+    private var notchWidth = NotchPreferences.widthFallback
+    @AppStorage(NotchPreferences.heightAdjustmentKey)
+    private var heightAdjustment = NotchPreferences.heightAdjustmentFallback
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -203,8 +207,13 @@ struct NotchPlayerView: View {
 
     var body: some View {
         GeometryReader { proxy in
+            let expandedHeight = NotchPreferences.expandedSize(
+                width: notchWidth,
+                heightAdjustment: heightAdjustment
+            ).height
             let revealProgress = NotchResponsiveLayout.revealProgress(
-                forHeight: proxy.size.height
+                forHeight: proxy.size.height,
+                expandedHeight: expandedHeight
             )
             let shimmerLineWidth = NotchPreferences.clampedOutlineWidth(outlineWidth)
 
@@ -465,6 +474,11 @@ struct NotchPlayerView: View {
         }
     }
 
+    private struct ExpandedContentState: Equatable {
+        let availability: PlaybackAvailability
+        let hasTrack: Bool
+    }
+
     @ViewBuilder
     private func expandedContent(in containerSize: CGSize) -> some View {
         Group {
@@ -474,7 +488,10 @@ struct NotchPlayerView: View {
             reduceMotion
                 ? nil
                 : .smooth(duration: PlayerMotion.playbackDuration, extraBounce: 0),
-            value: model.availability
+            value: ExpandedContentState(
+                availability: model.availability,
+                hasTrack: model.track != nil
+            )
         )
     }
 
@@ -492,6 +509,9 @@ struct NotchPlayerView: View {
                         cornerRadius: min(15, artworkSize * 0.19),
                         showsShadow: true
                     )
+                    .contentShape(Rectangle())
+                    .onTapGesture { PlayerAppLauncher.openActiveSource() }
+                    .help("Открыть плеер")
 
                     HStack(spacing: 5) {
                         Circle()

@@ -45,11 +45,15 @@ struct SettingsView: View {
     private var artworkSizeValue = ArtworkSizePreference.fallback
     @AppStorage(DisplayMode.storageKey)
     private var selectedModeRawValue = DisplayMode.fallback.rawValue
+    @AppStorage(MediaSourcePreference.storageKey)
+    private var mediaSourceRawValue = MediaSourcePreference.fallback.rawValue
 
     @State private var showsResetConfirmation = false
+    @State private var launchAtLoginEnabled = LaunchAtLogin.isEnabled
 
     private static let resettableKeys: [String] = [
         DisplayMode.storageKey,
+        MediaSourcePreference.storageKey,
         "showAlbumName",
         "showPlaybackStatus",
         "showArtworkShadow",
@@ -94,6 +98,13 @@ struct SettingsView: View {
         DisplayMode(rawValue: selectedModeRawValue) ?? .fallback
     }
 
+    private var mediaSource: Binding<MediaSourcePreference> {
+        Binding(
+            get: { MediaSourcePreference(rawValue: mediaSourceRawValue) ?? .fallback },
+            set: { mediaSourceRawValue = $0.rawValue }
+        )
+    }
+
     private var backgroundStyle: Binding<PopoverBackgroundStyle> {
         Binding(
             get: {
@@ -117,6 +128,7 @@ struct SettingsView: View {
                 subtitle: "Выберите поверхность TrackPeek и доступный режим отображения."
             ) {
                 displayModeSection
+                systemSection
                 aboutSection
             }
             .tabItem {
@@ -255,6 +267,44 @@ struct SettingsView: View {
         }
     }
 
+    private var systemSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            SettingsSectionHeader(
+                title: "Система",
+                subtitle: "Поведение TrackPeek относительно macOS и источник трека."
+            )
+
+            SettingsGroup {
+                SettingsRow(
+                    title: "Запускать при входе в систему",
+                    subtitle: "TrackPeek стартует автоматически после входа в macOS."
+                ) {
+                    Toggle("Запускать при входе в систему", isOn: $launchAtLoginEnabled)
+                        .labelsHidden()
+                        .onChange(of: launchAtLoginEnabled) { _, enabled in
+                            LaunchAtLogin.setEnabled(enabled)
+                        }
+                }
+
+                SettingsRowDivider()
+
+                SettingsRow(
+                    title: "Источник трека",
+                    subtitle: MediaSourcePreference(rawValue: mediaSourceRawValue)?.summary
+                        ?? MediaSourcePreference.fallback.summary
+                ) {
+                    Picker("Источник трека", selection: mediaSource) {
+                        ForEach(MediaSourcePreference.allCases) { source in
+                            Text(source.title).tag(source)
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(width: 170)
+                }
+            }
+        }
+    }
+
     private var aboutSection: some View {
         VStack(alignment: .leading, spacing: 14) {
             SettingsSectionHeader(
@@ -286,6 +336,10 @@ struct SettingsView: View {
                 }
 
                 Spacer()
+
+                Button("Проверить обновления") {
+                    SparkleUpdaterController.shared.checkForUpdates()
+                }
 
                 Button("Сбросить настройки") {
                     showsResetConfirmation = true

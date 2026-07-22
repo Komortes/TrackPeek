@@ -143,7 +143,7 @@ actor ArtworkPaletteLoader {
         guard
             let url,
             let scheme = url.scheme?.lowercased(),
-            scheme == "https" || scheme == "http"
+            scheme == "https" || scheme == "http" || scheme == "file"
         else {
             return .fallback
         }
@@ -154,16 +154,23 @@ actor ArtworkPaletteLoader {
         }
 
         do {
-            var request = URLRequest(url: url)
-            request.timeoutInterval = 12
-            request.cachePolicy = .returnCacheDataElseLoad
-            let (data, response) = try await URLSession.shared.data(for: request)
-            guard
-                let response = response as? HTTPURLResponse,
-                200 ... 299 ~= response.statusCode,
-                data.count <= 8_000_000
-            else {
-                return .fallback
+            let data: Data
+            if scheme == "file" {
+                data = try Data(contentsOf: url)
+                guard data.count <= 8_000_000 else { return .fallback }
+            } else {
+                var request = URLRequest(url: url)
+                request.timeoutInterval = 12
+                request.cachePolicy = .returnCacheDataElseLoad
+                let (responseData, response) = try await URLSession.shared.data(for: request)
+                guard
+                    let response = response as? HTTPURLResponse,
+                    200 ... 299 ~= response.statusCode,
+                    responseData.count <= 8_000_000
+                else {
+                    return .fallback
+                }
+                data = responseData
             }
 
             let palette = extractPalette(from: data)

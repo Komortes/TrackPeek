@@ -14,6 +14,9 @@ struct CompactHorizontalPlayerView: View {
                     cornerRadius: 13,
                     showsShadow: options.showsArtworkShadow
                 )
+                .contentShape(Rectangle())
+                .onTapGesture { PlayerAppLauncher.openActiveSource() }
+                .help("Открыть плеер")
 
                 if options.showsPlaybackStatus {
                     Circle()

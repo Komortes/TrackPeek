@@ -20,6 +20,9 @@ struct StandardPlayerView: View {
                     cornerRadius: 14,
                     showsShadow: options.showsArtworkShadow
                 )
+                .contentShape(Rectangle())
+                .onTapGesture { PlayerAppLauncher.openActiveSource() }
+                .help("Открыть плеер")
 
                 TrackInfoView(
                     track: track,

@@ -278,9 +278,9 @@ private final class NotchPanelHost {
         NSAnimationContext.runAnimationGroup { context in
             context.duration = NotchMotion.resizeDuration
             context.timingFunction = CAMediaTimingFunction(
-                controlPoints: 0.4,
+                controlPoints: 0.42,
                 0,
-                0.2,
+                0.58,
                 1
             )
             panel.animator().setFrame(frame, display: true)

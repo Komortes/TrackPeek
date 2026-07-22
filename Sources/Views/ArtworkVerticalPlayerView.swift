@@ -20,6 +20,9 @@ struct ArtworkVerticalPlayerView: View {
                 cornerRadius: 17,
                 showsShadow: options.showsArtworkShadow
             )
+            .contentShape(Rectangle())
+            .onTapGesture { PlayerAppLauncher.openActiveSource() }
+            .help("Открыть плеер")
 
             PlaybackControlsView(
                 isPlaying: track.isPlaying,

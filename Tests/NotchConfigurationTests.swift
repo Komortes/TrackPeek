@@ -55,6 +55,16 @@ struct NotchConfigurationTests {
         #expect(NotchResponsiveLayout.revealProgress(forHeight: 176) == 1)
     }
 
+    @Test("finishes revealing exactly at the configured expanded height")
+    func finishesRevealingAtConfiguredExpandedHeight() {
+        // A taller configured panel must not stay mid-reveal once its own
+        // resize finishes, and a shorter one must not have already finished
+        // revealing before its resize actually completes.
+        #expect(NotchResponsiveLayout.revealProgress(forHeight: 188, expandedHeight: 188) == 1)
+        #expect(NotchResponsiveLayout.revealProgress(forHeight: 172, expandedHeight: 172) == 1)
+        #expect(NotchResponsiveLayout.revealProgress(forHeight: 176, expandedHeight: 188) < 1)
+    }
+
     @Test("keeps compact notch bottom edge rounded and visibly outlined")
     func keepsCompactNotchChromeVisible() {
         let radius = NotchResponsiveLayout.bottomCornerRadius(
@@ -200,10 +210,10 @@ struct NotchConfigurationTests {
 
     @Test("uses one measured panel motion contract")
     func usesMeasuredPanelMotionContract() {
-        #expect(NotchMotion.resizeDuration == 0.36)
+        #expect(NotchMotion.resizeDuration == 0.42)
         #expect(NotchMotion.hoverExitGrace == 0.14)
 
-        #expect(NotchMotion.resizeDuration < 0.4)
+        #expect(NotchMotion.resizeDuration < 0.5)
     }
 
     @Test("song information visibility follows playback state")

@@ -7,6 +7,13 @@ options:
 settings:
   base:
     SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+
+packages:
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    from: 2.6.4
 
 targets:
   TrackPeek:
@@ -16,17 +23,26 @@ targets:
       - path: Sources
     dependencies:
       - sdk: CoreAudio.framework
+      - package: Sparkle
     info:
       path: Sources/Info.plist
       properties:
         LSUIElement: true
-        NSAppleEventsUsageDescription: "TrackPeek использует Automation для чтения текущего трека и управления Spotify."
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSAppleEventsUsageDescription: "TrackPeek использует Automation для чтения текущего трека и управления Spotify или Music."
         NSAudioCaptureUsageDescription: "TrackPeek анализирует системное аудио Spotify, чтобы эквалайзер двигался в ритм музыки."
+        SUFeedURL: https://github.com/Komortes/TrackPeek/releases/latest/download/appcast.xml
+        SUEnableAutomaticChecks: true
+        SUScheduledCheckInterval: 86400
+        SUPublicEDKey: "sWZKEDp9cNT0tBU07drKze1pKrne087vMriQmheJnUs="
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.trackpeek.TrackPeek
         SWIFT_OBJC_BRIDGING_HEADER: Sources/Support/TrackPeek-Bridging-Header.h
-        CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_STYLE: Manual
+        CODE_SIGN_IDENTITY: Apple Development
+        DEVELOPMENT_TEAM: 97JZ23LR73
         ENABLE_HARDENED_RUNTIME: YES
 
   TrackPeekTests:
@@ -40,6 +56,9 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.trackpeek.TrackPeekTests
         GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_STYLE: Manual
+        CODE_SIGN_IDENTITY: Apple Development
+        DEVELOPMENT_TEAM: 97JZ23LR73
 
 schemes:
   TrackPeek:

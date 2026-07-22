@@ -50,6 +50,10 @@ struct MenuBarLabelView: View {
                 Image(systemName: "music.note")
             }
         }
+        // The label is decorative only — without this, the equalizer/text
+        // content can swallow the click that's supposed to open the
+        // popover, since it looks/behaves like live interactive content.
+        .allowsHitTesting(false)
         .accessibilityLabel("TrackPeek")
     }
 }

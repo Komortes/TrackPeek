@@ -1,16 +1,56 @@
 import AppKit
 import SwiftUI
 
+@MainActor
+enum SettingsWindowPresentation {
+    static func present(
+        openSettings: () -> Void,
+        focusSettingsWindow: @escaping @MainActor () -> Void = focusLiveSettingsWindow
+    ) {
+        openSettings()
+        RunLoop.main.perform(inModes: [.default]) {
+            MainActor.assumeIsolated {
+                focusSettingsWindow()
+            }
+        }
+    }
+
+    static func isSettingsWindow(_ window: NSWindow) -> Bool {
+        !(window is NSPanel)
+            && window.level == .normal
+            && window.styleMask.contains(.titled)
+            && window.canBecomeKey
+    }
+
+    private static func focusLiveSettingsWindow() {
+        NSApplication.shared.activate()
+        let settingsWindow = NSApplication.shared.windows.first {
+            isSettingsWindow($0)
+        }
+        settingsWindow?.makeKeyAndOrderFront(nil)
+    }
+}
+
 /// The action list shared by the "…" menu button and every right-click context
 /// menu, so all surfaces (popover, notch) expose the same actions consistently.
 struct PlayerActionsMenuItems: View {
     let track: SpotifyTrack?
     let onRefresh: () -> Void
 
+    @Environment(\.openSettings) private var openSettings
+    @AppStorage(MediaSourcePreference.storageKey)
+    private var sourceRawValue = MediaSourcePreference.fallback.rawValue
+
+    private var sourceName: String {
+        (MediaSourcePreference(rawValue: sourceRawValue) ?? .fallback) == .appleMusic
+            ? "Music"
+            : "Spotify"
+    }
+
     var body: some View {
         Group {
-            Button("Открыть Spotify", systemImage: "arrow.up.right.square") {
-                openSpotify()
+            Button("Открыть \(sourceName)", systemImage: "arrow.up.right.square") {
+                PlayerAppLauncher.openActiveSource()
             }
 
             Divider()
@@ -30,8 +70,8 @@ struct PlayerActionsMenuItems: View {
 
             Divider()
 
-            SettingsLink {
-                Label("Настройки…", systemImage: "gearshape")
+            Button("Настройки…", systemImage: "gearshape") {
+                SettingsWindowPresentation.present(openSettings: openSettings.callAsFunction)
             }
 
             Button("Завершить TrackPeek", systemImage: "power") {
@@ -43,19 +83,6 @@ struct PlayerActionsMenuItems: View {
     private func copy(_ value: String) {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(value, forType: .string)
-    }
-
-    private func openSpotify() {
-        guard let url = NSWorkspace.shared.urlForApplication(
-            withBundleIdentifier: "com.spotify.client"
-        ) else {
-            return
-        }
-
-        NSWorkspace.shared.openApplication(
-            at: url,
-            configuration: NSWorkspace.OpenConfiguration()
-        )
     }
 }
 

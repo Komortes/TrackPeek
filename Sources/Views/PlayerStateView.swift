@@ -5,6 +5,15 @@ struct PlayerStateView: View {
     let availability: PlaybackAvailability
     let onRetry: () -> Void
 
+    @AppStorage(MediaSourcePreference.storageKey)
+    private var sourceRawValue = MediaSourcePreference.fallback.rawValue
+
+    private var sourceName: String {
+        (MediaSourcePreference(rawValue: sourceRawValue) ?? .fallback) == .appleMusic
+            ? "Music"
+            : "Spotify"
+    }
+
     var body: some View {
         VStack(spacing: 10) {
             stateIcon
@@ -40,8 +49,8 @@ struct PlayerStateView: View {
     private var action: some View {
         switch availability {
         case .spotifyNotRunning:
-            Button("Открыть Spotify") {
-                openSpotify()
+            Button("Открыть \(sourceName)") {
+                PlayerAppLauncher.openActiveSource()
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
@@ -61,7 +70,7 @@ struct PlayerStateView: View {
         case .nothingPlaying:
             "Ничего не воспроизводится"
         case .spotifyNotRunning:
-            "Spotify не запущен"
+            "\(sourceName) не запущен"
         case .unavailable:
             "Не удалось прочитать состояние"
         case .ready:
@@ -76,7 +85,7 @@ struct PlayerStateView: View {
         case .nothingPlaying:
             "Запустите воспроизведение в Spotify"
         case .spotifyNotRunning:
-            "Откройте приложение, чтобы продолжить"
+            "Откройте \(sourceName), чтобы продолжить"
         case .unavailable:
             "Попробуйте обновить информацию о треке"
         case .ready:
@@ -95,18 +104,5 @@ struct PlayerStateView: View {
         case .loading, .ready:
             "music.note"
         }
-    }
-
-    private func openSpotify() {
-        guard let url = NSWorkspace.shared.urlForApplication(
-            withBundleIdentifier: "com.spotify.client"
-        ) else {
-            return
-        }
-
-        NSWorkspace.shared.openApplication(
-            at: url,
-            configuration: NSWorkspace.OpenConfiguration()
-        )
     }
 }
