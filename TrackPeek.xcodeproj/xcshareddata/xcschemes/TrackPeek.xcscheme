@@ -39,6 +39,17 @@
          </BuildableReference>
       </MacroExpansion>
       <Testables>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "16F151A58E3F89843816A95A"
+               BuildableName = "TrackPeekTests.xctest"
+               BlueprintName = "TrackPeekTests"
+               ReferencedContainer = "container:TrackPeek.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
       <CommandLineArguments>
       </CommandLineArguments>
