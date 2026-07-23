@@ -210,7 +210,6 @@ enum NotchPulseMode: String, CaseIterable, Identifiable, Sendable {
 }
 
 enum NotchPreferences {
-    static let enabledKey = "notchEnabled"
     static let displayTargetKey = "notchDisplayTarget"
     static let widthKey = "notchWidth"
     static let heightAdjustmentKey = "notchHeightAdjustment"
@@ -238,9 +237,15 @@ enum NotchPreferences {
     static let widgetOutlineWidthKey = "widgetOutlineWidth"
     static let widgetPulseModeKey = "widgetPulseMode"
     static let widgetGlassBackgroundKey = "widgetGlassBackground"
+    static let widgetWidthKey = "widgetWidth"
+    static let widgetDisplayTargetKey = "widgetDisplayTarget"
+    static let widgetColoredProgressKey = "widgetColoredProgress"
+    static let widgetColoredWaveformKey = "widgetColoredWaveform"
+    static let widgetColorSourceKey = "widgetColorSource"
+    static let widgetEqualizerSensitivityKey = "widgetEqualizerSensitivity"
+    static let widgetLyricsEnabledKey = "widgetLyricsEnabled"
     static let lyricsEnabledKey = "notchLyricsEnabled"
 
-    static let enabledFallback = true
     static let widthFallback = 320.0
     static let widthRange = 240.0 ... 420.0
     static let widthStep = 5.0
@@ -275,9 +280,29 @@ enum NotchPreferences {
     static let widgetTopInset = 8.0
     static let widgetEdgeMargin = 12.0
 
+    /// Одноразовый перенос: раньше виджет использовал настройки чёлки —
+    /// существующие пользователи сохраняют текущий вид.
+    static func migrateWidgetDefaultsIfNeeded(in defaults: UserDefaults = .standard) {
+        guard defaults.object(forKey: widgetWidthKey) == nil else { return }
+
+        let pairs: [(source: String, destination: String)] = [
+            (widthKey, widgetWidthKey),
+            (displayTargetKey, widgetDisplayTargetKey),
+            (coloredProgressKey, widgetColoredProgressKey),
+            (coloredWaveformKey, widgetColoredWaveformKey),
+            (colorSourceKey, widgetColorSourceKey),
+            (equalizerSensitivityKey, widgetEqualizerSensitivityKey),
+            (lyricsEnabledKey, widgetLyricsEnabledKey),
+        ]
+        for pair in pairs {
+            if let value = defaults.object(forKey: pair.source) {
+                defaults.set(value, forKey: pair.destination)
+            }
+        }
+    }
+
     static func registerDefaults(in defaults: UserDefaults = .standard) {
         defaults.register(defaults: [
-            enabledKey: enabledFallback,
             displayTargetKey: NotchDisplayTarget.fallback.rawValue,
             widthKey: widthFallback,
             heightAdjustmentKey: heightAdjustmentFallback,
@@ -303,6 +328,13 @@ enum NotchPreferences {
             widgetOutlineWidthKey: outlineWidthFallback,
             widgetPulseModeKey: NotchPulseMode.fallback.rawValue,
             widgetGlassBackgroundKey: false,
+            widgetWidthKey: widthFallback,
+            widgetDisplayTargetKey: NotchDisplayTarget.mainDisplay.rawValue,
+            widgetColoredProgressKey: coloredProgressFallback,
+            widgetColoredWaveformKey: coloredWaveformFallback,
+            widgetColorSourceKey: NotchColorSource.fallback.rawValue,
+            widgetEqualizerSensitivityKey: equalizerSensitivityFallback,
+            widgetLyricsEnabledKey: lyricsEnabledFallback,
             lyricsEnabledKey: lyricsEnabledFallback,
         ])
     }
@@ -346,6 +378,14 @@ enum NotchPreferences {
         CGSize(
             width: max(clampedWidth(width) + 96, 352),
             height: 176 + clampedHeightAdjustment(heightAdjustment)
+        )
+    }
+
+    /// Размер лёгкого уведомления о новом треке.
+    static func notificationSize(width: Double, heightAdjustment: Double) -> CGSize {
+        CGSize(
+            width: min(clampedWidth(width) + 48, expandedSize(width: width, heightAdjustment: heightAdjustment).width),
+            height: 64 + clampedHeightAdjustment(heightAdjustment)
         )
     }
 
@@ -421,7 +461,33 @@ enum NotchMotion {
     static let hoverExitGrace = 0.14
 }
 
+/// Состояние панели: свернута, лёгкое уведомление о новом треке или полный плеер.
+enum NotchPanelState: Equatable, Sendable {
+    case collapsed
+    case notification
+    case expanded
+}
+
 enum NotchExpansionPolicy {
+    /// Приоритет: ручная фиксация > наведение > уведомление > свернуто.
+    /// Уведомление о новой песне больше не раскрывает полный плеер —
+    /// оно показывает лёгкий вариант без контролов.
+    static func state(
+        hoverReady: Bool,
+        hoverEnabled: Bool,
+        isPinned: Bool,
+        clickEnabled: Bool,
+        notificationVisible: Bool
+    ) -> NotchPanelState {
+        if (isPinned && clickEnabled) || (hoverReady && hoverEnabled) {
+            return .expanded
+        }
+        if notificationVisible {
+            return .notification
+        }
+        return .collapsed
+    }
+
     static func shouldExpand(
         hoverReady: Bool,
         hoverEnabled: Bool,
@@ -429,8 +495,12 @@ enum NotchExpansionPolicy {
         clickEnabled: Bool,
         notificationVisible: Bool
     ) -> Bool {
-        (hoverReady && hoverEnabled)
-            || (isPinned && clickEnabled)
-            || notificationVisible
+        state(
+            hoverReady: hoverReady,
+            hoverEnabled: hoverEnabled,
+            isPinned: isPinned,
+            clickEnabled: clickEnabled,
+            notificationVisible: notificationVisible
+        ) == .expanded
     }
 }

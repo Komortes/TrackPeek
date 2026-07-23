@@ -2,10 +2,8 @@ import Foundation
 import SwiftUI
 
 struct NotchSettingsView: View {
-    @AppStorage(DisplayMode.storageKey)
-    private var selectedModeRawValue = DisplayMode.fallback.rawValue
-    @AppStorage(NotchPreferences.enabledKey)
-    private var isEnabled = NotchPreferences.enabledFallback
+    @AppStorage(OverlayMode.storageKey)
+    private var selectedModeRawValue = OverlayMode.fallback.rawValue
     @AppStorage(NotchPreferences.displayTargetKey)
     private var displayTargetRawValue = NotchDisplayTarget.fallback.rawValue
     @AppStorage(NotchPreferences.widthKey)
@@ -43,8 +41,8 @@ struct NotchSettingsView: View {
     @AppStorage(NotchPreferences.cornerRadiusKey)
     private var cornerRadius = NotchPreferences.cornerRadiusFallback
 
-    private var selectedMode: DisplayMode {
-        DisplayMode(rawValue: selectedModeRawValue) ?? .fallback
+    private var selectedMode: OverlayMode {
+        OverlayMode(rawValue: selectedModeRawValue) ?? .fallback
     }
 
     private var displayTarget: Binding<NotchDisplayTarget> {
@@ -151,7 +149,7 @@ struct NotchSettingsView: View {
         switch selectedMode {
         case .notch: "Режим чёлки активен"
         case .floatingWidget: "Режим виджета активен"
-        case .menuBar: "Режим пока не выбран"
+        case .off: "Экранный плеер выключен"
         }
     }
 
@@ -178,7 +176,7 @@ struct NotchSettingsView: View {
 
             if !isPanelModeActive {
                 Button("Использовать чёлку") {
-                    selectedModeRawValue = DisplayMode.notch.rawValue
+                    selectedModeRawValue = OverlayMode.notch.rawValue
                 }
                 .buttonStyle(.borderedProminent)
             }
@@ -198,16 +196,6 @@ struct NotchSettingsView: View {
             symbolName: "gearshape"
         ) {
             SettingsGroup {
-                SettingsRow(
-                    title: "Показывать чёлку",
-                    subtitle: "Быстро скрывает панель, сохраняя остальные параметры."
-                ) {
-                    Toggle("Показывать чёлку", isOn: $isEnabled)
-                        .labelsHidden()
-                }
-
-                SettingsRowDivider()
-
                 SettingsRow(
                     title: "Показывать на",
                     subtitle: "Можно выбрать основной, встроенный или все экраны."

@@ -8,6 +8,8 @@ final class TrackPeekAppDelegate: NSObject, NSApplicationDelegate {
     let menuBarControlsController = MenuBarControlsController()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        OverlayMode.migrateIfNeeded()
+        NotchPreferences.migrateWidgetDefaultsIfNeeded()
         NotchPreferences.registerDefaults()
         MenuBarPreferences.registerDefaults()
 

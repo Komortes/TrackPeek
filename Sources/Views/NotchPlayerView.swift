@@ -146,7 +146,7 @@ struct NotchPlayerView: View {
     let lyricsStore: LyricsStore
     let pointerState: NotchPointerState
     let panelLayoutState: NotchPanelLayoutState
-    let onExpansionChange: (Bool) -> Void
+    let onStateChange: (NotchPanelState) -> Void
 
     @AppStorage(NotchPreferences.hoverEnabledKey)
     private var hoverEnabled = NotchPreferences.hoverEnabledFallback
@@ -182,8 +182,8 @@ struct NotchPlayerView: View {
     private var heightAdjustment = NotchPreferences.heightAdjustmentFallback
     @AppStorage(NotchPreferences.lyricsEnabledKey)
     private var lyricsEnabled = NotchPreferences.lyricsEnabledFallback
-    @AppStorage(DisplayMode.storageKey)
-    private var displayModeRawValue = DisplayMode.fallback.rawValue
+    @AppStorage(OverlayMode.storageKey)
+    private var overlayModeRawValue = OverlayMode.fallback.rawValue
     @AppStorage(NotchPreferences.widgetLayoutKey)
     private var widgetLayoutRawValue = NotchWidgetLayout.fallback.rawValue
     @AppStorage(NotchPreferences.widgetOutlineShimmerKey)
@@ -194,6 +194,18 @@ struct NotchPlayerView: View {
     private var widgetPulseModeRawValue = NotchPulseMode.fallback.rawValue
     @AppStorage(NotchPreferences.widgetGlassBackgroundKey)
     private var widgetGlassBackground = false
+    @AppStorage(NotchPreferences.widgetWidthKey)
+    private var widgetWidth = NotchPreferences.widthFallback
+    @AppStorage(NotchPreferences.widgetColoredProgressKey)
+    private var widgetColoredProgress = NotchPreferences.coloredProgressFallback
+    @AppStorage(NotchPreferences.widgetColoredWaveformKey)
+    private var widgetColoredWaveform = NotchPreferences.coloredWaveformFallback
+    @AppStorage(NotchPreferences.widgetColorSourceKey)
+    private var widgetColorSourceRawValue = NotchColorSource.fallback.rawValue
+    @AppStorage(NotchPreferences.widgetEqualizerSensitivityKey)
+    private var widgetEqualizerSensitivity = NotchPreferences.equalizerSensitivityFallback
+    @AppStorage(NotchPreferences.widgetLyricsEnabledKey)
+    private var widgetLyricsEnabled = NotchPreferences.lyricsEnabledFallback
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -210,7 +222,38 @@ struct NotchPlayerView: View {
     }
 
     private var colorSource: NotchColorSource {
-        NotchColorSource(rawValue: colorSourceRawValue) ?? .fallback
+        NotchColorSource(
+            rawValue: isPillMode ? widgetColorSourceRawValue : colorSourceRawValue
+        ) ?? .fallback
+    }
+
+    // Каждая поверхность владеет своими значениями; здесь выбирается набор
+    // активной поверхности.
+    private var effectiveWidth: Double {
+        isPillMode ? widgetWidth : notchWidth
+    }
+
+    private var effectiveColoredProgress: Bool {
+        isPillMode ? widgetColoredProgress : coloredProgress
+    }
+
+    private var effectiveColoredWaveform: Bool {
+        isPillMode ? widgetColoredWaveform : coloredWaveform
+    }
+
+    private var effectiveLyricsEnabled: Bool {
+        get { isPillMode ? widgetLyricsEnabled : lyricsEnabled }
+        nonmutating set {
+            if isPillMode {
+                widgetLyricsEnabled = newValue
+            } else {
+                lyricsEnabled = newValue
+            }
+        }
+    }
+
+    private var sensitivityOverride: Double? {
+        isPillMode ? widgetEqualizerSensitivity : nil
     }
 
     // Оформление виджета настраивается отдельно от чёлки.
@@ -230,13 +273,13 @@ struct NotchPlayerView: View {
 
     /// Пилюльный режим floating-виджета: та же панель, но со скруглённым верхом.
     private var isPillMode: Bool {
-        DisplayMode(rawValue: displayModeRawValue) == .floatingWidget
+        OverlayMode(rawValue: overlayModeRawValue) == .floatingWidget
     }
 
     /// Активная карточная раскладка виджета; `nil` — обычная пилюля/чёлка.
     /// Нужна ли загрузка текста: включён тумблер или выбрана лирическая раскладка.
     private var lyricsNeeded: Bool {
-        lyricsEnabled || cardLayout == .lyricsCard || cardLayout == .karaokeCard
+        effectiveLyricsEnabled || cardLayout == .lyricsCard || cardLayout == .karaokeCard
     }
 
     private var cardLayout: NotchWidgetLayout? {
@@ -283,17 +326,21 @@ struct NotchPlayerView: View {
         return 0.18 + audioLevel * 0.5
     }
 
-    private var isExpanded: Bool {
+    private var panelState: NotchPanelState {
         if cardLayout != nil {
-            return true
+            return .expanded
         }
-        return NotchExpansionPolicy.shouldExpand(
+        return NotchExpansionPolicy.state(
             hoverReady: hoverReady,
             hoverEnabled: hoverEnabled,
             isPinned: isPinned,
             clickEnabled: clickEnabled,
             notificationVisible: notificationVisible
         )
+    }
+
+    private var isExpanded: Bool {
+        panelState == .expanded
     }
 
     private var trackIdentity: String? {
@@ -303,8 +350,8 @@ struct NotchPlayerView: View {
     var body: some View {
         GeometryReader { proxy in
             let expandedHeight = NotchPreferences.expandedSize(
-                width: notchWidth,
-                heightAdjustment: heightAdjustment
+                width: effectiveWidth,
+                heightAdjustment: isPillMode ? 0 : heightAdjustment
             ).height
             let revealProgress = NotchResponsiveLayout.revealProgress(
                 forHeight: proxy.size.height,
@@ -323,9 +370,20 @@ struct NotchPlayerView: View {
                                 minHeight: min(proxy.size.height, 44),
                                 maxHeight: min(proxy.size.height, 44)
                             )
-                            .opacity(max(0, 1 - revealProgress * 1.35))
+                            .opacity(
+                                panelState == .notification
+                                    ? 0
+                                    : max(0, 1 - revealProgress * 1.35)
+                            )
                             .scaleEffect(1 - revealProgress * 0.015, anchor: .top)
-                            .allowsHitTesting(!isExpanded)
+                            .allowsHitTesting(panelState == .collapsed)
+
+                        if panelState == .notification {
+                            notificationContent
+                                .transition(
+                                    .opacity.combined(with: .scale(scale: 0.97, anchor: .top))
+                                )
+                        }
 
                         expandedContent(in: proxy.size)
                             .opacity(revealProgress)
@@ -416,10 +474,10 @@ struct NotchPlayerView: View {
         .onChange(of: pointerState.isInside) { _, isInside in
             handleHover(isInside)
         }
-        .onChange(of: isExpanded) { wasExpanded, expanded in
-            onExpansionChange(expanded)
+        .onChange(of: panelState) { previousState, state in
+            onStateChange(state)
 
-            if expanded && !wasExpanded && hapticFeedback {
+            if state == .expanded && previousState != .expanded && hapticFeedback {
                 NSHapticFeedbackManager.defaultPerformer.perform(
                     .alignment,
                     performanceTime: .now
@@ -443,7 +501,7 @@ struct NotchPlayerView: View {
             }
         }
         .onAppear {
-            onExpansionChange(false)
+            onStateChange(panelState)
             handleHover(pointerState.isInside)
 
             if !reduceMotion {
@@ -506,7 +564,7 @@ struct NotchPlayerView: View {
                 .overlay(Color.black.opacity(0.45))
             }
 
-            if coloredWaveform {
+            if effectiveColoredWaveform {
                 LinearGradient(
                     colors: [
                         artworkPalette.primary.swiftUIColor.opacity(isExpanded ? 0.20 : 0.12),
@@ -525,6 +583,47 @@ struct NotchPlayerView: View {
                 : .smooth(duration: PlayerMotion.equalizerDuration, extraBounce: 0),
             value: artworkPalette
         )
+    }
+
+    /// Лёгкое уведомление о новом треке: обложка и название без контролов.
+    @ViewBuilder
+    private var notificationContent: some View {
+        if let track = model.track {
+            HStack(spacing: 12) {
+                TrackArtworkView(
+                    url: track.artworkURL,
+                    size: 40,
+                    cornerRadius: 8,
+                    showsShadow: false
+                )
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(track.title)
+                        .font(.system(size: 12.5, weight: .semibold, design: .rounded))
+                        .lineLimit(1)
+
+                    Text(track.artist)
+                        .font(.system(size: 10.5, weight: .medium, design: .rounded))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                ArtworkEqualizerView(
+                    audioMonitor: audioMonitor,
+                    isPlaying: track.isPlaying,
+                    isVisible: panelState == .notification,
+                    isColored: effectiveColoredWaveform,
+                    palette: artworkPalette,
+                    sensitivityOverride: sensitivityOverride
+                )
+                .frame(width: 28, height: 18)
+            }
+            .padding(.horizontal, 16)
+            .frame(maxHeight: .infinity)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Новый трек: \(track.title), \(track.artist)")
+        }
     }
 
     @ViewBuilder
@@ -558,7 +657,7 @@ struct NotchPlayerView: View {
                     audioMonitor: audioMonitor,
                     isPlaying: track.isPlaying,
                     isVisible: !isExpanded,
-                    isColored: coloredWaveform,
+                    isColored: effectiveColoredWaveform,
                     palette: artworkPalette
                 )
                 .frame(
@@ -675,16 +774,16 @@ struct NotchPlayerView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
 
                         Button {
-                            lyricsEnabled.toggle()
+                            effectiveLyricsEnabled.toggle()
                         } label: {
-                            Image(systemName: lyricsEnabled ? "quote.bubble.fill" : "quote.bubble")
+                            Image(systemName: effectiveLyricsEnabled ? "quote.bubble.fill" : "quote.bubble")
                                 .font(.system(size: 9, weight: .bold))
                                 .frame(width: 22, height: 22)
                                 .background(.white.opacity(0.06), in: Circle())
                         }
                         .buttonStyle(.plain)
-                        .foregroundStyle(lyricsEnabled ? AnyShapeStyle(artworkPalette.primary.onDarkSurface.swiftUIColor) : AnyShapeStyle(.secondary))
-                        .help(lyricsEnabled ? "Скрыть текст песни" : "Показать текст песни")
+                        .foregroundStyle(effectiveLyricsEnabled ? AnyShapeStyle(artworkPalette.primary.onDarkSurface.swiftUIColor) : AnyShapeStyle(.secondary))
+                        .help(effectiveLyricsEnabled ? "Скрыть текст песни" : "Показать текст песни")
 
                         Button {
                             isPinned = false
@@ -703,14 +802,14 @@ struct NotchPlayerView: View {
 
                     Spacer(minLength: 6)
 
-                    if lyricsEnabled {
+                    if effectiveLyricsEnabled {
                         NotchLyricsView(
                             state: lyricsStore.state(for: track),
                             position: track.position,
                             duration: track.duration,
                             isPlaying: track.isPlaying,
                             snapshotDate: model.snapshotDate,
-                            tint: coloredProgress ? artworkPalette.primary.onDarkSurface.swiftUIColor : .white
+                            tint: effectiveColoredProgress ? artworkPalette.primary.onDarkSurface.swiftUIColor : .white
                         )
                     } else {
                         PlaybackProgressView(
@@ -719,7 +818,7 @@ struct NotchPlayerView: View {
                             isPlaying: track.isPlaying,
                             snapshotDate: model.snapshotDate,
                             onSeek: { position in Task { await model.seek(to: position) } },
-                            tint: coloredProgress ? artworkPalette.primary.onDarkSurface.swiftUIColor : .white
+                            tint: effectiveColoredProgress ? artworkPalette.primary.onDarkSurface.swiftUIColor : .white
                         )
                     }
 
@@ -741,8 +840,9 @@ struct NotchPlayerView: View {
                             audioMonitor: audioMonitor,
                             isPlaying: track.isPlaying,
                             isVisible: isExpanded,
-                            isColored: coloredWaveform,
-                            palette: artworkPalette
+                            isColored: effectiveColoredWaveform,
+                            palette: artworkPalette,
+                            sensitivityOverride: sensitivityOverride
                         )
                         .frame(width: isNarrow ? 36 : 48, height: 24)
                     }
@@ -771,7 +871,8 @@ struct NotchPlayerView: View {
             lyricsStore: lyricsStore,
             audioMonitor: audioMonitor,
             palette: artworkPalette,
-            coloredProgress: coloredProgress
+            coloredProgress: effectiveColoredProgress,
+            equalizerSensitivity: widgetEqualizerSensitivity
         )
     }
 
@@ -790,7 +891,7 @@ struct NotchPlayerView: View {
                     context: widgetCardContext,
                     track: track,
                     size: size,
-                    lyricsEnabled: lyricsEnabled
+                    lyricsEnabled: effectiveLyricsEnabled
                 )
             case .artworkSquare:
                 WidgetArtworkSquare(

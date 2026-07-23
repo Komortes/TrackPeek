@@ -48,8 +48,8 @@ struct SettingsView: View {
     private var backgroundStyleRawValue = PopoverBackgroundStyle.fallback.rawValue
     @AppStorage(ArtworkSizePreference.storageKey)
     private var artworkSizeValue = ArtworkSizePreference.fallback
-    @AppStorage(DisplayMode.storageKey)
-    private var selectedModeRawValue = DisplayMode.fallback.rawValue
+    @AppStorage(OverlayMode.storageKey)
+    private var selectedModeRawValue = OverlayMode.fallback.rawValue
     @AppStorage(MediaSourcePreference.storageKey)
     private var mediaSourceRawValue = MediaSourcePreference.fallback.rawValue
 
@@ -57,7 +57,7 @@ struct SettingsView: View {
     @State private var launchAtLoginEnabled = LaunchAtLogin.isEnabled
 
     private static let resettableKeys: [String] = [
-        DisplayMode.storageKey,
+        OverlayMode.storageKey,
         MediaSourcePreference.storageKey,
         "showAlbumName",
         "showPlaybackStatus",
@@ -65,7 +65,6 @@ struct SettingsView: View {
         PopoverBackgroundStyle.storageKey,
         ArtworkSizePreference.storageKey,
         PlayerLayout.storageKey,
-        NotchPreferences.enabledKey,
         NotchPreferences.displayTargetKey,
         NotchPreferences.widthKey,
         NotchPreferences.heightAdjustmentKey,
@@ -84,6 +83,23 @@ struct SettingsView: View {
         NotchPreferences.pulseModeKey,
         NotchPreferences.colorSourceKey,
         NotchPreferences.cornerRadiusKey,
+        NotchPreferences.lyricsEnabledKey,
+        NotchPreferences.widgetPositionKey,
+        NotchPreferences.widgetLayoutKey,
+        NotchPreferences.widgetFreeMoveKey,
+        NotchPreferences.widgetOriginXKey,
+        NotchPreferences.widgetOriginTopYKey,
+        NotchPreferences.widgetOutlineShimmerKey,
+        NotchPreferences.widgetOutlineWidthKey,
+        NotchPreferences.widgetPulseModeKey,
+        NotchPreferences.widgetGlassBackgroundKey,
+        NotchPreferences.widgetWidthKey,
+        NotchPreferences.widgetDisplayTargetKey,
+        NotchPreferences.widgetColoredProgressKey,
+        NotchPreferences.widgetColoredWaveformKey,
+        NotchPreferences.widgetColorSourceKey,
+        NotchPreferences.widgetEqualizerSensitivityKey,
+        NotchPreferences.widgetLyricsEnabledKey,
         MenuBarPreferences.controlsEnabledKey,
         MenuBarPreferences.showsTitleKey,
         MenuBarPreferences.showsEqualizerKey,
@@ -99,8 +115,8 @@ struct SettingsView: View {
         PlayerLayout(rawValue: playerLayoutRawValue) ?? .fallback
     }
 
-    private var selectedMode: DisplayMode {
-        DisplayMode(rawValue: selectedModeRawValue) ?? .fallback
+    private var selectedMode: OverlayMode {
+        OverlayMode(rawValue: selectedModeRawValue) ?? .fallback
     }
 
     private var mediaSource: Binding<MediaSourcePreference> {
@@ -261,18 +277,18 @@ struct SettingsView: View {
     private var displayModeSection: some View {
         VStack(alignment: .leading, spacing: 14) {
             SettingsSectionHeader(
-                title: "Режим отображения",
-                subtitle: "Где TrackPeek будет показывать текущий трек."
+                title: "Экранный плеер",
+                subtitle: "Menu Bar доступен всегда; здесь выбирается панель поверх рабочего стола."
             )
 
             HStack(alignment: .top, spacing: 12) {
-                ForEach(DisplayMode.allCases) { mode in
+                ForEach(OverlayMode.allCases) { mode in
                     displayModeCard(mode)
                 }
             }
 
             Label(
-                "Menu Bar и Notch доступны. Floating Widget подключим следующим этапом.",
+                "Иконка и управление в строке меню работают в любом режиме.",
                 systemImage: "info.circle"
             )
             .font(.caption)
@@ -425,7 +441,7 @@ struct SettingsView: View {
         .accessibilityAddTraits(playerLayout == layout ? .isSelected : [])
     }
 
-    private func displayModeCard(_ mode: DisplayMode) -> some View {
+    private func displayModeCard(_ mode: OverlayMode) -> some View {
         Button {
             selectedModeRawValue = mode.rawValue
         } label: {
@@ -433,7 +449,7 @@ struct SettingsView: View {
                 Image(systemName: mode.symbolName)
                     .font(.system(size: 20, weight: .medium))
                     .frame(height: 28)
-                    .foregroundStyle(mode.isAvailable ? Color.accentColor : Color.secondary)
+                    .foregroundStyle(Color.accentColor)
 
                 HStack {
                     Text(mode.title)
@@ -452,9 +468,9 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(3)
 
-                Text(mode.isAvailable ? "Доступен" : "В разработке")
+                Text(selectedMode == mode ? "Активен" : "Доступен")
                     .font(.caption2.weight(.semibold))
-                    .foregroundStyle(mode.isAvailable ? Color.green : Color.secondary)
+                    .foregroundStyle(selectedMode == mode ? Color.green : Color.secondary)
             }
             .frame(maxWidth: .infinity, minHeight: 108, alignment: .topLeading)
             .padding(12)
@@ -468,8 +484,6 @@ struct SettingsView: View {
             }
         }
         .buttonStyle(.plain)
-        .disabled(!mode.isAvailable)
-        .opacity(mode.isAvailable ? 1 : 0.58)
-        .help(mode.isAvailable ? "Выбрать \(mode.title)" : "Этот режим пока в разработке")
+        .help("Выбрать \(mode.title)")
     }
 }

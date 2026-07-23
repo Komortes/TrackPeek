@@ -145,7 +145,7 @@ struct NotchConfigurationTests {
                 lyricsStore: LyricsStore(),
                 pointerState: NotchPointerState(),
                 panelLayoutState: NotchPanelLayoutState(size: size),
-                onExpansionChange: { _ in }
+                onStateChange: { _ in }
             )
             .defaultAppStorage(defaults)
         }
@@ -225,34 +225,45 @@ struct NotchConfigurationTests {
         #expect(!NotchSongInfoVisibility.never.shouldShow(isPlaying: true))
     }
 
-    @Test("expands for enabled hover click or song notification sources")
+    @Test("expands for hover or pin and shows a light notification for new songs")
     func expansionPolicyUsesEnabledSources() {
         #expect(
-            NotchExpansionPolicy.shouldExpand(
+            NotchExpansionPolicy.state(
                 hoverReady: true,
                 hoverEnabled: true,
                 isPinned: false,
                 clickEnabled: true,
                 notificationVisible: false
-            )
+            ) == .expanded
         )
         #expect(
-            !NotchExpansionPolicy.shouldExpand(
+            NotchExpansionPolicy.state(
                 hoverReady: true,
                 hoverEnabled: false,
                 isPinned: true,
                 clickEnabled: false,
                 notificationVisible: false
-            )
+            ) == .collapsed
         )
+        // Новая песня показывает лёгкое уведомление, а не полный плеер.
         #expect(
-            NotchExpansionPolicy.shouldExpand(
+            NotchExpansionPolicy.state(
                 hoverReady: false,
                 hoverEnabled: false,
                 isPinned: false,
                 clickEnabled: false,
                 notificationVisible: true
-            )
+            ) == .notification
+        )
+        // Наведение имеет приоритет над уведомлением.
+        #expect(
+            NotchExpansionPolicy.state(
+                hoverReady: true,
+                hoverEnabled: true,
+                isPinned: false,
+                clickEnabled: false,
+                notificationVisible: true
+            ) == .expanded
         )
     }
 }

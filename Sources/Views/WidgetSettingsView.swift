@@ -1,16 +1,28 @@
 import SwiftUI
 
 struct WidgetSettingsView: View {
-    @AppStorage(DisplayMode.storageKey)
-    private var selectedModeRawValue = DisplayMode.fallback.rawValue
+    @AppStorage(OverlayMode.storageKey)
+    private var selectedModeRawValue = OverlayMode.fallback.rawValue
     @AppStorage(NotchPreferences.widgetLayoutKey)
     private var widgetLayoutRawValue = NotchWidgetLayout.fallback.rawValue
     @AppStorage(NotchPreferences.widgetPositionKey)
     private var widgetPositionRawValue = NotchWidgetPosition.fallback.rawValue
     @AppStorage(NotchPreferences.widgetFreeMoveKey)
     private var freeMoveEnabled = false
-    @AppStorage(NotchPreferences.lyricsEnabledKey)
+    @AppStorage(NotchPreferences.widgetLyricsEnabledKey)
     private var lyricsEnabled = NotchPreferences.lyricsEnabledFallback
+    @AppStorage(NotchPreferences.widgetWidthKey)
+    private var width = NotchPreferences.widthFallback
+    @AppStorage(NotchPreferences.widgetDisplayTargetKey)
+    private var displayTargetRawValue = NotchDisplayTarget.mainDisplay.rawValue
+    @AppStorage(NotchPreferences.widgetColoredProgressKey)
+    private var coloredProgress = NotchPreferences.coloredProgressFallback
+    @AppStorage(NotchPreferences.widgetColoredWaveformKey)
+    private var coloredWaveform = NotchPreferences.coloredWaveformFallback
+    @AppStorage(NotchPreferences.widgetColorSourceKey)
+    private var colorSourceRawValue = NotchColorSource.fallback.rawValue
+    @AppStorage(NotchPreferences.widgetEqualizerSensitivityKey)
+    private var equalizerSensitivity = NotchPreferences.equalizerSensitivityFallback
     @AppStorage(NotchPreferences.widgetOutlineShimmerKey)
     private var outlineShimmer = NotchPreferences.outlineShimmerFallback
     @AppStorage(NotchPreferences.widgetOutlineWidthKey)
@@ -20,8 +32,8 @@ struct WidgetSettingsView: View {
     @AppStorage(NotchPreferences.widgetGlassBackgroundKey)
     private var glassBackground = false
 
-    private var selectedMode: DisplayMode {
-        DisplayMode(rawValue: selectedModeRawValue) ?? .fallback
+    private var selectedMode: OverlayMode {
+        OverlayMode(rawValue: selectedModeRawValue) ?? .fallback
     }
 
     private var selectedLayout: NotchWidgetLayout {
@@ -36,6 +48,34 @@ struct WidgetSettingsView: View {
         Binding(
             get: { NotchPulseMode(rawValue: pulseModeRawValue) ?? .fallback },
             set: { pulseModeRawValue = $0.rawValue }
+        )
+    }
+
+    private var displayTarget: Binding<NotchDisplayTarget> {
+        Binding(
+            get: { NotchDisplayTarget(rawValue: displayTargetRawValue) ?? .mainDisplay },
+            set: { displayTargetRawValue = $0.rawValue }
+        )
+    }
+
+    private var widgetWidth: Binding<Double> {
+        Binding(
+            get: { NotchPreferences.clampedWidth(width) },
+            set: { width = NotchPreferences.clampedWidth($0) }
+        )
+    }
+
+    private var colorSource: Binding<NotchColorSource> {
+        Binding(
+            get: { NotchColorSource(rawValue: colorSourceRawValue) ?? .fallback },
+            set: { colorSourceRawValue = $0.rawValue }
+        )
+    }
+
+    private var widgetSensitivity: Binding<Double> {
+        Binding(
+            get: { NotchPreferences.clampedEqualizerSensitivity(equalizerSensitivity) },
+            set: { equalizerSensitivity = NotchPreferences.clampedEqualizerSensitivity($0) }
         )
     }
 
@@ -76,7 +116,7 @@ struct WidgetSettingsView: View {
 
                 Text(
                     selectedMode == .floatingWidget
-                        ? "Панель уже использует настройки ниже. Ширина и цвета — на вкладке «Чёлка»."
+                        ? "Все настройки виджета собраны на этой вкладке."
                         : "Настройки сохранятся; включить виджет можно одной кнопкой."
                 )
                 .font(.caption)
@@ -87,7 +127,7 @@ struct WidgetSettingsView: View {
 
             if selectedMode != .floatingWidget {
                 Button("Использовать виджет") {
-                    selectedModeRawValue = DisplayMode.floatingWidget.rawValue
+                    selectedModeRawValue = OverlayMode.floatingWidget.rawValue
                 }
                 .buttonStyle(.borderedProminent)
             }
@@ -181,6 +221,23 @@ struct WidgetSettingsView: View {
             positionSchematic
 
             SettingsGroup {
+                SettingsRow(
+                    title: "Показывать на",
+                    subtitle: "Экран, на котором живёт виджет."
+                ) {
+                    Picker("Экран", selection: displayTarget) {
+                        ForEach(NotchDisplayTarget.allCases) { target in
+                            Label(target.title, systemImage: target.symbolName)
+                                .tag(target)
+                        }
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.segmented)
+                    .frame(width: 330)
+                }
+
+                SettingsRowDivider()
+
                 SettingsRow(
                     title: "Свободное перемещение",
                     subtitle: "Перетаскивайте виджет за фон в любое место; позиция запоминается."
@@ -313,6 +370,72 @@ struct WidgetSettingsView: View {
             symbolName: "paintpalette"
         ) {
             SettingsGroup {
+                SettingsRow(
+                    title: "Ширина",
+                    subtitle: "Базовая ширина пилюли; размеры карточек следуют за ней."
+                ) {
+                    SettingsValueSlider(
+                        value: widgetWidth,
+                        range: NotchPreferences.widthRange,
+                        step: NotchPreferences.widthStep,
+                        text: "\(Int(NotchPreferences.clampedWidth(width))) px"
+                    )
+                }
+
+                SettingsRowDivider()
+
+                SettingsRow(
+                    title: "Цветной прогресс",
+                    subtitle: "Акцент палитры на полосе воспроизведения и тексте."
+                ) {
+                    Toggle("Цветной прогресс", isOn: $coloredProgress)
+                        .labelsHidden()
+                }
+
+                SettingsRowDivider()
+
+                SettingsRow(
+                    title: "Цветная волна",
+                    subtitle: "Подсвечивать эквалайзер палитрой обложки."
+                ) {
+                    Toggle("Цветная волна", isOn: $coloredWaveform)
+                        .labelsHidden()
+                }
+
+                SettingsRowDivider()
+
+                SettingsRow(
+                    title: "Источник цвета",
+                    subtitle: "Откуда берутся акцентные цвета виджета."
+                ) {
+                    Picker("Источник цвета", selection: colorSource) {
+                        ForEach(NotchColorSource.allCases) { source in
+                            Text(source.title).tag(source)
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(width: 190)
+                }
+
+                SettingsRowDivider()
+
+                SettingsRow(
+                    title: "Чувствительность эквалайзера",
+                    subtitle: "Насколько активно волна реагирует на звук."
+                ) {
+                    SettingsValueSlider(
+                        value: widgetSensitivity,
+                        range: NotchPreferences.equalizerSensitivityRange,
+                        step: NotchPreferences.equalizerSensitivityStep,
+                        text: String(
+                            format: "%.1f×",
+                            NotchPreferences.clampedEqualizerSensitivity(equalizerSensitivity)
+                        )
+                    )
+                }
+
+                SettingsRowDivider()
+
                 SettingsRow(
                     title: "Стекло из обложки",
                     subtitle: "Размытая обложка вместо чёрного фона карточек."

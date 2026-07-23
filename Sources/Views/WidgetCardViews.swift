@@ -7,6 +7,7 @@ struct WidgetCardContext {
     let audioMonitor: SpotifyAudioMonitor
     let palette: ArtworkPalette
     let coloredProgress: Bool
+    let equalizerSensitivity: Double
 
     var accent: Color {
         palette.primary.onDarkSurface.swiftUIColor
@@ -148,7 +149,8 @@ struct WidgetMiniBar: View {
                 isPlaying: track.isPlaying,
                 isVisible: true,
                 isColored: context.coloredProgress,
-                palette: context.palette
+                palette: context.palette,
+                sensitivityOverride: context.equalizerSensitivity
             )
             .frame(width: 22, height: 14)
 
@@ -360,7 +362,8 @@ struct WidgetEqualizerCard: View {
                 isVisible: true,
                 isColored: true,
                 palette: context.palette,
-                barCount: 21
+                barCount: 21,
+                sensitivityOverride: context.equalizerSensitivity
             )
             .frame(maxWidth: .infinity)
             .frame(height: 62)

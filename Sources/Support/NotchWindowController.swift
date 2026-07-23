@@ -80,19 +80,20 @@ final class NotchWindowController: NSObject {
 
     private func synchronizePanels() {
         let defaults = UserDefaults.standard
-        let mode = DisplayMode(
-            rawValue: defaults.string(forKey: DisplayMode.storageKey) ?? DisplayMode.fallback.rawValue
+        let mode = OverlayMode(
+            rawValue: defaults.string(forKey: OverlayMode.storageKey) ?? OverlayMode.fallback.rawValue
         ) ?? .fallback
-        let isEnabled = defaults.bool(forKey: NotchPreferences.enabledKey)
-
-        guard mode == .notch || mode == .floatingWidget, isEnabled else {
+        guard mode == .notch || mode == .floatingWidget else {
             removeAllPanels()
             updateRefreshTask()
             return
         }
 
+        let targetKey = mode == .floatingWidget
+            ? NotchPreferences.widgetDisplayTargetKey
+            : NotchPreferences.displayTargetKey
         let target = NotchDisplayTarget(
-            rawValue: defaults.string(forKey: NotchPreferences.displayTargetKey)
+            rawValue: defaults.string(forKey: targetKey)
                 ?? NotchDisplayTarget.fallback.rawValue
         ) ?? .fallback
         let targetScreens = screens(for: target)
@@ -181,7 +182,7 @@ private final class NotchPanelHost: NSObject {
     private let pointerState = NotchPointerState()
     private let layoutState: NotchPanelLayoutState
     private let screen: NSScreen
-    private var isExpanded = false
+    private var panelState: NotchPanelState = .collapsed
     /// Отличает программные setFrame от перетаскивания пользователем.
     private var isApplyingLayout = false
 
@@ -227,8 +228,8 @@ private final class NotchPanelHost: NSObject {
                 lyricsStore: lyricsStore,
                 pointerState: pointerState,
                 panelLayoutState: layoutState,
-                onExpansionChange: { [weak self] expanded in
-                    self?.setExpanded(expanded)
+                onStateChange: { [weak self] state in
+                    self?.setPanelState(state)
                 }
             ),
             pointerState: pointerState,
@@ -284,22 +285,33 @@ private final class NotchPanelHost: NSObject {
         ]
     }
 
-    private func setExpanded(_ expanded: Bool) {
-        guard isExpanded != expanded else { return }
-        isExpanded = expanded
+    private func setPanelState(_ state: NotchPanelState) {
+        guard panelState != state else { return }
+        panelState = state
         updateLayout(animated: true)
     }
 
     private func updateLayout(animated: Bool) {
         let defaults = UserDefaults.standard
-        let width = defaults.double(forKey: NotchPreferences.widthKey)
-        let heightAdjustment = defaults.double(forKey: NotchPreferences.heightAdjustmentKey)
-        let size = isExpanded
-            ? NotchPreferences.expandedSize(width: width, heightAdjustment: heightAdjustment)
-            : NotchPreferences.compactSize(width: width, heightAdjustment: heightAdjustment)
-        let mode = DisplayMode(
-            rawValue: defaults.string(forKey: DisplayMode.storageKey) ?? DisplayMode.fallback.rawValue
+        let mode = OverlayMode(
+            rawValue: defaults.string(forKey: OverlayMode.storageKey) ?? OverlayMode.fallback.rawValue
         ) ?? .fallback
+        // Виджет использует собственную ширину; коррекция высоты относится
+        // только к геометрии физической чёлки.
+        let width = mode == .floatingWidget
+            ? defaults.double(forKey: NotchPreferences.widgetWidthKey)
+            : defaults.double(forKey: NotchPreferences.widthKey)
+        let heightAdjustment = mode == .floatingWidget
+            ? 0
+            : defaults.double(forKey: NotchPreferences.heightAdjustmentKey)
+        let size: CGSize = switch panelState {
+        case .expanded:
+            NotchPreferences.expandedSize(width: width, heightAdjustment: heightAdjustment)
+        case .notification:
+            NotchPreferences.notificationSize(width: width, heightAdjustment: heightAdjustment)
+        case .collapsed:
+            NotchPreferences.compactSize(width: width, heightAdjustment: heightAdjustment)
+        }
         let frame: NSRect
 
         if mode == .floatingWidget {

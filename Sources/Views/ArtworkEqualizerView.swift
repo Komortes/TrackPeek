@@ -7,6 +7,9 @@ private struct EqualizerShape: Shape {
     /// Число столбиков; при значении больше числа полос спектра значения
     /// линейно интерполируются — волна выглядит детальнее.
     var barCount = AudioSpectrum.bandCount
+    /// Позволяет поверхности передать собственную чувствительность вместо
+    /// общего notch-значения.
+    var sensitivityOverride: Double? = nil
 
     var animatableData: AudioSpectrum {
         get { spectrum }
@@ -58,6 +61,9 @@ struct ArtworkEqualizerView: View {
     let isColored: Bool
     let palette: ArtworkPalette
     var barCount = AudioSpectrum.bandCount
+    /// Позволяет поверхности передать собственную чувствительность вместо
+    /// общего notch-значения.
+    var sensitivityOverride: Double? = nil
 
     @AppStorage(NotchPreferences.equalizerSensitivityKey)
     private var equalizerSensitivity = NotchPreferences.equalizerSensitivityFallback
@@ -68,7 +74,9 @@ struct ArtworkEqualizerView: View {
         guard isPlaying, isVisible, !reduceMotion else { return .resting }
         let spectrum = audioMonitor.spectrum
 
-        let sensitivity = NotchPreferences.clampedEqualizerSensitivity(equalizerSensitivity)
+        let sensitivity = NotchPreferences.clampedEqualizerSensitivity(
+            sensitivityOverride ?? equalizerSensitivity
+        )
         guard sensitivity != 1 else { return spectrum }
 
         let scaledValues = (0 ..< AudioSpectrum.bandCount).map { spectrum[$0] * sensitivity }
