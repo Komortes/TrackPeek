@@ -32,6 +32,21 @@ struct ArtworkColor: Hashable, Sendable {
         )
     }
 
+    var luminance: Double {
+        0.2126 * red + 0.7152 * green + 0.0722 * blue
+    }
+
+    /// Акцент, гарантированно читаемый на почти чёрной панели: слишком тёмный
+    /// цвет обложки подмешивается к белому до минимальной светимости,
+    /// сохраняя оттенок.
+    var onDarkSurface: ArtworkColor {
+        let minimumLuminance = 0.45
+        guard luminance < minimumLuminance else { return self }
+
+        let amount = (minimumLuminance - luminance) / max(1 - luminance, 0.001)
+        return mixed(with: ArtworkColor(red: 1, green: 1, blue: 1), amount: amount)
+    }
+
     func mixed(with other: ArtworkColor, amount: Double) -> ArtworkColor {
         let amount = min(max(amount, 0), 1)
         return ArtworkColor(

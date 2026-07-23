@@ -11,6 +11,10 @@ final class SpotifySpikeModel {
     private(set) var snapshotDate = Date()
     private(set) var availability: PlaybackAvailability = .loading
 
+    /// После нашего seek AppleScript какое-то время может возвращать старую
+    /// позицию — до этого момента доверяем оптимистичной локальной позиции.
+    private var seekSettlingDeadline: Date?
+
     init(provider: any SpotifyPlaybackProviding = PlaybackSourceRouter()) {
         self.provider = provider
     }
@@ -26,8 +30,9 @@ final class SpotifySpikeModel {
                 return
             }
 
-            self.track = track
-            snapshotDate = Date()
+            let now = Date()
+            self.track = reconciled(track, now: now)
+            snapshotDate = now
             availability = .ready
             statusText = track.isPlaying ? "Играет" : "На паузе"
         } catch SpotifyPlaybackError.spotifyNotRunning {
@@ -87,8 +92,51 @@ final class SpotifySpikeModel {
                 isPlaying: track.isPlaying
             )
             snapshotDate = Date()
+            seekSettlingDeadline = Date().addingTimeInterval(2)
         } catch {
             statusText = error.localizedDescription
         }
+    }
+
+    private func reconciled(_ fetched: SpotifyTrack, now: Date) -> SpotifyTrack {
+        guard
+            let current = track,
+            current.title == fetched.title,
+            current.artist == fetched.artist,
+            abs(current.duration - fetched.duration) < 1,
+            current.isPlaying,
+            fetched.isPlaying
+        else {
+            seekSettlingDeadline = nil
+            return fetched
+        }
+
+        let predicted = PlaybackPositionResolver.livePosition(
+            snapshotPosition: current.position,
+            snapshotDate: snapshotDate,
+            now: now,
+            duration: current.duration,
+            isPlaying: true
+        )
+        let isSeekSettling = seekSettlingDeadline.map { now < $0 } ?? false
+        if !isSeekSettling {
+            seekSettlingDeadline = nil
+        }
+
+        let position = PlaybackPositionResolver.reconciledPosition(
+            fetched: fetched.position,
+            predicted: predicted,
+            isSeekSettling: isSeekSettling
+        )
+
+        return SpotifyTrack(
+            title: fetched.title,
+            artist: fetched.artist,
+            album: fetched.album,
+            duration: fetched.duration,
+            position: position,
+            artworkURL: fetched.artworkURL,
+            isPlaying: fetched.isPlaying
+        )
     }
 }

@@ -3,6 +3,7 @@ import SwiftUI
 enum SettingsTab: CaseIterable {
     case general
     case notch
+    case widget
     case menuBar
     case player
 
@@ -12,6 +13,8 @@ enum SettingsTab: CaseIterable {
             "Основные"
         case .notch:
             "Чёлка"
+        case .widget:
+            "Виджет"
         case .menuBar:
             "Menu Bar"
         case .player:
@@ -25,6 +28,8 @@ enum SettingsTab: CaseIterable {
             "switch.2"
         case .notch:
             "macbook"
+        case .widget:
+            "rectangle.on.rectangle"
         case .menuBar:
             "menubar.rectangle"
         case .player:
@@ -143,6 +148,14 @@ struct SettingsView: View {
                     Label(
                         SettingsTab.notch.title,
                         systemImage: SettingsTab.notch.symbolName
+                    )
+                }
+
+            WidgetSettingsView()
+                .tabItem {
+                    Label(
+                        SettingsTab.widget.title,
+                        systemImage: SettingsTab.widget.symbolName
                     )
                 }
 

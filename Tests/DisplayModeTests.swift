@@ -15,11 +15,9 @@ struct DisplayModeTests {
         #expect(DisplayMode(rawValue: "floatingWidget") == .floatingWidget)
     }
 
-    @Test("exposes menu bar and notch as working modes")
+    @Test("exposes every product mode as working")
     func fallsBackToMenuBar() {
         #expect(DisplayMode.fallback == .menuBar)
-        #expect(DisplayMode.menuBar.isAvailable)
-        #expect(DisplayMode.notch.isAvailable)
-        #expect(!DisplayMode.floatingWidget.isAvailable)
+        #expect(DisplayMode.allCases.allSatisfy { $0.isAvailable })
     }
 }

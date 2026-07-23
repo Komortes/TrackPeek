@@ -48,7 +48,7 @@ struct PlayerStateView: View {
     @ViewBuilder
     private var action: some View {
         switch availability {
-        case .spotifyNotRunning:
+        case .spotifyNotRunning, .nothingPlaying:
             Button("Открыть \(sourceName)") {
                 PlayerAppLauncher.openActiveSource()
             }
@@ -58,7 +58,7 @@ struct PlayerStateView: View {
             Button("Повторить", action: onRetry)
                 .buttonStyle(.bordered)
                 .controlSize(.small)
-        case .loading, .ready, .nothingPlaying:
+        case .loading, .ready:
             EmptyView()
         }
     }
@@ -83,7 +83,7 @@ struct PlayerStateView: View {
         case .loading:
             ""
         case .nothingPlaying:
-            "Запустите воспроизведение в Spotify"
+            "Запустите воспроизведение в \(sourceName)"
         case .spotifyNotRunning:
             "Откройте \(sourceName), чтобы продолжить"
         case .unavailable:

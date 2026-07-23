@@ -6,6 +6,8 @@ struct PlaybackControlsView: View {
     let onPlayPause: () -> Void
     let onNext: () -> Void
     var spacing: CGFloat = 16
+    /// Уменьшенные кнопки для компактных виджет-раскладок.
+    var compact = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -55,6 +57,7 @@ struct PlaybackControlsView: View {
             symbol: symbol,
             label: label,
             isPrimary: isPrimary,
+            compact: compact,
             action: action
         )
     }
@@ -64,6 +67,7 @@ private struct PlaybackControlButton: View {
     let symbol: String
     let label: String
     let isPrimary: Bool
+    var compact = false
     let action: () -> Void
 
     @State private var isHovered = false
@@ -72,7 +76,7 @@ private struct PlaybackControlButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: symbol)
-                .font(.system(size: isPrimary ? 18 : 15, weight: .semibold))
+                .font(.system(size: compact ? (isPrimary ? 12 : 10) : (isPrimary ? 18 : 15), weight: .semibold))
                 .contentTransition(.symbolEffect(.replace))
                 .animation(
                     reduceMotion

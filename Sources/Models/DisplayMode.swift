@@ -11,7 +11,7 @@ enum DisplayMode: String, CaseIterable, Identifiable, Sendable {
     var id: String { rawValue }
 
     var isAvailable: Bool {
-        self != .floatingWidget
+        true
     }
 
     var title: String {
@@ -32,7 +32,7 @@ enum DisplayMode: String, CaseIterable, Identifiable, Sendable {
         case .notch:
             "Компактная чёлка, которая раскрывается при наведении."
         case .floatingWidget:
-            "Свободный виджет поверх окон с несколькими вариантами оформления."
+            "Пилюля у верхнего края любого экрана — как чёлка, но на мониторах без выреза."
         }
     }
 

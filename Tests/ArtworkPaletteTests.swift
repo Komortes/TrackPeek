@@ -40,3 +40,18 @@ struct ArtworkPaletteTests {
         #expect(palette.colors.allSatisfy { $0.brightness > 0.2 })
     }
 }
+
+@Suite("Dark surface accent contrast")
+struct DarkSurfaceContrastTests {
+    @Test("brightens too-dark artwork accents to a readable minimum")
+    func brightensDarkAccents() {
+        let dark = ArtworkColor(red: 0.1, green: 0.05, blue: 0.12)
+        #expect(dark.onDarkSurface.luminance >= 0.44)
+    }
+
+    @Test("keeps already-bright accents untouched")
+    func keepsBrightAccents() {
+        let bright = ArtworkColor(red: 0.4, green: 0.8, blue: 0.9)
+        #expect(bright.onDarkSurface == bright)
+    }
+}

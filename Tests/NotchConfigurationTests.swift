@@ -142,6 +142,7 @@ struct NotchConfigurationTests {
             NotchPlayerView(
                 model: model,
                 audioMonitor: SpotifyAudioMonitor(),
+                lyricsStore: LyricsStore(),
                 pointerState: NotchPointerState(),
                 panelLayoutState: NotchPanelLayoutState(size: size),
                 onExpansionChange: { _ in }

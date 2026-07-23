@@ -4,6 +4,7 @@ import SwiftUI
 @MainActor
 final class TrackPeekAppDelegate: NSObject, NSApplicationDelegate {
     private var notchWindowController: NotchWindowController?
+    private let onboardingController = OnboardingWindowController()
     let menuBarControlsController = MenuBarControlsController()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -16,6 +17,8 @@ final class TrackPeekAppDelegate: NSObject, NSApplicationDelegate {
 
         menuBarControlsController.start()
         _ = SparkleUpdaterController.shared
+
+        onboardingController.showIfNeeded()
     }
 
     func applicationWillTerminate(_ notification: Notification) {

@@ -33,6 +33,111 @@ enum NotchDisplayTarget: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
+enum NotchWidgetPosition: String, CaseIterable, Identifiable, Sendable {
+    // Старые raw-значения оставлены для совместимости с сохранёнными настройками.
+    case topLeading = "leading"
+    case topCenter = "center"
+    case topTrailing = "trailing"
+    case bottomLeading
+    case bottomCenter
+    case bottomTrailing
+
+    static let fallback: NotchWidgetPosition = .topCenter
+
+    var id: String { rawValue }
+
+    var isBottom: Bool {
+        switch self {
+        case .bottomLeading, .bottomCenter, .bottomTrailing:
+            true
+        case .topLeading, .topCenter, .topTrailing:
+            false
+        }
+    }
+
+    /// Горизонтальное выравнивание: -1 слева, 0 центр, 1 справа.
+    var horizontalAlignment: Int {
+        switch self {
+        case .topLeading, .bottomLeading: -1
+        case .topCenter, .bottomCenter: 0
+        case .topTrailing, .bottomTrailing: 1
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .topLeading: "Сверху слева"
+        case .topCenter: "Сверху по центру"
+        case .topTrailing: "Сверху справа"
+        case .bottomLeading: "Снизу слева"
+        case .bottomCenter: "Снизу по центру"
+        case .bottomTrailing: "Снизу справа"
+        }
+    }
+}
+
+enum NotchWidgetLayout: String, CaseIterable, Identifiable, Sendable {
+    case pill
+    case miniBar
+    case cardHorizontal
+    case cardVertical
+    case artworkSquare
+    case lyricsCard
+    case karaokeCard
+    case equalizerCard
+
+    static let fallback: NotchWidgetLayout = .pill
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .pill:
+            "Пилюля"
+        case .miniBar:
+            "Мини-строка"
+        case .cardHorizontal:
+            "Обложка сбоку"
+        case .cardVertical:
+            "Обложка сверху"
+        case .artworkSquare:
+            "Квадрат-обложка"
+        case .lyricsCard:
+            "Текст песни"
+        case .karaokeCard:
+            "Караоке"
+        case .equalizerCard:
+            "Эквалайзер"
+        }
+    }
+
+    var summary: String {
+        switch self {
+        case .pill:
+            "Компактная полоска, раскрывается при наведении."
+        case .miniBar:
+            "Тонкая строка: обложка, название и кнопки."
+        case .cardHorizontal:
+            "Полный плеер постоянного размера."
+        case .cardVertical:
+            "Вертикальная карточка с крупной обложкой."
+        case .artworkSquare:
+            "Только обложка; управление появляется при наведении."
+        case .lyricsCard:
+            "Компактный плеер с синхронизированным текстом."
+        case .karaokeCard:
+            "Крупный текст песни в несколько строк."
+        case .equalizerCard:
+            "Живая волна во всю карточку."
+        }
+    }
+
+    /// Карточные раскладки не сворачиваются — панель всегда развёрнута.
+    var isAlwaysExpanded: Bool {
+        self != .pill
+    }
+}
+
 enum NotchSongInfoVisibility: String, CaseIterable, Identifiable, Sendable {
     case always
     case whilePlaying
@@ -124,6 +229,16 @@ enum NotchPreferences {
     static let pulseModeKey = "notchPulseMode"
     static let colorSourceKey = "notchColorSource"
     static let cornerRadiusKey = "notchCornerRadius"
+    static let widgetPositionKey = "notchWidgetPosition"
+    static let widgetLayoutKey = "notchWidgetLayout"
+    static let widgetFreeMoveKey = "notchWidgetFreeMove"
+    static let widgetOriginXKey = "notchWidgetOriginX"
+    static let widgetOriginTopYKey = "notchWidgetOriginTopY"
+    static let widgetOutlineShimmerKey = "widgetOutlineShimmer"
+    static let widgetOutlineWidthKey = "widgetOutlineWidth"
+    static let widgetPulseModeKey = "widgetPulseMode"
+    static let widgetGlassBackgroundKey = "widgetGlassBackground"
+    static let lyricsEnabledKey = "notchLyricsEnabled"
 
     static let enabledFallback = true
     static let widthFallback = 320.0
@@ -154,6 +269,11 @@ enum NotchPreferences {
     static let cornerRadiusFallback = 12.0
     static let cornerRadiusRange = 0.0 ... 20.0
     static let cornerRadiusStep = 1.0
+    static let lyricsEnabledFallback = false
+
+    /// Отступы floating-виджета от краёв экрана.
+    static let widgetTopInset = 8.0
+    static let widgetEdgeMargin = 12.0
 
     static func registerDefaults(in defaults: UserDefaults = .standard) {
         defaults.register(defaults: [
@@ -176,6 +296,14 @@ enum NotchPreferences {
             pulseModeKey: NotchPulseMode.fallback.rawValue,
             colorSourceKey: NotchColorSource.fallback.rawValue,
             cornerRadiusKey: cornerRadiusFallback,
+            widgetPositionKey: NotchWidgetPosition.fallback.rawValue,
+            widgetLayoutKey: NotchWidgetLayout.fallback.rawValue,
+            widgetFreeMoveKey: false,
+            widgetOutlineShimmerKey: outlineShimmerFallback,
+            widgetOutlineWidthKey: outlineWidthFallback,
+            widgetPulseModeKey: NotchPulseMode.fallback.rawValue,
+            widgetGlassBackgroundKey: false,
+            lyricsEnabledKey: lyricsEnabledFallback,
         ])
     }
 
@@ -219,6 +347,35 @@ enum NotchPreferences {
             width: max(clampedWidth(width) + 96, 352),
             height: 176 + clampedHeightAdjustment(heightAdjustment)
         )
+    }
+
+    /// Постоянный размер карточных раскладок floating-виджета.
+    static func widgetCardSize(
+        layout: NotchWidgetLayout,
+        width: Double,
+        heightAdjustment: Double
+    ) -> CGSize {
+        switch layout {
+        case .pill:
+            compactSize(width: width, heightAdjustment: heightAdjustment)
+        case .miniBar:
+            CGSize(width: max(clampedWidth(width) + 20, 340), height: 44)
+        case .cardHorizontal:
+            expandedSize(width: width, heightAdjustment: heightAdjustment)
+        case .cardVertical:
+            CGSize(width: max(clampedWidth(width) * 0.72, 250), height: 296)
+        case .artworkSquare:
+            CGSize(
+                width: max(clampedWidth(width) * 0.58, 190),
+                height: max(clampedWidth(width) * 0.58, 190)
+            )
+        case .lyricsCard:
+            CGSize(width: max(clampedWidth(width) + 60, 380), height: 78)
+        case .karaokeCard:
+            CGSize(width: max(clampedWidth(width) + 80, 400), height: 188)
+        case .equalizerCard:
+            CGSize(width: max(clampedWidth(width) * 0.82, 268), height: 132)
+        }
     }
 }
 

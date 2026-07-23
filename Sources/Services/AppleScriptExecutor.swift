@@ -15,32 +15,50 @@ enum AppleScriptExecutionError: LocalizedError {
 }
 
 enum AppleScriptExecutor {
-    /// Runs the blocking `NSAppleScript` call off the caller's executor so a
-    /// hung/unresponsive app can't stall every other queued command; a
-    /// sibling task races it with a timeout and wins if the app never replies.
+    /// Все скрипты идут через одну последовательную GCD-очередь:
+    /// 1) `NSAppleScript` не потокобезопасен — параллельное исполнение
+    ///    приводило к порче состояния и подвисаниям;
+    /// 2) блокирующий вызов больше не занимает поток кооперативного пула
+    ///    Swift Concurrency — шквал команд (быстрое пролистывание + опросы)
+    ///    раньше исчерпывал пул и замораживал весь UI.
+    /// Таймаут-гонка сохранена: зависший плеер не держит вызывающего.
+    private static let scriptQueue = DispatchQueue(
+        label: "com.trackpeek.applescript",
+        qos: .userInitiated
+    )
+
     static func execute(
         _ source: String,
         timeout: Duration = .seconds(5)
     ) async throws -> NSAppleEventDescriptor {
-        let scriptTask = Task.detached(priority: .userInitiated) { () -> UncheckedSendableBox<NSAppleEventDescriptor> in
-            guard let script = NSAppleScript(source: source) else {
-                throw AppleScriptExecutionError.scriptFailed("не удалось создать AppleScript")
+        try await withThrowingTaskGroup(of: UncheckedSendableBox<NSAppleEventDescriptor>.self) { group in
+            group.addTask {
+                try await withCheckedThrowingContinuation { continuation in
+                    scriptQueue.async {
+                        guard let script = NSAppleScript(source: source) else {
+                            continuation.resume(
+                                throwing: AppleScriptExecutionError.scriptFailed(
+                                    "не удалось создать AppleScript"
+                                )
+                            )
+                            return
+                        }
+
+                        var errorInfo: NSDictionary?
+                        let result = script.executeAndReturnError(&errorInfo)
+
+                        if let errorInfo {
+                            let message = errorInfo["NSAppleScriptErrorMessage"] as? String
+                                ?? "неизвестная ошибка AppleScript"
+                            continuation.resume(
+                                throwing: AppleScriptExecutionError.scriptFailed(message)
+                            )
+                        } else {
+                            continuation.resume(returning: UncheckedSendableBox(value: result))
+                        }
+                    }
+                }
             }
-
-            var errorInfo: NSDictionary?
-            let result = script.executeAndReturnError(&errorInfo)
-
-            if let errorInfo {
-                let message = errorInfo["NSAppleScriptErrorMessage"] as? String
-                    ?? "неизвестная ошибка AppleScript"
-                throw AppleScriptExecutionError.scriptFailed(message)
-            }
-
-            return UncheckedSendableBox(value: result)
-        }
-
-        return try await withThrowingTaskGroup(of: UncheckedSendableBox<NSAppleEventDescriptor>.self) { group in
-            group.addTask { try await scriptTask.value }
             group.addTask {
                 try await Task.sleep(for: timeout)
                 throw AppleScriptExecutionError.timedOut

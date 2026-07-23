@@ -143,18 +143,30 @@ struct NotchSettingsView: View {
         }
     }
 
+    private var isPanelModeActive: Bool {
+        selectedMode == .notch || selectedMode == .floatingWidget
+    }
+
+    private var activationTitle: String {
+        switch selectedMode {
+        case .notch: "Режим чёлки активен"
+        case .floatingWidget: "Режим виджета активен"
+        case .menuBar: "Режим пока не выбран"
+        }
+    }
+
     private var activationCard: some View {
         HStack(spacing: 12) {
-            Image(systemName: selectedMode == .notch ? "checkmark.circle.fill" : "macbook")
+            Image(systemName: isPanelModeActive ? "checkmark.circle.fill" : "macbook")
                 .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(selectedMode == .notch ? Color.green : Color.accentColor)
+                .foregroundStyle(isPanelModeActive ? Color.green : Color.accentColor)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(selectedMode == .notch ? "Режим чёлки активен" : "Режим пока не выбран")
+                Text(activationTitle)
                     .font(.headline)
 
                 Text(
-                    selectedMode == .notch
+                    isPanelModeActive
                         ? "Панель уже использует настройки ниже."
                         : "Настройки сохранятся; включить панель можно одной кнопкой."
                 )
@@ -164,7 +176,7 @@ struct NotchSettingsView: View {
 
             Spacer()
 
-            if selectedMode != .notch {
+            if !isPanelModeActive {
                 Button("Использовать чёлку") {
                     selectedModeRawValue = DisplayMode.notch.rawValue
                 }

@@ -37,6 +37,7 @@ final class NotchPanelLayoutState {
 final class NotchWindowController: NSObject {
     private let model = SpotifySpikeModel()
     private let audioMonitor = SpotifyAudioMonitor()
+    private let lyricsStore = LyricsStore()
     private var panelHosts: [Int: NotchPanelHost] = [:]
     private var refreshTask: Task<Void, Never>?
 
@@ -84,7 +85,7 @@ final class NotchWindowController: NSObject {
         ) ?? .fallback
         let isEnabled = defaults.bool(forKey: NotchPreferences.enabledKey)
 
-        guard mode == .notch, isEnabled else {
+        guard mode == .notch || mode == .floatingWidget, isEnabled else {
             removeAllPanels()
             updateRefreshTask()
             return
@@ -112,7 +113,8 @@ final class NotchWindowController: NSObject {
                 let host = NotchPanelHost(
                     screen: screen,
                     model: model,
-                    audioMonitor: audioMonitor
+                    audioMonitor: audioMonitor,
+                    lyricsStore: lyricsStore
                 )
                 panelHosts[identifier] = host
                 host.show()
@@ -174,17 +176,20 @@ final class NotchWindowController: NSObject {
 }
 
 @MainActor
-private final class NotchPanelHost {
+private final class NotchPanelHost: NSObject {
     private let panel: NotchPanel
     private let pointerState = NotchPointerState()
     private let layoutState: NotchPanelLayoutState
     private let screen: NSScreen
     private var isExpanded = false
+    /// Отличает программные setFrame от перетаскивания пользователем.
+    private var isApplyingLayout = false
 
     init(
         screen: NSScreen,
         model: SpotifySpikeModel,
-        audioMonitor: SpotifyAudioMonitor
+        audioMonitor: SpotifyAudioMonitor,
+        lyricsStore: LyricsStore
     ) {
         self.screen = screen
         let defaults = UserDefaults.standard
@@ -203,13 +208,23 @@ private final class NotchPanelHost {
             defer: false
         )
 
+        super.init()
+
         configurePanel()
         updateLayout(animated: false)
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(panelDidMove),
+            name: NSWindow.didMoveNotification,
+            object: panel
+        )
 
         panel.contentView = NotchTrackingHostingView(
             rootView: NotchPlayerView(
                 model: model,
                 audioMonitor: audioMonitor,
+                lyricsStore: lyricsStore,
                 pointerState: pointerState,
                 panelLayoutState: layoutState,
                 onExpansionChange: { [weak self] expanded in
@@ -226,7 +241,26 @@ private final class NotchPanelHost {
     }
 
     func close() {
+        NotificationCenter.default.removeObserver(self)
         panel.orderOut(nil)
+    }
+
+    /// Пользователь перетащил виджет — запоминаем позицию (верхний край,
+    /// чтобы раскрытие пилюли по-прежнему росло вниз).
+    @objc nonisolated private func panelDidMove(_ notification: Notification) {
+        Task { @MainActor [weak self] in
+            guard
+                let self,
+                !isApplyingLayout,
+                UserDefaults.standard.bool(forKey: NotchPreferences.widgetFreeMoveKey)
+            else {
+                return
+            }
+
+            let frame = panel.frame
+            UserDefaults.standard.set(Double(frame.origin.x), forKey: NotchPreferences.widgetOriginXKey)
+            UserDefaults.standard.set(Double(frame.maxY), forKey: NotchPreferences.widgetOriginTopYKey)
+        }
     }
 
     func updateLayout() {
@@ -263,15 +297,78 @@ private final class NotchPanelHost {
         let size = isExpanded
             ? NotchPreferences.expandedSize(width: width, heightAdjustment: heightAdjustment)
             : NotchPreferences.compactSize(width: width, heightAdjustment: heightAdjustment)
-        let frame = NSRect(
-            x: screen.frame.midX - size.width / 2,
-            y: screen.frame.maxY - size.height,
-            width: size.width,
-            height: size.height
-        )
+        let mode = DisplayMode(
+            rawValue: defaults.string(forKey: DisplayMode.storageKey) ?? DisplayMode.fallback.rawValue
+        ) ?? .fallback
+        let frame: NSRect
+
+        if mode == .floatingWidget {
+            let layout = NotchWidgetLayout(
+                rawValue: defaults.string(forKey: NotchPreferences.widgetLayoutKey)
+                    ?? NotchWidgetLayout.fallback.rawValue
+            ) ?? .fallback
+            // Карточные раскладки держат постоянный размер, пилюля — как чёлка.
+            let widgetSize = layout.isAlwaysExpanded
+                ? NotchPreferences.widgetCardSize(
+                    layout: layout,
+                    width: width,
+                    heightAdjustment: heightAdjustment
+                )
+                : size
+
+            let freeMove = defaults.bool(forKey: NotchPreferences.widgetFreeMoveKey)
+            panel.isMovable = freeMove
+            panel.isMovableByWindowBackground = freeMove
+
+            let bounds = screen.visibleFrame
+            let margin = NotchPreferences.widgetEdgeMargin
+            var origin: CGPoint
+
+            if freeMove,
+               let x = defaults.object(forKey: NotchPreferences.widgetOriginXKey) as? Double,
+               let topY = defaults.object(forKey: NotchPreferences.widgetOriginTopYKey) as? Double {
+                // Пользовательская позиция: закреплён верхний край, чтобы
+                // раскрытие пилюли росло вниз, как у чёлки.
+                origin = CGPoint(x: x, y: topY - widgetSize.height)
+            } else {
+                let position = NotchWidgetPosition(
+                    rawValue: defaults.string(forKey: NotchPreferences.widgetPositionKey)
+                        ?? NotchWidgetPosition.fallback.rawValue
+                ) ?? .fallback
+                let x: CGFloat = switch position.horizontalAlignment {
+                case ..<0:
+                    bounds.minX + margin
+                case 0:
+                    bounds.midX - widgetSize.width / 2
+                default:
+                    bounds.maxX - widgetSize.width - margin
+                }
+                let y = position.isBottom
+                    ? bounds.minY + NotchPreferences.widgetTopInset
+                    : bounds.maxY - widgetSize.height - NotchPreferences.widgetTopInset
+                origin = CGPoint(x: x, y: y)
+            }
+
+            origin.x = min(max(origin.x, bounds.minX), bounds.maxX - widgetSize.width)
+            origin.y = min(max(origin.y, bounds.minY), bounds.maxY - widgetSize.height)
+            frame = NSRect(origin: origin, size: widgetSize)
+        } else {
+            panel.isMovable = false
+            panel.isMovableByWindowBackground = false
+            frame = NSRect(
+                x: screen.frame.midX - size.width / 2,
+                y: screen.frame.maxY - size.height,
+                width: size.width,
+                height: size.height
+            )
+        }
+
+        isApplyingLayout = true
 
         guard animated, !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else {
             panel.setFrame(frame, display: true)
+            isApplyingLayout = false
+            syncPointerState()
             return
         }
 
@@ -284,6 +381,21 @@ private final class NotchPanelHost {
                 1
             )
             panel.animator().setFrame(frame, display: true)
+        } completionHandler: {
+            // Ресайз панели под неподвижным курсором генерирует ложные
+            // enter/exit; после анимации сверяемся с реальным положением мыши,
+            // иначе панель может зациклиться в открытии/закрытии.
+            MainActor.assumeIsolated { [weak self] in
+                self?.isApplyingLayout = false
+                self?.syncPointerState()
+            }
+        }
+    }
+
+    private func syncPointerState() {
+        let inside = panel.frame.contains(NSEvent.mouseLocation)
+        if pointerState.isInside != inside {
+            pointerState.isInside = inside
         }
     }
 }
@@ -336,11 +448,21 @@ private final class NotchTrackingHostingView<Content: View>: NSHostingView<Conte
     }
 
     override func mouseEntered(with event: NSEvent) {
-        pointerState.isInside = true
+        syncPointerState()
     }
 
     override func mouseExited(with event: NSEvent) {
-        pointerState.isInside = false
+        syncPointerState()
+    }
+
+    /// Не доверяем самим событиям enter/exit: во время анимации ресайза окна
+    /// AppKit шлёт их и под неподвижным курсором. Истина — реальное положение
+    /// мыши относительно текущего фрейма окна.
+    private func syncPointerState() {
+        let inside = window.map { $0.frame.contains(NSEvent.mouseLocation) } ?? false
+        if pointerState.isInside != inside {
+            pointerState.isInside = inside
+        }
     }
 }
 
