@@ -13,6 +13,12 @@ private final class SpotifyAudioAnalyzerEngine: @unchecked Sendable {
     private var connectedProcessIdentifier: pid_t?
     private var retryAfter = 0.0
     private var lastPublishedSpectrum: AudioSpectrum?
+    /// Сглаженный уровень на каждую полосу — раздельные коэффициенты для
+    /// атаки/спада не дают волне дёргаться, когда очередная сырая выборка
+    /// приходит быстрее, чем успела доиграть предыдущая SwiftUI-анимация.
+    private var smoothedLevels: [Double]?
+    private static let attackCoefficient = 0.55
+    private static let releaseCoefficient = 0.22
 
     func start(onSpectrum: @escaping @Sendable (AudioSpectrum) -> Void) {
         queue.async { [self] in
@@ -60,6 +66,7 @@ private final class SpotifyAudioAnalyzerEngine: @unchecked Sendable {
             analyzer.stop()
             connectedProcessIdentifier = requestedProcessIdentifier
             retryAfter = 0
+            smoothedLevels = nil
         }
 
         if !analyzer.isRunning, now >= retryAfter,
@@ -71,13 +78,40 @@ private final class SpotifyAudioAnalyzerEngine: @unchecked Sendable {
             }
         }
 
-        let spectrum: AudioSpectrum = analyzer.isRunning
-            ? AudioSpectrum(values: analyzer.currentLevels().map(\.doubleValue))
-            : .resting
+        let spectrum: AudioSpectrum
+        if analyzer.isRunning {
+            let rawLevels = analyzer.currentLevels().map(\.doubleValue)
+            spectrum = AudioSpectrum(values: smoothed(rawLevels))
+        } else {
+            smoothedLevels = nil
+            spectrum = .resting
+        }
         guard spectrum != lastPublishedSpectrum else { return }
 
         lastPublishedSpectrum = spectrum
         onSpectrum(spectrum)
+    }
+
+    /// Экспоненциальное attack/release-сглаживание по каждой полосе: рост
+    /// уровня подхватывается быстро, спад — медленнее, как у аналогового
+    /// эквалайзера. Без этого резкая пилообразная выборка каждые 33 мс
+    /// дёргала волну быстрее, чем успевала доиграть анимация в SwiftUI.
+    private func smoothed(_ rawLevels: [Double]) -> [Double] {
+        guard var levels = smoothedLevels, levels.count == rawLevels.count else {
+            smoothedLevels = rawLevels
+            return rawLevels
+        }
+
+        for index in rawLevels.indices {
+            let raw = rawLevels[index]
+            let coefficient = raw > levels[index]
+                ? Self.attackCoefficient
+                : Self.releaseCoefficient
+            levels[index] += (raw - levels[index]) * coefficient
+        }
+
+        smoothedLevels = levels
+        return levels
     }
 }
 
@@ -88,6 +122,11 @@ final class SpotifyAudioMonitor: NSObject {
 
     @ObservationIgnored private let engine = SpotifyAudioAnalyzerEngine()
     @ObservationIgnored private var processTimer: Timer?
+    /// Плеер, чей аудиопоток анализируется; ставится координатором из
+    /// активного источника снапшота. Раньше монитор знал только Spotify,
+    /// и на Apple Music эквалайзер оставался неподвижным.
+    @ObservationIgnored private var activeBundleIdentifier =
+        PlaybackSource.spotify.bundleIdentifier
 
     func start() {
         guard processTimer == nil else { return }
@@ -101,7 +140,7 @@ final class SpotifyAudioMonitor: NSObject {
                 self?.spectrum = spectrum
             }
         }
-        synchronizeSpotifyProcess()
+        synchronizeProcess()
         processTimer = Timer.scheduledTimer(
             timeInterval: 1,
             target: self,
@@ -119,14 +158,21 @@ final class SpotifyAudioMonitor: NSObject {
         spectrum = .resting
     }
 
-    @objc private func processTimerDidFire() {
-        synchronizeSpotifyProcess()
+    func setActiveSource(_ source: PlaybackSource?) {
+        let bundleIdentifier = (source ?? .spotify).bundleIdentifier
+        guard bundleIdentifier != activeBundleIdentifier else { return }
+        activeBundleIdentifier = bundleIdentifier
+        synchronizeProcess()
     }
 
-    private func synchronizeSpotifyProcess() {
-        let spotifyPID = NSRunningApplication.runningApplications(
-            withBundleIdentifier: "com.spotify.client"
+    @objc private func processTimerDidFire() {
+        synchronizeProcess()
+    }
+
+    private func synchronizeProcess() {
+        let pid = NSRunningApplication.runningApplications(
+            withBundleIdentifier: activeBundleIdentifier
         ).first?.processIdentifier
-        engine.setProcessIdentifier(spotifyPID)
+        engine.setProcessIdentifier(pid)
     }
 }

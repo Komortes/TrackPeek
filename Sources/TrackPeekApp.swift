@@ -8,10 +8,19 @@ final class TrackPeekAppDelegate: NSObject, NSApplicationDelegate {
     let menuBarControlsController = MenuBarControlsController()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // В тест-хосте не поднимаем сервисы приложения: опрос плеера через
+        // AppleScript и оконные контроллеры роняли тест-раннер (EXC_BAD_ACCESS).
+        guard ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil else {
+            return
+        }
+
         OverlayMode.migrateIfNeeded()
-        NotchPreferences.migrateWidgetDefaultsIfNeeded()
+        WidgetPreferences.migrateDefaultsIfNeeded()
         NotchPreferences.registerDefaults()
+        WidgetPreferences.registerDefaults()
         MenuBarPreferences.registerDefaults()
+
+        PlaybackCoordinator.shared.start()
 
         let controller = NotchWindowController()
         notchWindowController = controller
@@ -26,6 +35,7 @@ final class TrackPeekAppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         notchWindowController?.stop()
         menuBarControlsController.stop()
+        PlaybackCoordinator.shared.stop()
     }
 }
 

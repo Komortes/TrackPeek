@@ -276,6 +276,7 @@ private actor NotchRenderingSpotifyProvider: SpotifyPlaybackProviding {
     }
 
     func fetchCurrentTrack() -> SpotifyTrack { track }
+    func activeSource() -> PlaybackSource { track.source ?? .spotify }
     func playPause() {}
     func nextTrack() {}
     func previousTrack() {}

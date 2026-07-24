@@ -6,6 +6,10 @@ actor MusicAppleScriptClient: SpotifyPlaybackProviding {
     private var cachedArtworkIdentity: String?
     private var cachedArtworkURL: URL?
 
+    func activeSource() -> PlaybackSource {
+        .appleMusic
+    }
+
     func fetchCurrentTrack() async throws -> SpotifyTrack {
         guard isMusicRunning else {
             throw SpotifyPlaybackError.spotifyNotRunning

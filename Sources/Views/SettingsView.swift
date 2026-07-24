@@ -5,7 +5,6 @@ enum SettingsTab: CaseIterable {
     case notch
     case widget
     case menuBar
-    case player
 
     var title: String {
         switch self {
@@ -17,8 +16,6 @@ enum SettingsTab: CaseIterable {
             "Виджет"
         case .menuBar:
             "Menu Bar"
-        case .player:
-            "Плеер"
         }
     }
 
@@ -32,22 +29,11 @@ enum SettingsTab: CaseIterable {
             "rectangle.on.rectangle"
         case .menuBar:
             "menubar.rectangle"
-        case .player:
-            "play.square"
         }
     }
 }
 
 struct SettingsView: View {
-    @AppStorage(PlayerLayout.storageKey)
-    private var playerLayoutRawValue = PlayerLayout.fallback.rawValue
-    @AppStorage("showAlbumName") private var showsAlbum = true
-    @AppStorage("showPlaybackStatus") private var showsPlaybackStatus = true
-    @AppStorage("showArtworkShadow") private var showsArtworkShadow = true
-    @AppStorage(PopoverBackgroundStyle.storageKey)
-    private var backgroundStyleRawValue = PopoverBackgroundStyle.fallback.rawValue
-    @AppStorage(ArtworkSizePreference.storageKey)
-    private var artworkSizeValue = ArtworkSizePreference.fallback
     @AppStorage(OverlayMode.storageKey)
     private var selectedModeRawValue = OverlayMode.fallback.rawValue
     @AppStorage(MediaSourcePreference.storageKey)
@@ -55,6 +41,13 @@ struct SettingsView: View {
 
     @State private var showsResetConfirmation = false
     @State private var launchAtLoginEnabled = LaunchAtLogin.isEnabled
+    @State private var automationStatus: AutomationCheckStatus = .unknown
+    @State private var automationTask: Task<Void, Never>?
+    private let onboardingController = OnboardingWindowController()
+
+    private enum AutomationCheckStatus {
+        case unknown, checking, granted, playerNotRunning, failed(String)
+    }
 
     private static let resettableKeys: [String] = [
         OverlayMode.storageKey,
@@ -84,22 +77,22 @@ struct SettingsView: View {
         NotchPreferences.colorSourceKey,
         NotchPreferences.cornerRadiusKey,
         NotchPreferences.lyricsEnabledKey,
-        NotchPreferences.widgetPositionKey,
-        NotchPreferences.widgetLayoutKey,
-        NotchPreferences.widgetFreeMoveKey,
-        NotchPreferences.widgetOriginXKey,
-        NotchPreferences.widgetOriginTopYKey,
-        NotchPreferences.widgetOutlineShimmerKey,
-        NotchPreferences.widgetOutlineWidthKey,
-        NotchPreferences.widgetPulseModeKey,
-        NotchPreferences.widgetGlassBackgroundKey,
-        NotchPreferences.widgetWidthKey,
-        NotchPreferences.widgetDisplayTargetKey,
-        NotchPreferences.widgetColoredProgressKey,
-        NotchPreferences.widgetColoredWaveformKey,
-        NotchPreferences.widgetColorSourceKey,
-        NotchPreferences.widgetEqualizerSensitivityKey,
-        NotchPreferences.widgetLyricsEnabledKey,
+        WidgetPreferences.positionKey,
+        WidgetPreferences.layoutKey,
+        WidgetPreferences.freeMoveKey,
+        WidgetPreferences.originXKey,
+        WidgetPreferences.originTopYKey,
+        WidgetPreferences.outlineShimmerKey,
+        WidgetPreferences.outlineWidthKey,
+        WidgetPreferences.pulseModeKey,
+        WidgetPreferences.glassBackgroundKey,
+        WidgetPreferences.widthKey,
+        WidgetPreferences.displayTargetKey,
+        WidgetPreferences.coloredProgressKey,
+        WidgetPreferences.coloredWaveformKey,
+        WidgetPreferences.colorSourceKey,
+        WidgetPreferences.equalizerSensitivityKey,
+        WidgetPreferences.lyricsEnabledKey,
         MenuBarPreferences.controlsEnabledKey,
         MenuBarPreferences.showsTitleKey,
         MenuBarPreferences.showsEqualizerKey,
@@ -111,10 +104,6 @@ struct SettingsView: View {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—"
     }
 
-    private var playerLayout: PlayerLayout {
-        PlayerLayout(rawValue: playerLayoutRawValue) ?? .fallback
-    }
-
     private var selectedMode: OverlayMode {
         OverlayMode(rawValue: selectedModeRawValue) ?? .fallback
     }
@@ -123,22 +112,6 @@ struct SettingsView: View {
         Binding(
             get: { MediaSourcePreference(rawValue: mediaSourceRawValue) ?? .fallback },
             set: { mediaSourceRawValue = $0.rawValue }
-        )
-    }
-
-    private var backgroundStyle: Binding<PopoverBackgroundStyle> {
-        Binding(
-            get: {
-                PopoverBackgroundStyle(rawValue: backgroundStyleRawValue) ?? .fallback
-            },
-            set: { backgroundStyleRawValue = $0.rawValue }
-        )
-    }
-
-    private var artworkSize: Binding<Double> {
-        Binding(
-            get: { ArtworkSizePreference.clamped(artworkSizeValue) },
-            set: { artworkSizeValue = ArtworkSizePreference.clamped($0) }
         )
     }
 
@@ -183,95 +156,8 @@ struct SettingsView: View {
                     )
                 }
 
-            SettingsPage(
-                title: "Плеер",
-                subtitle: "Настройте компоновку, обложку и второстепенные детали."
-            ) {
-                appearanceSection
-            }
-            .tabItem {
-                Label(
-                    SettingsTab.player.title,
-                    systemImage: SettingsTab.player.symbolName
-                )
-            }
         }
         .frame(width: 720, height: 640)
-    }
-
-    private var appearanceSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            SettingsSectionHeader(
-                title: "Popover",
-                subtitle: "Компоновка и детали компактного плеера."
-            )
-
-            HStack(alignment: .top, spacing: 12) {
-                ForEach(PlayerLayout.allCases) { layout in
-                    playerLayoutCard(layout)
-                }
-            }
-
-            SettingsGroup {
-                SettingsRow(
-                    title: "Фон",
-                    subtitle: "Системный материал или цвета текущей обложки."
-                ) {
-                    Picker("Фон", selection: backgroundStyle) {
-                        ForEach(PopoverBackgroundStyle.allCases) { style in
-                            Text(style.title).tag(style)
-                        }
-                    }
-                    .labelsHidden()
-                    .frame(width: 170)
-                }
-
-                SettingsRowDivider()
-
-                SettingsRow(
-                    title: "Размер обложки",
-                    subtitle: "Масштаб фотографии в режиме Artwork."
-                ) {
-                    SettingsValueSlider(
-                        value: artworkSize,
-                        range: ArtworkSizePreference.range,
-                        step: ArtworkSizePreference.step,
-                        text: "\(Int(ArtworkSizePreference.clamped(artworkSizeValue))) px"
-                    )
-                    .accessibilityLabel("Размер обложки")
-                }
-
-                SettingsRowDivider()
-
-                SettingsRow(
-                    title: "Название альбома",
-                    subtitle: "Показывать дополнительную строку под исполнителем."
-                ) {
-                    Toggle("Название альбома", isOn: $showsAlbum)
-                        .labelsHidden()
-                }
-
-                SettingsRowDivider()
-
-                SettingsRow(
-                    title: "Статус Spotify",
-                    subtitle: "Небольшой индикатор воспроизведения или паузы."
-                ) {
-                    Toggle("Статус Spotify", isOn: $showsPlaybackStatus)
-                        .labelsHidden()
-                }
-
-                SettingsRowDivider()
-
-                SettingsRow(
-                    title: "Тень обложки",
-                    subtitle: "Добавляет глубину, не меняя саму обложку."
-                ) {
-                    Toggle("Тень обложки", isOn: $showsArtworkShadow)
-                        .labelsHidden()
-                }
-            }
-        }
     }
 
     private var displayModeSection: some View {
@@ -329,6 +215,31 @@ struct SettingsView: View {
                     }
                     .labelsHidden()
                     .frame(width: 170)
+                }
+
+                SettingsRowDivider()
+
+                SettingsRow(
+                    title: "Доступ к плееру",
+                    subtitle: "TrackPeek управляет Spotify/Music через Apple Events."
+                ) {
+                    HStack(spacing: 8) {
+                        Button("Проверить", action: checkAutomationAccess)
+                            .disabled(isCheckingAccess)
+
+                        automationStatusView
+                    }
+                }
+
+                SettingsRowDivider()
+
+                SettingsRow(
+                    title: "Приветственный экран",
+                    subtitle: "Пройти онбординг заново: источник, разрешение, автозапуск."
+                ) {
+                    Button("Показать") {
+                        onboardingController.show()
+                    }
                 }
             }
         }
@@ -393,52 +304,56 @@ struct SettingsView: View {
         }
     }
 
+    private var isCheckingAccess: Bool {
+        if case .checking = automationStatus { return true }
+        return false
+    }
+
+    @ViewBuilder
+    private var automationStatusView: some View {
+        switch automationStatus {
+        case .unknown:
+            EmptyView()
+        case .checking:
+            ProgressView().controlSize(.small)
+        case .granted:
+            Label("Доступ есть", systemImage: "checkmark.circle.fill")
+                .foregroundStyle(.green)
+                .font(.caption)
+        case .playerNotRunning:
+            Label("Плеер не запущен", systemImage: "info.circle")
+                .foregroundStyle(.secondary)
+                .font(.caption)
+        case .failed(let message):
+            Label(message, systemImage: "exclamationmark.triangle")
+                .foregroundStyle(.orange)
+                .font(.caption)
+        }
+    }
+
+    private func checkAutomationAccess() {
+        automationTask?.cancel()
+        automationStatus = .checking
+        automationTask = Task { @MainActor in
+            do {
+                _ = try await PlaybackSourceRouter().fetchCurrentTrack()
+                guard !Task.isCancelled else { return }
+                automationStatus = .granted
+            } catch SpotifyPlaybackError.spotifyNotRunning {
+                guard !Task.isCancelled else { return }
+                automationStatus = .playerNotRunning
+            } catch {
+                guard !Task.isCancelled else { return }
+                automationStatus = .failed(error.localizedDescription)
+            }
+        }
+    }
+
     private func resetAllSettings() {
         let defaults = UserDefaults.standard
         for key in Self.resettableKeys {
             defaults.removeObject(forKey: key)
         }
-    }
-
-    private func playerLayoutCard(_ layout: PlayerLayout) -> some View {
-        Button {
-            playerLayoutRawValue = layout.rawValue
-        } label: {
-            VStack(alignment: .leading, spacing: 10) {
-                PlayerLayoutPreview(layout: layout)
-
-                HStack {
-                    Text(layout.title)
-                        .font(.headline)
-
-                    Spacer()
-
-                    if playerLayout == layout {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundStyle(.tint)
-                    }
-                }
-
-                Text(layout.summary)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(11)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 13, style: .continuous)
-                    .stroke(
-                        playerLayout == layout ? Color.accentColor : Color.primary.opacity(0.08),
-                        lineWidth: playerLayout == layout ? 2 : 1
-                    )
-            }
-        }
-        .buttonStyle(.plain)
-        .help("Выбрать \(layout.title)")
-        .accessibilityLabel("Компоновка \(layout.title)")
-        .accessibilityAddTraits(playerLayout == layout ? .isSelected : [])
     }
 
     private func displayModeCard(_ mode: OverlayMode) -> some View {

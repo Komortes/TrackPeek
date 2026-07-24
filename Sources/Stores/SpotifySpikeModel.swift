@@ -10,6 +10,9 @@ final class SpotifySpikeModel {
     private(set) var statusText = "Обновление…"
     private(set) var snapshotDate = Date()
     private(set) var availability: PlaybackAvailability = .loading
+    /// Реально резолвнутый источник — не гадаем по сохранённой preference,
+    /// потому что в режиме «Автоматически» она не говорит, что играет сейчас.
+    private(set) var activeSource: PlaybackSource?
 
     /// После нашего seek AppleScript какое-то время может возвращать старую
     /// позицию — до этого момента доверяем оптимистичной локальной позиции.
@@ -19,7 +22,13 @@ final class SpotifySpikeModel {
         self.provider = provider
     }
 
+    var activeSourceDisplayName: String {
+        activeSource?.displayName ?? "Плеер"
+    }
+
     func refresh() async {
+        activeSource = await provider.activeSource()
+
         do {
             let track = try await provider.fetchCurrentTrack()
 

@@ -8,8 +8,10 @@ import Observation
 @MainActor
 @Observable
 final class MenuBarControlsController: NSObject {
-    let model = SpotifySpikeModel()
-    let audioMonitor = SpotifyAudioMonitor()
+    private let coordinator = PlaybackCoordinator.shared
+
+    var model: SpotifySpikeModel { coordinator.model }
+    var audioMonitor: SpotifyAudioMonitor { coordinator.audioMonitor }
 
     private var previousItem: NSStatusItem?
     private var playPauseItem: NSStatusItem?
@@ -45,8 +47,7 @@ final class MenuBarControlsController: NSObject {
 
         if enabled {
             createStatusItemsIfNeeded()
-            audioMonitor.start()
-            startRefreshTask()
+            startAppearanceTask()
         } else {
             teardown()
         }
@@ -55,7 +56,6 @@ final class MenuBarControlsController: NSObject {
     private func teardown() {
         refreshTask?.cancel()
         refreshTask = nil
-        audioMonitor.stop()
 
         for item in [previousItem, playPauseItem, nextItem] {
             if let item {
@@ -114,17 +114,16 @@ final class MenuBarControlsController: NSObject {
         Task { await model.nextTrack() }
     }
 
-    private func startRefreshTask() {
+    /// Опрос плеера централизован в PlaybackCoordinator; здесь только
+    /// синхронизация вида кнопок с общим снапшотом.
+    private func startAppearanceTask() {
         guard refreshTask == nil else { return }
 
         refreshTask = Task { @MainActor [weak self] in
             while !Task.isCancelled {
                 guard let self else { return }
-                await model.refresh()
                 updateButtonAppearance()
-
-                let interval = model.track?.isPlaying == true ? 2.0 : 4.0
-                try? await Task.sleep(for: .milliseconds(Int64(interval * 1_000)))
+                try? await Task.sleep(for: .seconds(1))
             }
         }
     }

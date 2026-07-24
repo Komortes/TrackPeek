@@ -115,6 +115,11 @@ struct PlayerLayoutTests {
             backing: .buffered,
             defer: false
         )
+        // close() у окна с isReleasedWhenClosed (default для NSWindow) делает
+        // самостоятельный release; вместе с ARC это double-release и падение
+        // всего тест-раннера при следующем дренаже autorelease-пула.
+        settingsWindow.isReleasedWhenClosed = false
+        utilityPanel.isReleasedWhenClosed = false
 
         #expect(SettingsWindowPresentation.isSettingsWindow(settingsWindow))
         #expect(!SettingsWindowPresentation.isSettingsWindow(utilityPanel))

@@ -2,6 +2,7 @@ import AppKit
 
 protocol SpotifyPlaybackProviding: Sendable {
     func fetchCurrentTrack() async throws -> SpotifyTrack
+    func activeSource() async -> PlaybackSource
     func playPause() async throws
     func nextTrack() async throws
     func previousTrack() async throws
@@ -26,6 +27,10 @@ enum SpotifyPlaybackError: LocalizedError {
 }
 
 actor SpotifyAppleScriptClient: SpotifyPlaybackProviding {
+    func activeSource() -> PlaybackSource {
+        .spotify
+    }
+
     func fetchCurrentTrack() async throws -> SpotifyTrack {
         guard isSpotifyRunning else {
             throw SpotifyPlaybackError.spotifyNotRunning

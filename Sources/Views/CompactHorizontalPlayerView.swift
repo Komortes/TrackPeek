@@ -25,7 +25,11 @@ struct CompactHorizontalPlayerView: View {
                         .padding(7)
                         .background(.regularMaterial, in: Circle())
                         .padding(7)
-                        .help(track.isPlaying ? "Spotify воспроизводит трек" : "Spotify на паузе")
+                        .help(
+                            track.isPlaying
+                                ? "\(track.source?.displayName ?? "Плеер") воспроизводит трек"
+                                : "\(track.source?.displayName ?? "Плеер") на паузе"
+                        )
                 }
             }
 
@@ -39,6 +43,7 @@ struct CompactHorizontalPlayerView: View {
 
                     PlayerMoreMenu(
                         track: track,
+                        sourceName: model.activeSourceDisplayName,
                         onRefresh: { Task { await model.refresh() } }
                     )
                 }

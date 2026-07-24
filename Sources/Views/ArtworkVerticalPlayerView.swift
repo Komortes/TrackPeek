@@ -10,6 +10,7 @@ struct ArtworkVerticalPlayerView: View {
         VStack(spacing: 10) {
             PlayerHeaderView(
                 track: track,
+                sourceName: model.activeSourceDisplayName,
                 showsPlaybackStatus: options.showsPlaybackStatus,
                 onRefresh: { Task { await model.refresh() } }
             )

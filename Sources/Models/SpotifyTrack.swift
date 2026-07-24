@@ -1,5 +1,25 @@
 import Foundation
 
+/// Конкретный плеер, из которого получен playback-снапшот.
+enum PlaybackSource: String, Sendable, Equatable {
+    case spotify
+    case appleMusic
+
+    var bundleIdentifier: String {
+        switch self {
+        case .spotify: "com.spotify.client"
+        case .appleMusic: "com.apple.Music"
+        }
+    }
+
+    var displayName: String {
+        switch self {
+        case .spotify: "Spotify"
+        case .appleMusic: "Music"
+        }
+    }
+}
+
 struct SpotifyTrack: Equatable, Sendable {
     let title: String
     let artist: String
@@ -8,6 +28,8 @@ struct SpotifyTrack: Equatable, Sendable {
     let position: TimeInterval
     let artworkURL: URL?
     let isPlaying: Bool
+    /// Источник снапшота; проставляется роутером, парсеры его не знают.
+    var source: PlaybackSource?
 
     init(
         title: String,
@@ -16,7 +38,8 @@ struct SpotifyTrack: Equatable, Sendable {
         duration: TimeInterval = 0,
         position: TimeInterval = 0,
         artworkURL: URL? = nil,
-        isPlaying: Bool
+        isPlaying: Bool,
+        source: PlaybackSource? = nil
     ) {
         self.title = title
         self.artist = artist
@@ -25,6 +48,13 @@ struct SpotifyTrack: Equatable, Sendable {
         self.position = position
         self.artworkURL = artworkURL
         self.isPlaying = isPlaying
+        self.source = source
+    }
+
+    func tagged(with source: PlaybackSource) -> SpotifyTrack {
+        var copy = self
+        copy.source = source
+        return copy
     }
 }
 

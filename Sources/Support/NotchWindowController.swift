@@ -35,11 +35,8 @@ final class NotchPanelLayoutState {
 
 @MainActor
 final class NotchWindowController: NSObject {
-    private let model = SpotifySpikeModel()
-    private let audioMonitor = SpotifyAudioMonitor()
-    private let lyricsStore = LyricsStore()
+    private let coordinator = PlaybackCoordinator.shared
     private var panelHosts: [Int: NotchPanelHost] = [:]
-    private var refreshTask: Task<Void, Never>?
 
     func start() {
         NotificationCenter.default.addObserver(
@@ -60,9 +57,6 @@ final class NotchWindowController: NSObject {
 
     func stop() {
         NotificationCenter.default.removeObserver(self)
-        refreshTask?.cancel()
-        refreshTask = nil
-        audioMonitor.stop()
         removeAllPanels()
     }
 
@@ -85,12 +79,11 @@ final class NotchWindowController: NSObject {
         ) ?? .fallback
         guard mode == .notch || mode == .floatingWidget else {
             removeAllPanels()
-            updateRefreshTask()
             return
         }
 
         let targetKey = mode == .floatingWidget
-            ? NotchPreferences.widgetDisplayTargetKey
+            ? WidgetPreferences.displayTargetKey
             : NotchPreferences.displayTargetKey
         let target = NotchDisplayTarget(
             rawValue: defaults.string(forKey: targetKey)
@@ -113,16 +106,14 @@ final class NotchWindowController: NSObject {
             } else {
                 let host = NotchPanelHost(
                     screen: screen,
-                    model: model,
-                    audioMonitor: audioMonitor,
-                    lyricsStore: lyricsStore
+                    model: coordinator.model,
+                    audioMonitor: coordinator.audioMonitor,
+                    lyricsStore: coordinator.lyricsStore
                 )
                 panelHosts[identifier] = host
                 host.show()
             }
         }
-
-        updateRefreshTask()
     }
 
     private func screens(for target: NotchDisplayTarget) -> [NSScreen] {
@@ -145,29 +136,6 @@ final class NotchWindowController: NSObject {
     private func screenIdentifier(_ screen: NSScreen) -> Int? {
         let key = NSDeviceDescriptionKey("NSScreenNumber")
         return (screen.deviceDescription[key] as? NSNumber)?.intValue
-    }
-
-    private func updateRefreshTask() {
-        guard !panelHosts.isEmpty else {
-            refreshTask?.cancel()
-            refreshTask = nil
-            audioMonitor.stop()
-            return
-        }
-
-        audioMonitor.start()
-
-        guard refreshTask == nil else { return }
-
-        refreshTask = Task { @MainActor [weak self] in
-            while !Task.isCancelled {
-                guard let self else { return }
-                await model.refresh()
-
-                let interval = model.track?.isPlaying == true ? 2.0 : 4.0
-                try? await Task.sleep(for: .milliseconds(Int64(interval * 1_000)))
-            }
-        }
     }
 
     private func removeAllPanels() {
@@ -253,14 +221,14 @@ private final class NotchPanelHost: NSObject {
             guard
                 let self,
                 !isApplyingLayout,
-                UserDefaults.standard.bool(forKey: NotchPreferences.widgetFreeMoveKey)
+                UserDefaults.standard.bool(forKey: WidgetPreferences.freeMoveKey)
             else {
                 return
             }
 
             let frame = panel.frame
-            UserDefaults.standard.set(Double(frame.origin.x), forKey: NotchPreferences.widgetOriginXKey)
-            UserDefaults.standard.set(Double(frame.maxY), forKey: NotchPreferences.widgetOriginTopYKey)
+            UserDefaults.standard.set(Double(frame.origin.x), forKey: WidgetPreferences.originXKey)
+            UserDefaults.standard.set(Double(frame.maxY), forKey: WidgetPreferences.originTopYKey)
         }
     }
 
@@ -299,7 +267,7 @@ private final class NotchPanelHost: NSObject {
         // Виджет использует собственную ширину; коррекция высоты относится
         // только к геометрии физической чёлки.
         let width = mode == .floatingWidget
-            ? defaults.double(forKey: NotchPreferences.widgetWidthKey)
+            ? defaults.double(forKey: WidgetPreferences.widthKey)
             : defaults.double(forKey: NotchPreferences.widthKey)
         let heightAdjustment = mode == .floatingWidget
             ? 0
@@ -316,35 +284,35 @@ private final class NotchPanelHost: NSObject {
 
         if mode == .floatingWidget {
             let layout = NotchWidgetLayout(
-                rawValue: defaults.string(forKey: NotchPreferences.widgetLayoutKey)
+                rawValue: defaults.string(forKey: WidgetPreferences.layoutKey)
                     ?? NotchWidgetLayout.fallback.rawValue
             ) ?? .fallback
             // Карточные раскладки держат постоянный размер, пилюля — как чёлка.
             let widgetSize = layout.isAlwaysExpanded
-                ? NotchPreferences.widgetCardSize(
+                ? WidgetPreferences.cardSize(
                     layout: layout,
                     width: width,
                     heightAdjustment: heightAdjustment
                 )
                 : size
 
-            let freeMove = defaults.bool(forKey: NotchPreferences.widgetFreeMoveKey)
+            let freeMove = defaults.bool(forKey: WidgetPreferences.freeMoveKey)
             panel.isMovable = freeMove
             panel.isMovableByWindowBackground = freeMove
 
             let bounds = screen.visibleFrame
-            let margin = NotchPreferences.widgetEdgeMargin
+            let margin = WidgetPreferences.edgeMargin
             var origin: CGPoint
 
             if freeMove,
-               let x = defaults.object(forKey: NotchPreferences.widgetOriginXKey) as? Double,
-               let topY = defaults.object(forKey: NotchPreferences.widgetOriginTopYKey) as? Double {
+               let x = defaults.object(forKey: WidgetPreferences.originXKey) as? Double,
+               let topY = defaults.object(forKey: WidgetPreferences.originTopYKey) as? Double {
                 // Пользовательская позиция: закреплён верхний край, чтобы
                 // раскрытие пилюли росло вниз, как у чёлки.
                 origin = CGPoint(x: x, y: topY - widgetSize.height)
             } else {
                 let position = NotchWidgetPosition(
-                    rawValue: defaults.string(forKey: NotchPreferences.widgetPositionKey)
+                    rawValue: defaults.string(forKey: WidgetPreferences.positionKey)
                         ?? NotchWidgetPosition.fallback.rawValue
                 ) ?? .fallback
                 let x: CGFloat = switch position.horizontalAlignment {
@@ -356,8 +324,8 @@ private final class NotchPanelHost: NSObject {
                     bounds.maxX - widgetSize.width - margin
                 }
                 let y = position.isBottom
-                    ? bounds.minY + NotchPreferences.widgetTopInset
-                    : bounds.maxY - widgetSize.height - NotchPreferences.widgetTopInset
+                    ? bounds.minY + WidgetPreferences.topInset
+                    : bounds.maxY - widgetSize.height - WidgetPreferences.topInset
                 origin = CGPoint(x: x, y: y)
             }
 
@@ -384,13 +352,22 @@ private final class NotchPanelHost: NSObject {
             return
         }
 
+        // Растёт панель или сжимается — разная длительность и кривая
+        // (см. NotchMotion): раскрытие подтверждает намерение быстро,
+        // закрытие чуть быстрее освобождает экран.
+        let isGrowing = frame.height >= panel.frame.height
+        let duration = isGrowing ? NotchMotion.expandDuration : NotchMotion.collapseDuration
+        let controlPoints: (Float, Float, Float, Float) = isGrowing
+            ? (0.16, 1, 0.3, 1)
+            : (0.4, 0, 1, 1)
+
         NSAnimationContext.runAnimationGroup { context in
-            context.duration = NotchMotion.resizeDuration
+            context.duration = duration
             context.timingFunction = CAMediaTimingFunction(
-                controlPoints: 0.42,
-                0,
-                0.58,
-                1
+                controlPoints: controlPoints.0,
+                controlPoints.1,
+                controlPoints.2,
+                controlPoints.3
             )
             panel.animator().setFrame(frame, display: true)
         } completionHandler: {

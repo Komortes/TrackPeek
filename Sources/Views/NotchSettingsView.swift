@@ -239,19 +239,20 @@ struct NotchSettingsView: View {
                         .labelsHidden()
                 }
 
-                SettingsRowDivider()
+                if hoverEnabled {
+                    SettingsRowDivider()
 
-                SettingsRow(
-                    title: "Задержка наведения",
-                    subtitle: "Небольшая пауза защищает от случайных раскрытий."
-                ) {
-                    SettingsValueSlider(
-                        value: notchHoverDelay,
-                        range: NotchPreferences.hoverDelayRange,
-                        step: NotchPreferences.hoverDelayStep,
-                        text: String(format: "%.2f с", NotchPreferences.clampedHoverDelay(hoverDelay))
-                    )
-                    .disabled(!hoverEnabled)
+                    SettingsRow(
+                        title: "Задержка наведения",
+                        subtitle: "Небольшая пауза защищает от случайных раскрытий."
+                    ) {
+                        SettingsValueSlider(
+                            value: notchHoverDelay,
+                            range: NotchPreferences.hoverDelayRange,
+                            step: NotchPreferences.hoverDelayStep,
+                            text: String(format: "%.2f с", NotchPreferences.clampedHoverDelay(hoverDelay))
+                        )
+                    }
                 }
 
                 SettingsRowDivider()
@@ -282,22 +283,23 @@ struct NotchSettingsView: View {
                         .labelsHidden()
                 }
 
-                SettingsRowDivider()
+                if notificationsEnabled {
+                    SettingsRowDivider()
 
-                SettingsRow(
-                    title: "Длительность",
-                    subtitle: "Сколько времени держать уведомление раскрытым."
-                ) {
-                    SettingsValueSlider(
-                        value: notchNotificationDuration,
-                        range: NotchPreferences.notificationDurationRange,
-                        step: NotchPreferences.notificationDurationStep,
-                        text: String(
-                            format: "%.2f с",
-                            NotchPreferences.clampedNotificationDuration(notificationDuration)
+                    SettingsRow(
+                        title: "Длительность",
+                        subtitle: "Сколько времени держать уведомление раскрытым."
+                    ) {
+                        SettingsValueSlider(
+                            value: notchNotificationDuration,
+                            range: NotchPreferences.notificationDurationRange,
+                            step: NotchPreferences.notificationDurationStep,
+                            text: String(
+                                format: "%.2f с",
+                                NotchPreferences.clampedNotificationDuration(notificationDuration)
+                            )
                         )
-                    )
-                    .disabled(!notificationsEnabled)
+                    }
                 }
             }
         }
@@ -415,23 +417,24 @@ struct NotchSettingsView: View {
                         .labelsHidden()
                 }
 
-                SettingsRowDivider()
+                if outlineShimmer {
+                    SettingsRowDivider()
 
-                SettingsRow(
-                    title: "Толщина контура",
-                    subtitle: "Размер переливающейся обводки."
-                ) {
-                    SettingsValueSlider(
-                        value: notchOutlineWidth,
-                        range: NotchPreferences.outlineWidthRange,
-                        step: NotchPreferences.outlineWidthStep,
-                        text: String(
-                            format: "%.1f px",
-                            NotchPreferences.clampedOutlineWidth(outlineWidth)
+                    SettingsRow(
+                        title: "Толщина контура",
+                        subtitle: "Размер переливающейся обводки."
+                    ) {
+                        SettingsValueSlider(
+                            value: notchOutlineWidth,
+                            range: NotchPreferences.outlineWidthRange,
+                            step: NotchPreferences.outlineWidthStep,
+                            text: String(
+                                format: "%.1f px",
+                                NotchPreferences.clampedOutlineWidth(outlineWidth)
+                            )
                         )
-                    )
+                    }
                 }
-                .disabled(!outlineShimmer)
 
                 SettingsRowDivider()
 

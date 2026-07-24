@@ -3,16 +3,8 @@ import SwiftUI
 
 struct PlayerStateView: View {
     let availability: PlaybackAvailability
+    let sourceName: String
     let onRetry: () -> Void
-
-    @AppStorage(MediaSourcePreference.storageKey)
-    private var sourceRawValue = MediaSourcePreference.fallback.rawValue
-
-    private var sourceName: String {
-        (MediaSourcePreference(rawValue: sourceRawValue) ?? .fallback) == .appleMusic
-            ? "Music"
-            : "Spotify"
-    }
 
     var body: some View {
         VStack(spacing: 10) {

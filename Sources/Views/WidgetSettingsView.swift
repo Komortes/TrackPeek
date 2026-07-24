@@ -3,33 +3,33 @@ import SwiftUI
 struct WidgetSettingsView: View {
     @AppStorage(OverlayMode.storageKey)
     private var selectedModeRawValue = OverlayMode.fallback.rawValue
-    @AppStorage(NotchPreferences.widgetLayoutKey)
+    @AppStorage(WidgetPreferences.layoutKey)
     private var widgetLayoutRawValue = NotchWidgetLayout.fallback.rawValue
-    @AppStorage(NotchPreferences.widgetPositionKey)
+    @AppStorage(WidgetPreferences.positionKey)
     private var widgetPositionRawValue = NotchWidgetPosition.fallback.rawValue
-    @AppStorage(NotchPreferences.widgetFreeMoveKey)
+    @AppStorage(WidgetPreferences.freeMoveKey)
     private var freeMoveEnabled = false
-    @AppStorage(NotchPreferences.widgetLyricsEnabledKey)
+    @AppStorage(WidgetPreferences.lyricsEnabledKey)
     private var lyricsEnabled = NotchPreferences.lyricsEnabledFallback
-    @AppStorage(NotchPreferences.widgetWidthKey)
+    @AppStorage(WidgetPreferences.widthKey)
     private var width = NotchPreferences.widthFallback
-    @AppStorage(NotchPreferences.widgetDisplayTargetKey)
+    @AppStorage(WidgetPreferences.displayTargetKey)
     private var displayTargetRawValue = NotchDisplayTarget.mainDisplay.rawValue
-    @AppStorage(NotchPreferences.widgetColoredProgressKey)
+    @AppStorage(WidgetPreferences.coloredProgressKey)
     private var coloredProgress = NotchPreferences.coloredProgressFallback
-    @AppStorage(NotchPreferences.widgetColoredWaveformKey)
+    @AppStorage(WidgetPreferences.coloredWaveformKey)
     private var coloredWaveform = NotchPreferences.coloredWaveformFallback
-    @AppStorage(NotchPreferences.widgetColorSourceKey)
+    @AppStorage(WidgetPreferences.colorSourceKey)
     private var colorSourceRawValue = NotchColorSource.fallback.rawValue
-    @AppStorage(NotchPreferences.widgetEqualizerSensitivityKey)
+    @AppStorage(WidgetPreferences.equalizerSensitivityKey)
     private var equalizerSensitivity = NotchPreferences.equalizerSensitivityFallback
-    @AppStorage(NotchPreferences.widgetOutlineShimmerKey)
+    @AppStorage(WidgetPreferences.outlineShimmerKey)
     private var outlineShimmer = NotchPreferences.outlineShimmerFallback
-    @AppStorage(NotchPreferences.widgetOutlineWidthKey)
+    @AppStorage(WidgetPreferences.outlineWidthKey)
     private var outlineWidth = NotchPreferences.outlineWidthFallback
-    @AppStorage(NotchPreferences.widgetPulseModeKey)
+    @AppStorage(WidgetPreferences.pulseModeKey)
     private var pulseModeRawValue = NotchPulseMode.fallback.rawValue
-    @AppStorage(NotchPreferences.widgetGlassBackgroundKey)
+    @AppStorage(WidgetPreferences.glassBackgroundKey)
     private var glassBackground = false
 
     private var selectedMode: OverlayMode {
@@ -148,12 +148,20 @@ struct WidgetSettingsView: View {
             subtitle: "Форма и размер плавающей панели.",
             symbolName: "square.grid.2x2"
         ) {
-            LazyVGrid(
-                columns: [GridItem(.adaptive(minimum: 148), spacing: 10)],
-                spacing: 10
-            ) {
-                ForEach(NotchWidgetLayout.allCases) { layout in
-                    layoutCard(layout)
+            ForEach(NotchWidgetLayoutFamily.allCases) { family in
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(family.title)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+
+                    LazyVGrid(
+                        columns: [GridItem(.adaptive(minimum: 148), spacing: 10)],
+                        spacing: 10
+                    ) {
+                        ForEach(family.layouts) { layout in
+                            layoutCard(layout)
+                        }
+                    }
                 }
             }
 
@@ -254,10 +262,10 @@ struct WidgetSettingsView: View {
                 ) {
                     Button("Сбросить") {
                         UserDefaults.standard.removeObject(
-                            forKey: NotchPreferences.widgetOriginXKey
+                            forKey: WidgetPreferences.originXKey
                         )
                         UserDefaults.standard.removeObject(
-                            forKey: NotchPreferences.widgetOriginTopYKey
+                            forKey: WidgetPreferences.originTopYKey
                         )
                     }
                 }
@@ -318,7 +326,7 @@ struct WidgetSettingsView: View {
             RoundedRectangle(cornerRadius: 13, style: .continuous)
                 .stroke(.primary.opacity(0.08), lineWidth: 1)
         }
-        .disabled(freeMoveEnabled)
+        .allowsHitTesting(!freeMoveEnabled)
     }
 
     private func positionRow(top: Bool) -> some View {
@@ -454,23 +462,24 @@ struct WidgetSettingsView: View {
                         .labelsHidden()
                 }
 
-                SettingsRowDivider()
+                if outlineShimmer {
+                    SettingsRowDivider()
 
-                SettingsRow(
-                    title: "Толщина контура",
-                    subtitle: "Размер переливающейся обводки."
-                ) {
-                    SettingsValueSlider(
-                        value: widgetOutlineWidth,
-                        range: NotchPreferences.outlineWidthRange,
-                        step: NotchPreferences.outlineWidthStep,
-                        text: String(
-                            format: "%.1f px",
-                            NotchPreferences.clampedOutlineWidth(outlineWidth)
+                    SettingsRow(
+                        title: "Толщина контура",
+                        subtitle: "Размер переливающейся обводки."
+                    ) {
+                        SettingsValueSlider(
+                            value: widgetOutlineWidth,
+                            range: NotchPreferences.outlineWidthRange,
+                            step: NotchPreferences.outlineWidthStep,
+                            text: String(
+                                format: "%.1f px",
+                                NotchPreferences.clampedOutlineWidth(outlineWidth)
+                            )
                         )
-                    )
+                    }
                 }
-                .disabled(!outlineShimmer)
 
                 SettingsRowDivider()
 

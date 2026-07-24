@@ -1,145 +1,12 @@
 import AppKit
 import SwiftUI
 
-struct NotchSilhouetteShape: InsettableShape {
-    var bottomCornerRadius: CGFloat
-    /// Скругление верхних углов: 0 — «чёлка», прижатая к кромке экрана;
-    /// > 0 — свободная «пилюля» floating-виджета.
-    var topCornerRadius: CGFloat
-    private var insetAmount: CGFloat
-    private let includesTopEdge: Bool
-
-    init(
-        bottomCornerRadius: CGFloat,
-        topCornerRadius: CGFloat = 0,
-        insetAmount: CGFloat = 0,
-        includesTopEdge: Bool = true
-    ) {
-        self.bottomCornerRadius = bottomCornerRadius
-        self.topCornerRadius = topCornerRadius
-        self.insetAmount = insetAmount
-        self.includesTopEdge = includesTopEdge
-    }
-
-    var animatableData: AnimatablePair<CGFloat, CGFloat> {
-        get { AnimatablePair(bottomCornerRadius, insetAmount) }
-        set {
-            bottomCornerRadius = newValue.first
-            insetAmount = newValue.second
-        }
-    }
-
-    func path(in rect: CGRect) -> Path {
-        let frame = rect.insetBy(dx: insetAmount, dy: insetAmount)
-
-        guard frame.width > 0, frame.height > 0 else {
-            return Path()
-        }
-
-        let radius = min(
-            max(bottomCornerRadius - insetAmount, 0),
-            min(frame.width, frame.height) / 2
-        )
-
-        let topLeading = CGPoint(x: frame.minX, y: frame.minY)
-        let topTrailing = CGPoint(x: frame.maxX, y: frame.minY)
-        let bottomTrailing = CGPoint(x: frame.maxX, y: frame.maxY)
-        let bottomLeading = CGPoint(x: frame.minX, y: frame.maxY)
-
-        var path = Path()
-
-        let topRadius = min(
-            max(topCornerRadius - insetAmount, 0),
-            min(frame.width, frame.height) / 2
-        )
-
-        if includesTopEdge, topRadius > 0 {
-            path.move(to: CGPoint(x: frame.minX + topRadius, y: frame.minY))
-            path.addLine(to: CGPoint(x: frame.maxX - topRadius, y: frame.minY))
-            path.addArc(
-                tangent1End: topTrailing,
-                tangent2End: bottomTrailing,
-                radius: topRadius
-            )
-
-            if radius > 0 {
-                path.addArc(
-                    tangent1End: bottomTrailing,
-                    tangent2End: bottomLeading,
-                    radius: radius
-                )
-                path.addArc(
-                    tangent1End: bottomLeading,
-                    tangent2End: topLeading,
-                    radius: radius
-                )
-            } else {
-                path.addLine(to: bottomTrailing)
-                path.addLine(to: bottomLeading)
-            }
-
-            path.addArc(
-                tangent1End: topLeading,
-                tangent2End: topTrailing,
-                radius: topRadius
-            )
-            path.closeSubpath()
-            return path
-        }
-
-        if includesTopEdge {
-            path.move(to: topLeading)
-            path.addLine(to: topTrailing)
-
-            if radius > 0 {
-                path.addArc(
-                    tangent1End: bottomTrailing,
-                    tangent2End: bottomLeading,
-                    radius: radius
-                )
-                path.addArc(
-                    tangent1End: bottomLeading,
-                    tangent2End: topLeading,
-                    radius: radius
-                )
-            } else {
-                path.addLine(to: bottomTrailing)
-                path.addLine(to: bottomLeading)
-            }
-
-            path.closeSubpath()
-        } else {
-            path.move(to: topLeading)
-
-            if radius > 0 {
-                path.addArc(
-                    tangent1End: bottomLeading,
-                    tangent2End: bottomTrailing,
-                    radius: radius
-                )
-                path.addArc(
-                    tangent1End: bottomTrailing,
-                    tangent2End: topTrailing,
-                    radius: radius
-                )
-            } else {
-                path.addLine(to: bottomLeading)
-                path.addLine(to: bottomTrailing)
-            }
-
-            path.addLine(to: topTrailing)
-        }
-
-        return path
-    }
-
-    func inset(by amount: CGFloat) -> Self {
-        var copy = self
-        copy.insetAmount += amount
-        return copy
-    }
-}
-
+/// Контейнер экранного плеера: читает настройки активной поверхности
+/// (чёлка или виджет), собирает их в `OverlayAppearance` и отдаёт готовое
+/// содержимое — `NotchSurfaceContent` либо `WidgetSurfaceContent` — под
+/// общей отделкой `OverlayChrome`. Сам контейнер не знает, как рисуется
+/// компактная полоска или карточка виджета; это разделение — то, что
+/// раньше было одним 960-строчным файлом.
 struct NotchPlayerView: View {
     let model: SpotifySpikeModel
     let audioMonitor: SpotifyAudioMonitor
@@ -184,37 +51,34 @@ struct NotchPlayerView: View {
     private var lyricsEnabled = NotchPreferences.lyricsEnabledFallback
     @AppStorage(OverlayMode.storageKey)
     private var overlayModeRawValue = OverlayMode.fallback.rawValue
-    @AppStorage(NotchPreferences.widgetLayoutKey)
+    @AppStorage(WidgetPreferences.layoutKey)
     private var widgetLayoutRawValue = NotchWidgetLayout.fallback.rawValue
-    @AppStorage(NotchPreferences.widgetOutlineShimmerKey)
+    @AppStorage(WidgetPreferences.outlineShimmerKey)
     private var widgetOutlineShimmer = NotchPreferences.outlineShimmerFallback
-    @AppStorage(NotchPreferences.widgetOutlineWidthKey)
+    @AppStorage(WidgetPreferences.outlineWidthKey)
     private var widgetOutlineWidth = NotchPreferences.outlineWidthFallback
-    @AppStorage(NotchPreferences.widgetPulseModeKey)
+    @AppStorage(WidgetPreferences.pulseModeKey)
     private var widgetPulseModeRawValue = NotchPulseMode.fallback.rawValue
-    @AppStorage(NotchPreferences.widgetGlassBackgroundKey)
+    @AppStorage(WidgetPreferences.glassBackgroundKey)
     private var widgetGlassBackground = false
-    @AppStorage(NotchPreferences.widgetWidthKey)
+    @AppStorage(WidgetPreferences.widthKey)
     private var widgetWidth = NotchPreferences.widthFallback
-    @AppStorage(NotchPreferences.widgetColoredProgressKey)
+    @AppStorage(WidgetPreferences.coloredProgressKey)
     private var widgetColoredProgress = NotchPreferences.coloredProgressFallback
-    @AppStorage(NotchPreferences.widgetColoredWaveformKey)
+    @AppStorage(WidgetPreferences.coloredWaveformKey)
     private var widgetColoredWaveform = NotchPreferences.coloredWaveformFallback
-    @AppStorage(NotchPreferences.widgetColorSourceKey)
+    @AppStorage(WidgetPreferences.colorSourceKey)
     private var widgetColorSourceRawValue = NotchColorSource.fallback.rawValue
-    @AppStorage(NotchPreferences.widgetEqualizerSensitivityKey)
+    @AppStorage(WidgetPreferences.equalizerSensitivityKey)
     private var widgetEqualizerSensitivity = NotchPreferences.equalizerSensitivityFallback
-    @AppStorage(NotchPreferences.widgetLyricsEnabledKey)
+    @AppStorage(WidgetPreferences.lyricsEnabledKey)
     private var widgetLyricsEnabled = NotchPreferences.lyricsEnabledFallback
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
-    @State private var hoverReady = false
-    @State private var isPinned = false
-    @State private var notificationVisible = false
+    @State private var interaction = NotchInteractionState()
     @State private var artworkPalette = ArtworkPalette.fallback
-    @State private var hoverTask: Task<Void, Never>?
-    @State private var notificationTask: Task<Void, Never>?
     @State private var shimmerAngle = Angle.degrees(0)
 
     private var songInfoVisibility: NotchSongInfoVisibility {
@@ -228,47 +92,33 @@ struct NotchPlayerView: View {
     }
 
     // Каждая поверхность владеет своими значениями; здесь выбирается набор
-    // активной поверхности.
+    // активной поверхности и они собираются в один `OverlayAppearance`.
     private var effectiveWidth: Double {
         isPillMode ? widgetWidth : notchWidth
-    }
-
-    private var effectiveColoredProgress: Bool {
-        isPillMode ? widgetColoredProgress : coloredProgress
-    }
-
-    private var effectiveColoredWaveform: Bool {
-        isPillMode ? widgetColoredWaveform : coloredWaveform
-    }
-
-    private var effectiveLyricsEnabled: Bool {
-        get { isPillMode ? widgetLyricsEnabled : lyricsEnabled }
-        nonmutating set {
-            if isPillMode {
-                widgetLyricsEnabled = newValue
-            } else {
-                lyricsEnabled = newValue
-            }
-        }
     }
 
     private var sensitivityOverride: Double? {
         isPillMode ? widgetEqualizerSensitivity : nil
     }
 
-    // Оформление виджета настраивается отдельно от чёлки.
     private var pulseMode: NotchPulseMode {
         NotchPulseMode(
             rawValue: isPillMode ? widgetPulseModeRawValue : pulseModeRawValue
         ) ?? .fallback
     }
 
-    private var effectiveOutlineShimmer: Bool {
-        isPillMode ? widgetOutlineShimmer : outlineShimmer
-    }
-
-    private var effectiveOutlineWidth: Double {
-        isPillMode ? widgetOutlineWidth : outlineWidth
+    private var appearance: OverlayAppearance {
+        OverlayAppearance(
+            width: effectiveWidth,
+            coloredProgress: isPillMode ? widgetColoredProgress : coloredProgress,
+            coloredWaveform: isPillMode ? widgetColoredWaveform : coloredWaveform,
+            colorSource: colorSource,
+            pulseMode: pulseMode,
+            outlineShimmer: isPillMode ? widgetOutlineShimmer : outlineShimmer,
+            outlineWidth: isPillMode ? widgetOutlineWidth : outlineWidth,
+            equalizerSensitivityOverride: sensitivityOverride,
+            lyricsEnabled: isPillMode ? $widgetLyricsEnabled : $lyricsEnabled
+        )
     }
 
     /// Пилюльный режим floating-виджета: та же панель, но со скруглённым верхом.
@@ -277,15 +127,17 @@ struct NotchPlayerView: View {
     }
 
     /// Активная карточная раскладка виджета; `nil` — обычная пилюля/чёлка.
-    /// Нужна ли загрузка текста: включён тумблер или выбрана лирическая раскладка.
-    private var lyricsNeeded: Bool {
-        effectiveLyricsEnabled || cardLayout == .lyricsCard || cardLayout == .karaokeCard
-    }
-
     private var cardLayout: NotchWidgetLayout? {
         guard isPillMode else { return nil }
         let layout = NotchWidgetLayout(rawValue: widgetLayoutRawValue) ?? .fallback
         return layout.isAlwaysExpanded ? layout : nil
+    }
+
+    /// Нужна ли загрузка текста: включён тумблер или выбрана лирическая раскладка.
+    private var lyricsNeeded: Bool {
+        appearance.lyricsEnabled.wrappedValue
+            || cardLayout == .lyricsCard
+            || cardLayout == .karaokeCard
     }
 
     private struct PaletteRequest: Equatable {
@@ -327,15 +179,10 @@ struct NotchPlayerView: View {
     }
 
     private var panelState: NotchPanelState {
-        if cardLayout != nil {
-            return .expanded
-        }
-        return NotchExpansionPolicy.state(
-            hoverReady: hoverReady,
+        interaction.panelState(
+            cardLayoutActive: cardLayout != nil,
             hoverEnabled: hoverEnabled,
-            isPinned: isPinned,
-            clickEnabled: clickEnabled,
-            notificationVisible: notificationVisible
+            clickEnabled: clickEnabled
         )
     }
 
@@ -357,109 +204,60 @@ struct NotchPlayerView: View {
                 forHeight: proxy.size.height,
                 expandedHeight: expandedHeight
             )
-            let shimmerLineWidth = NotchPreferences.clampedOutlineWidth(effectiveOutlineWidth)
 
             Group {
                 if let layout = cardLayout {
-                    widgetCardContent(layout: layout, in: proxy.size)
-                } else {
-                    ZStack(alignment: .top) {
-                        compactContent
-                            .frame(
-                                maxWidth: .infinity,
-                                minHeight: min(proxy.size.height, 44),
-                                maxHeight: min(proxy.size.height, 44)
-                            )
-                            .opacity(
-                                panelState == .notification
-                                    ? 0
-                                    : max(0, 1 - revealProgress * 1.35)
-                            )
-                            .scaleEffect(1 - revealProgress * 0.015, anchor: .top)
-                            .allowsHitTesting(panelState == .collapsed)
-
-                        if panelState == .notification {
-                            notificationContent
-                                .transition(
-                                    .opacity.combined(with: .scale(scale: 0.97, anchor: .top))
-                                )
-                        }
-
-                        expandedContent(in: proxy.size)
-                            .opacity(revealProgress)
-                            .scaleEffect(0.985 + revealProgress * 0.015, anchor: .top)
-                            .allowsHitTesting(isExpanded && revealProgress > 0.8)
-                    }
-                }
-            }
-            .frame(
-                width: proxy.size.width,
-                height: proxy.size.height,
-                alignment: .top
-            )
-            .background {
-                notchBackground
-            }
-            .background {
-                if pulseMode == .glow {
-                    notchShape(revealProgress: revealProgress, height: proxy.size.height)
-                        .fill(artworkPalette.primary.swiftUIColor)
-                        .blur(radius: 10)
-                        .opacity(glowOpacity)
-                        .animation(
-                            reduceMotion
-                                ? nil
-                                : .linear(duration: PlayerMotion.spectrumFrameDuration),
-                            value: glowOpacity
-                        )
-                        .allowsHitTesting(false)
-                }
-            }
-            .scaleEffect(pulseScale, anchor: .top)
-            .animation(
-                reduceMotion ? nil : .linear(duration: PlayerMotion.spectrumFrameDuration),
-                value: pulseScale
-            )
-            .clipShape(notchShape(revealProgress: revealProgress, height: proxy.size.height))
-            .overlay {
-                ZStack {
-                    notchShape(
-                        revealProgress: revealProgress,
-                        height: proxy.size.height,
-                        includesTopEdge: isPillMode
+                    WidgetSurfaceContent(
+                        model: model,
+                        audioMonitor: audioMonitor,
+                        lyricsStore: lyricsStore,
+                        appearance: appearance,
+                        palette: artworkPalette,
+                        layout: layout,
+                        containerSize: proxy.size,
+                        songInfoVisibility: songInfoVisibility,
+                        isPointerInside: pointerState.isInside,
+                        onCollapse: { interaction.collapse() }
                     )
-                        .inset(by: 0.5)
-                        .stroke(
-                            Color.white,
-                            lineWidth: 1
-                        )
-                        .opacity(
-                            NotchResponsiveLayout.baseOutlineOpacity(
-                                revealProgress: revealProgress
-                            )
-                        )
-                        .allowsHitTesting(false)
-
-                    if effectiveOutlineShimmer {
-                        // One full-size silhouette keeps the animated gradient in
-                        // the same coordinate space across both corners and bottom.
-                        notchShape(
-                            revealProgress: revealProgress,
-                            height: proxy.size.height,
-                            includesTopEdge: isPillMode
-                        )
-                            .inset(by: shimmerLineWidth / 2)
-                            .stroke(
-                                shimmerGradient,
-                                lineWidth: shimmerLineWidth
-                            )
-                            .blur(radius: 0.6)
-                            .allowsHitTesting(false)
-                    }
+                } else {
+                    NotchSurfaceContent(
+                        model: model,
+                        audioMonitor: audioMonitor,
+                        lyricsStore: lyricsStore,
+                        appearance: appearance,
+                        palette: artworkPalette,
+                        panelState: panelState,
+                        containerSize: proxy.size,
+                        revealProgress: revealProgress,
+                        songInfoVisibility: songInfoVisibility,
+                        clickEnabled: clickEnabled,
+                        onTogglePin: { interaction.togglePin() },
+                        onCollapse: { interaction.collapse() }
+                    )
                 }
-                .frame(width: proxy.size.width, height: proxy.size.height)
-                .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
             }
+            .overlayChrome(
+                OverlayChromeConfiguration(
+                    containerSize: proxy.size,
+                    revealProgress: revealProgress,
+                    cornerRadius: cornerRadius,
+                    isPillMode: isPillMode,
+                    palette: artworkPalette,
+                    pulseMode: pulseMode,
+                    pulseScale: pulseScale,
+                    glowOpacity: glowOpacity,
+                    outlineShimmer: appearance.outlineShimmer,
+                    outlineWidth: appearance.outlineWidth,
+                    shimmerAngle: shimmerAngle,
+                    coloredWaveform: appearance.coloredWaveform,
+                    isExpanded: isExpanded,
+                    glassBackgroundURL: (isPillMode && widgetGlassBackground)
+                        ? model.track?.artworkURL
+                        : nil,
+                    reduceMotion: reduceMotion,
+                    reduceTransparency: reduceTransparency
+                )
+            )
         }
         .frame(
             width: panelLayoutState.size.width,
@@ -468,11 +266,16 @@ struct NotchPlayerView: View {
         )
         .contentShape(Rectangle())
         .environment(\.colorScheme, .dark)
-        .playerContextMenu(track: model.track) {
+        .playerContextMenu(track: model.track, sourceName: model.activeSourceDisplayName) {
             Task { await model.refresh() }
         }
         .onChange(of: pointerState.isInside) { _, isInside in
-            handleHover(isInside)
+            interaction.handleHover(
+                isInside: isInside,
+                pointerIsInside: { pointerState.isInside },
+                enabled: hoverEnabled,
+                delay: NotchPreferences.clampedHoverDelay(hoverDelay)
+            )
         }
         .onChange(of: panelState) { previousState, state in
             onStateChange(state)
@@ -484,7 +287,14 @@ struct NotchPlayerView: View {
                 )
             }
         }
-        .onChange(of: trackIdentity, handleTrackChange)
+        .onChange(of: trackIdentity) { oldValue, newValue in
+            interaction.handleTrackChange(
+                from: oldValue,
+                to: newValue,
+                notificationsEnabled: notificationsEnabled,
+                duration: NotchPreferences.clampedNotificationDuration(notificationDuration)
+            )
+        }
         .task(id: LyricsTaskKey(identity: trackIdentity, enabled: lyricsNeeded)) {
             guard lyricsNeeded, let track = model.track else { return }
             lyricsStore.prepare(for: track)
@@ -502,7 +312,12 @@ struct NotchPlayerView: View {
         }
         .onAppear {
             onStateChange(panelState)
-            handleHover(pointerState.isInside)
+            interaction.handleHover(
+                isInside: pointerState.isInside,
+                pointerIsInside: { pointerState.isInside },
+                enabled: hoverEnabled,
+                delay: NotchPreferences.clampedHoverDelay(hoverDelay)
+            )
 
             if !reduceMotion {
                 withAnimation(.linear(duration: 6).repeatForever(autoreverses: false)) {
@@ -511,455 +326,7 @@ struct NotchPlayerView: View {
             }
         }
         .onDisappear {
-            hoverTask?.cancel()
-            notificationTask?.cancel()
-        }
-    }
-
-    private var shimmerGradient: AngularGradient {
-        AngularGradient(
-            colors: [
-                artworkPalette.primary.swiftUIColor,
-                artworkPalette.secondary.swiftUIColor,
-                artworkPalette.tertiary.swiftUIColor,
-                artworkPalette.primary.swiftUIColor,
-            ],
-            center: .center,
-            angle: shimmerAngle
-        )
-    }
-
-    private func notchShape(
-        revealProgress: Double,
-        height: CGFloat,
-        includesTopEdge: Bool = true
-    ) -> NotchSilhouetteShape {
-        let radius = NotchResponsiveLayout.bottomCornerRadius(
-            preferredRadius: cornerRadius,
-            revealProgress: revealProgress,
-            height: height
-        )
-        return NotchSilhouetteShape(
-            bottomCornerRadius: radius,
-            topCornerRadius: isPillMode ? radius : 0,
-            includesTopEdge: includesTopEdge
-        )
-    }
-
-    private var notchBackground: some View {
-        ZStack {
-            Color.black.opacity(0.985)
-
-            if isPillMode, widgetGlassBackground, let url = model.track?.artworkURL {
-                // «Стекло»: размытая обложка вместо чёрного фона карточки.
-                AsyncImage(url: url) { phase in
-                    if case let .success(image) = phase {
-                        image
-                            .resizable()
-                            .scaledToFill()
-                            .transition(.opacity)
-                    }
-                }
-                .blur(radius: 30, opaque: true)
-                .overlay(Color.black.opacity(0.45))
-            }
-
-            if effectiveColoredWaveform {
-                LinearGradient(
-                    colors: [
-                        artworkPalette.primary.swiftUIColor.opacity(isExpanded ? 0.20 : 0.12),
-                        artworkPalette.secondary.swiftUIColor.opacity(isExpanded ? 0.10 : 0.04),
-                        .clear,
-                    ],
-                    startPoint: .bottomLeading,
-                    endPoint: .topTrailing
-                )
-                .blendMode(.plusLighter)
-            }
-        }
-        .animation(
-            reduceMotion
-                ? nil
-                : .smooth(duration: PlayerMotion.equalizerDuration, extraBounce: 0),
-            value: artworkPalette
-        )
-    }
-
-    /// Лёгкое уведомление о новом треке: обложка и название без контролов.
-    @ViewBuilder
-    private var notificationContent: some View {
-        if let track = model.track {
-            HStack(spacing: 12) {
-                TrackArtworkView(
-                    url: track.artworkURL,
-                    size: 40,
-                    cornerRadius: 8,
-                    showsShadow: false
-                )
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(track.title)
-                        .font(.system(size: 12.5, weight: .semibold, design: .rounded))
-                        .lineLimit(1)
-
-                    Text(track.artist)
-                        .font(.system(size: 10.5, weight: .medium, design: .rounded))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                ArtworkEqualizerView(
-                    audioMonitor: audioMonitor,
-                    isPlaying: track.isPlaying,
-                    isVisible: panelState == .notification,
-                    isColored: effectiveColoredWaveform,
-                    palette: artworkPalette,
-                    sensitivityOverride: sensitivityOverride
-                )
-                .frame(width: 28, height: 18)
-            }
-            .padding(.horizontal, 16)
-            .frame(maxHeight: .infinity)
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel("Новый трек: \(track.title), \(track.artist)")
-        }
-    }
-
-    @ViewBuilder
-    private var compactContent: some View {
-        if let track = model.track, model.availability == .ready {
-            HStack(spacing: 10) {
-                TrackArtworkView(
-                    url: track.artworkURL,
-                    size: NotchResponsiveLayout.compactArtworkSize,
-                    cornerRadius: 5,
-                    showsShadow: false
-                )
-
-                if songInfoVisibility.shouldShow(isPlaying: track.isPlaying) {
-                    VStack(alignment: .leading, spacing: 0) {
-                        Text(track.title)
-                            .font(.system(size: 10.5, weight: .semibold, design: .rounded))
-                            .lineLimit(1)
-
-                        Text(track.artist)
-                            .font(.system(size: 8.5, weight: .medium, design: .rounded))
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                    }
-                        .frame(maxWidth: .infinity)
-                } else {
-                    Spacer(minLength: 0)
-                }
-
-                ArtworkEqualizerView(
-                    audioMonitor: audioMonitor,
-                    isPlaying: track.isPlaying,
-                    isVisible: !isExpanded,
-                    isColored: effectiveColoredWaveform,
-                    palette: artworkPalette
-                )
-                .frame(
-                    width: NotchResponsiveLayout.compactEqualizerSize.width,
-                    height: NotchResponsiveLayout.compactEqualizerSize.height
-                )
-                .offset(y: NotchResponsiveLayout.compactEqualizerVerticalOffset)
-            }
-            .padding(.horizontal, NotchResponsiveLayout.compactHorizontalPadding)
-            .onTapGesture {
-                guard clickEnabled else { return }
-                isPinned.toggle()
-            }
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel("Компактный плеер TrackPeek")
-            .accessibilityHint("Раскрывает элементы управления воспроизведением")
-            .accessibilityAction {
-                guard clickEnabled else { return }
-                isPinned.toggle()
-            }
-            .help(clickEnabled ? "Нажмите, чтобы раскрыть плеер" : "Наведите, чтобы раскрыть плеер")
-        } else {
-            HStack(spacing: 8) {
-                Image(systemName: "music.note")
-                    .font(.caption.weight(.semibold))
-
-                Text(model.statusText)
-                    .font(.caption.weight(.medium))
-                    .lineLimit(1)
-            }
-            .foregroundStyle(.secondary)
-            .padding(.horizontal, 12)
-        }
-    }
-
-    private struct ExpandedContentState: Equatable {
-        let availability: PlaybackAvailability
-        let hasTrack: Bool
-    }
-
-    @ViewBuilder
-    private func expandedContent(in containerSize: CGSize) -> some View {
-        Group {
-            expandedContentBody(in: containerSize)
-        }
-        .animation(
-            reduceMotion
-                ? nil
-                : .smooth(duration: PlayerMotion.playbackDuration, extraBounce: 0),
-            value: ExpandedContentState(
-                availability: model.availability,
-                hasTrack: model.track != nil
-            )
-        )
-    }
-
-    @ViewBuilder
-    private func expandedContentBody(in containerSize: CGSize) -> some View {
-        if let track = model.track, model.availability == .ready {
-            let isNarrow = containerSize.width < 390
-            let artworkSize = NotchResponsiveLayout.artworkSize(in: containerSize)
-
-            HStack(alignment: .center, spacing: isNarrow ? 12 : 15) {
-                VStack(spacing: 7) {
-                    TrackArtworkView(
-                        url: track.artworkURL,
-                        size: artworkSize,
-                        cornerRadius: min(15, artworkSize * 0.19),
-                        showsShadow: true
-                    )
-                    .contentShape(Rectangle())
-                    .onTapGesture { PlayerAppLauncher.openActiveSource() }
-                    .help("Открыть плеер")
-
-                    HStack(spacing: 5) {
-                        Circle()
-                            .fill(track.isPlaying ? artworkPalette.primary.onDarkSurface.swiftUIColor : .secondary)
-                            .frame(width: 5, height: 5)
-
-                        Text(track.isPlaying ? "ИГРАЕТ" : "ПАУЗА")
-                            .font(.system(size: 8, weight: .bold, design: .rounded))
-                            .tracking(0.7)
-                            .contentTransition(.opacity)
-                    }
-                    .foregroundStyle(.secondary)
-                    .animation(
-                        reduceMotion
-                            ? nil
-                            : .smooth(duration: PlayerMotion.playbackDuration, extraBounce: 0),
-                        value: track.isPlaying
-                    )
-                }
-                .frame(width: artworkSize + 4)
-
-                VStack(alignment: .leading, spacing: 0) {
-                    HStack(alignment: .top, spacing: 10) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(track.title)
-                                .font(.system(size: 14, weight: .semibold, design: .rounded))
-                                .lineLimit(1)
-
-                            Text(track.artist)
-                                .font(.system(size: 11.5, weight: .medium, design: .rounded))
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-
-                            if !isNarrow, let album = track.album, !album.isEmpty {
-                                Text(album)
-                                    .font(.system(size: 9.5, weight: .medium, design: .rounded))
-                                    .foregroundStyle(.tertiary)
-                                    .lineLimit(1)
-                            }
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-
-                        Button {
-                            effectiveLyricsEnabled.toggle()
-                        } label: {
-                            Image(systemName: effectiveLyricsEnabled ? "quote.bubble.fill" : "quote.bubble")
-                                .font(.system(size: 9, weight: .bold))
-                                .frame(width: 22, height: 22)
-                                .background(.white.opacity(0.06), in: Circle())
-                        }
-                        .buttonStyle(.plain)
-                        .foregroundStyle(effectiveLyricsEnabled ? AnyShapeStyle(artworkPalette.primary.onDarkSurface.swiftUIColor) : AnyShapeStyle(.secondary))
-                        .help(effectiveLyricsEnabled ? "Скрыть текст песни" : "Показать текст песни")
-
-                        Button {
-                            isPinned = false
-                            notificationVisible = false
-                            hoverReady = false
-                        } label: {
-                            Image(systemName: "chevron.up")
-                                .font(.system(size: 9, weight: .bold))
-                                .frame(width: 22, height: 22)
-                                .background(.white.opacity(0.06), in: Circle())
-                        }
-                        .buttonStyle(.plain)
-                        .foregroundStyle(.secondary)
-                        .help("Свернуть плеер")
-                    }
-
-                    Spacer(minLength: 6)
-
-                    if effectiveLyricsEnabled {
-                        NotchLyricsView(
-                            state: lyricsStore.state(for: track),
-                            position: track.position,
-                            duration: track.duration,
-                            isPlaying: track.isPlaying,
-                            snapshotDate: model.snapshotDate,
-                            tint: effectiveColoredProgress ? artworkPalette.primary.onDarkSurface.swiftUIColor : .white
-                        )
-                    } else {
-                        PlaybackProgressView(
-                            position: track.position,
-                            duration: track.duration,
-                            isPlaying: track.isPlaying,
-                            snapshotDate: model.snapshotDate,
-                            onSeek: { position in Task { await model.seek(to: position) } },
-                            tint: effectiveColoredProgress ? artworkPalette.primary.onDarkSurface.swiftUIColor : .white
-                        )
-                    }
-
-                    Spacer(minLength: 4)
-
-                    HStack(spacing: 12) {
-                        PlaybackControlsView(
-                            isPlaying: track.isPlaying,
-                            onPrevious: { Task { await model.previousTrack() } },
-                            onPlayPause: { Task { await model.togglePlayback() } },
-                            onNext: { Task { await model.nextTrack() } },
-                            spacing: isNarrow ? 7 : 10
-                        )
-                        .tint(artworkPalette.primary.onDarkSurface.swiftUIColor)
-
-                        Spacer(minLength: 8)
-
-                        ArtworkEqualizerView(
-                            audioMonitor: audioMonitor,
-                            isPlaying: track.isPlaying,
-                            isVisible: isExpanded,
-                            isColored: effectiveColoredWaveform,
-                            palette: artworkPalette,
-                            sensitivityOverride: sensitivityOverride
-                        )
-                        .frame(width: isNarrow ? 36 : 48, height: 24)
-                    }
-                }
-            }
-            .padding(.horizontal, isNarrow ? 12 : 16)
-            .padding(.top, 13)
-            .padding(.bottom, 12)
-            .transition(
-                .opacity.combined(with: .scale(scale: 0.97, anchor: .top))
-            )
-        } else {
-            PlayerStateView(availability: model.availability) {
-                Task { await model.refresh() }
-            }
-            .padding(20)
-            .transition(
-                .opacity.combined(with: .scale(scale: 0.97, anchor: .top))
-            )
-        }
-    }
-
-    private var widgetCardContext: WidgetCardContext {
-        WidgetCardContext(
-            model: model,
-            lyricsStore: lyricsStore,
-            audioMonitor: audioMonitor,
-            palette: artworkPalette,
-            coloredProgress: effectiveColoredProgress,
-            equalizerSensitivity: widgetEqualizerSensitivity
-        )
-    }
-
-    @ViewBuilder
-    private func widgetCardContent(layout: NotchWidgetLayout, in size: CGSize) -> some View {
-        if layout == .cardHorizontal {
-            expandedContent(in: size)
-        } else if let track = model.track, model.availability == .ready {
-            switch layout {
-            case .pill, .cardHorizontal:
-                EmptyView()
-            case .miniBar:
-                WidgetMiniBar(context: widgetCardContext, track: track)
-            case .cardVertical:
-                WidgetVerticalCard(
-                    context: widgetCardContext,
-                    track: track,
-                    size: size,
-                    lyricsEnabled: effectiveLyricsEnabled
-                )
-            case .artworkSquare:
-                WidgetArtworkSquare(
-                    context: widgetCardContext,
-                    track: track,
-                    size: size,
-                    isHovering: pointerState.isInside
-                )
-            case .lyricsCard:
-                WidgetLyricsCard(context: widgetCardContext, track: track)
-            case .karaokeCard:
-                WidgetKaraokeCard(context: widgetCardContext, track: track)
-            case .equalizerCard:
-                WidgetEqualizerCard(context: widgetCardContext, track: track)
-            }
-        } else {
-            PlayerStateView(availability: model.availability) {
-                Task { await model.refresh() }
-            }
-            .padding(14)
-        }
-    }
-
-    private func handleHover(_ hovering: Bool) {
-        hoverTask?.cancel()
-
-        guard hoverEnabled else {
-            hoverReady = false
-            return
-        }
-
-        guard hovering else {
-            hoverTask = Task { @MainActor in
-                try? await Task.sleep(
-                    for: .milliseconds(Int64(NotchMotion.hoverExitGrace * 1_000))
-                )
-                guard !Task.isCancelled, !pointerState.isInside else { return }
-                hoverReady = false
-            }
-            return
-        }
-
-        let delay = NotchPreferences.clampedHoverDelay(hoverDelay)
-        hoverTask = Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(Int64(delay * 1_000)))
-            guard !Task.isCancelled, pointerState.isInside else { return }
-            hoverReady = true
-        }
-    }
-
-    private func handleTrackChange(from oldValue: String?, to newValue: String?) {
-        guard
-            notificationsEnabled,
-            oldValue != nil,
-            newValue != nil,
-            oldValue != newValue
-        else {
-            return
-        }
-
-        notificationTask?.cancel()
-        notificationVisible = true
-
-        let duration = NotchPreferences.clampedNotificationDuration(notificationDuration)
-        notificationTask = Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(Int64(duration * 1_000)))
-            guard !Task.isCancelled else { return }
-            notificationVisible = false
+            interaction.cancelPendingTasks()
         }
     }
 }

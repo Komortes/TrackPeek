@@ -136,6 +136,43 @@ enum NotchWidgetLayout: String, CaseIterable, Identifiable, Sendable {
     var isAlwaysExpanded: Bool {
         self != .pill
     }
+
+    /// Группа назначения — используется, чтобы сначала выбрать смысл,
+    /// а затем конкретный визуальный вариант внутри него.
+    var family: NotchWidgetLayoutFamily {
+        switch self {
+        case .pill, .miniBar:
+            .compact
+        case .cardHorizontal, .cardVertical, .artworkSquare:
+            .fullPlayer
+        case .lyricsCard, .karaokeCard:
+            .lyrics
+        case .equalizerCard:
+            .visualizer
+        }
+    }
+}
+
+enum NotchWidgetLayoutFamily: String, CaseIterable, Identifiable, Sendable {
+    case compact
+    case fullPlayer
+    case lyrics
+    case visualizer
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .compact: "Компактные"
+        case .fullPlayer: "Полный плеер"
+        case .lyrics: "Текст песни"
+        case .visualizer: "Визуализация"
+        }
+    }
+
+    var layouts: [NotchWidgetLayout] {
+        NotchWidgetLayout.allCases.filter { $0.family == self }
+    }
 }
 
 enum NotchSongInfoVisibility: String, CaseIterable, Identifiable, Sendable {
@@ -228,22 +265,6 @@ enum NotchPreferences {
     static let pulseModeKey = "notchPulseMode"
     static let colorSourceKey = "notchColorSource"
     static let cornerRadiusKey = "notchCornerRadius"
-    static let widgetPositionKey = "notchWidgetPosition"
-    static let widgetLayoutKey = "notchWidgetLayout"
-    static let widgetFreeMoveKey = "notchWidgetFreeMove"
-    static let widgetOriginXKey = "notchWidgetOriginX"
-    static let widgetOriginTopYKey = "notchWidgetOriginTopY"
-    static let widgetOutlineShimmerKey = "widgetOutlineShimmer"
-    static let widgetOutlineWidthKey = "widgetOutlineWidth"
-    static let widgetPulseModeKey = "widgetPulseMode"
-    static let widgetGlassBackgroundKey = "widgetGlassBackground"
-    static let widgetWidthKey = "widgetWidth"
-    static let widgetDisplayTargetKey = "widgetDisplayTarget"
-    static let widgetColoredProgressKey = "widgetColoredProgress"
-    static let widgetColoredWaveformKey = "widgetColoredWaveform"
-    static let widgetColorSourceKey = "widgetColorSource"
-    static let widgetEqualizerSensitivityKey = "widgetEqualizerSensitivity"
-    static let widgetLyricsEnabledKey = "widgetLyricsEnabled"
     static let lyricsEnabledKey = "notchLyricsEnabled"
 
     static let widthFallback = 320.0
@@ -276,31 +297,6 @@ enum NotchPreferences {
     static let cornerRadiusStep = 1.0
     static let lyricsEnabledFallback = false
 
-    /// Отступы floating-виджета от краёв экрана.
-    static let widgetTopInset = 8.0
-    static let widgetEdgeMargin = 12.0
-
-    /// Одноразовый перенос: раньше виджет использовал настройки чёлки —
-    /// существующие пользователи сохраняют текущий вид.
-    static func migrateWidgetDefaultsIfNeeded(in defaults: UserDefaults = .standard) {
-        guard defaults.object(forKey: widgetWidthKey) == nil else { return }
-
-        let pairs: [(source: String, destination: String)] = [
-            (widthKey, widgetWidthKey),
-            (displayTargetKey, widgetDisplayTargetKey),
-            (coloredProgressKey, widgetColoredProgressKey),
-            (coloredWaveformKey, widgetColoredWaveformKey),
-            (colorSourceKey, widgetColorSourceKey),
-            (equalizerSensitivityKey, widgetEqualizerSensitivityKey),
-            (lyricsEnabledKey, widgetLyricsEnabledKey),
-        ]
-        for pair in pairs {
-            if let value = defaults.object(forKey: pair.source) {
-                defaults.set(value, forKey: pair.destination)
-            }
-        }
-    }
-
     static func registerDefaults(in defaults: UserDefaults = .standard) {
         defaults.register(defaults: [
             displayTargetKey: NotchDisplayTarget.fallback.rawValue,
@@ -321,20 +317,6 @@ enum NotchPreferences {
             pulseModeKey: NotchPulseMode.fallback.rawValue,
             colorSourceKey: NotchColorSource.fallback.rawValue,
             cornerRadiusKey: cornerRadiusFallback,
-            widgetPositionKey: NotchWidgetPosition.fallback.rawValue,
-            widgetLayoutKey: NotchWidgetLayout.fallback.rawValue,
-            widgetFreeMoveKey: false,
-            widgetOutlineShimmerKey: outlineShimmerFallback,
-            widgetOutlineWidthKey: outlineWidthFallback,
-            widgetPulseModeKey: NotchPulseMode.fallback.rawValue,
-            widgetGlassBackgroundKey: false,
-            widgetWidthKey: widthFallback,
-            widgetDisplayTargetKey: NotchDisplayTarget.mainDisplay.rawValue,
-            widgetColoredProgressKey: coloredProgressFallback,
-            widgetColoredWaveformKey: coloredWaveformFallback,
-            widgetColorSourceKey: NotchColorSource.fallback.rawValue,
-            widgetEqualizerSensitivityKey: equalizerSensitivityFallback,
-            widgetLyricsEnabledKey: lyricsEnabledFallback,
             lyricsEnabledKey: lyricsEnabledFallback,
         ])
     }
@@ -389,34 +371,6 @@ enum NotchPreferences {
         )
     }
 
-    /// Постоянный размер карточных раскладок floating-виджета.
-    static func widgetCardSize(
-        layout: NotchWidgetLayout,
-        width: Double,
-        heightAdjustment: Double
-    ) -> CGSize {
-        switch layout {
-        case .pill:
-            compactSize(width: width, heightAdjustment: heightAdjustment)
-        case .miniBar:
-            CGSize(width: max(clampedWidth(width) + 20, 340), height: 44)
-        case .cardHorizontal:
-            expandedSize(width: width, heightAdjustment: heightAdjustment)
-        case .cardVertical:
-            CGSize(width: max(clampedWidth(width) * 0.72, 250), height: 296)
-        case .artworkSquare:
-            CGSize(
-                width: max(clampedWidth(width) * 0.58, 190),
-                height: max(clampedWidth(width) * 0.58, 190)
-            )
-        case .lyricsCard:
-            CGSize(width: max(clampedWidth(width) + 60, 380), height: 78)
-        case .karaokeCard:
-            CGSize(width: max(clampedWidth(width) + 80, 400), height: 188)
-        case .equalizerCard:
-            CGSize(width: max(clampedWidth(width) * 0.82, 268), height: 132)
-        }
-    }
 }
 
 enum NotchResponsiveLayout {
@@ -457,8 +411,16 @@ enum NotchResponsiveLayout {
 }
 
 enum NotchMotion {
-    static let resizeDuration = 0.42
+    /// Раскрытие и закрытие асимметричны: панель быстро подтверждает
+    /// намерение пользователя (ease-out) и чуть быстрее освобождает экран
+    /// обратно (ease-in) — симметричные 0.42 с ощущались медленно вместе
+    /// с задержкой наведения.
+    static let expandDuration = 0.30
+    static let collapseDuration = 0.24
     static let hoverExitGrace = 0.14
+
+    /// Оставлено для мест, которым конкретное направление недоступно.
+    static let resizeDuration = 0.42
 }
 
 /// Состояние панели: свернута, лёгкое уведомление о новом треке или полный плеер.
