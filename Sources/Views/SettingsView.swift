@@ -1,10 +1,14 @@
 import SwiftUI
 
-enum SettingsTab: CaseIterable {
+enum SettingsTab: String, CaseIterable {
     case general
     case notch
     case widget
     case menuBar
+
+    /// Выбранная вкладка хранится в defaults, чтобы контекстное меню могло
+    /// открыть настройки сразу на релевантной странице (§20.5).
+    static let selectionStorageKey = "settingsSelectedTab"
 
     var title: String {
         switch self {
@@ -36,10 +40,15 @@ enum SettingsTab: CaseIterable {
 struct SettingsView: View {
     @AppStorage(OverlayMode.storageKey)
     private var selectedModeRawValue = OverlayMode.fallback.rawValue
+    @AppStorage(OverlayVisibilityPolicy.storageKey)
+    private var visibilityPolicyRawValue = OverlayVisibilityPolicy.fallback.rawValue
     @AppStorage(MediaSourcePreference.storageKey)
     private var mediaSourceRawValue = MediaSourcePreference.fallback.rawValue
+    @AppStorage(SettingsTab.selectionStorageKey)
+    private var selectedTabRawValue = SettingsTab.general.rawValue
 
     @State private var showsResetConfirmation = false
+    @State private var presetRevision = 0
     @State private var launchAtLoginEnabled = LaunchAtLogin.isEnabled
     @State private var automationStatus: AutomationCheckStatus = .unknown
     @State private var automationTask: Task<Void, Never>?
@@ -93,6 +102,12 @@ struct SettingsView: View {
         WidgetPreferences.colorSourceKey,
         WidgetPreferences.equalizerSensitivityKey,
         WidgetPreferences.lyricsEnabledKey,
+        WidgetPreferences.alwaysOnTopKey,
+        WidgetPreferences.allSpacesKey,
+        WidgetPreferences.hideInFullscreenKey,
+        WidgetPreferences.positionLockedKey,
+        WidgetPlacementStore.storageKey,
+        OverlayVisibilityPolicy.storageKey,
         MenuBarPreferences.controlsEnabledKey,
         MenuBarPreferences.showsTitleKey,
         MenuBarPreferences.showsEqualizerKey,
@@ -115,8 +130,37 @@ struct SettingsView: View {
         )
     }
 
+    private var behaviorPresetSelection: Binding<String> {
+        Binding(
+            get: {
+                _ = presetRevision
+                return BehaviorPreset.allCases.first { $0.matches(.standard) }?.rawValue ?? ""
+            },
+            set: { raw in
+                BehaviorPreset(rawValue: raw)?.apply(in: .standard)
+                presetRevision += 1
+            }
+        )
+    }
+
+    private var stylePresetSelection: Binding<String> {
+        Binding(
+            get: {
+                _ = presetRevision
+                return StylePreset.allCases.first { $0.matches(.standard) }?.rawValue ?? ""
+            },
+            set: { raw in
+                StylePreset(rawValue: raw)?.apply(in: .standard)
+                presetRevision += 1
+            }
+        )
+    }
+
     var body: some View {
-        TabView {
+        TabView(selection: Binding(
+            get: { SettingsTab(rawValue: selectedTabRawValue) ?? .general },
+            set: { selectedTabRawValue = $0.rawValue }
+        )) {
             SettingsPage(
                 title: "Основные",
                 subtitle: "Выберите поверхность TrackPeek и доступный режим отображения."
@@ -131,6 +175,7 @@ struct SettingsView: View {
                     systemImage: SettingsTab.general.symbolName
                 )
             }
+            .tag(SettingsTab.general)
 
             NotchSettingsView()
                 .tabItem {
@@ -139,6 +184,7 @@ struct SettingsView: View {
                         systemImage: SettingsTab.notch.symbolName
                     )
                 }
+                .tag(SettingsTab.notch)
 
             WidgetSettingsView()
                 .tabItem {
@@ -147,6 +193,7 @@ struct SettingsView: View {
                         systemImage: SettingsTab.widget.symbolName
                     )
                 }
+                .tag(SettingsTab.widget)
 
             MenuBarSettingsView()
                 .tabItem {
@@ -155,6 +202,7 @@ struct SettingsView: View {
                         systemImage: SettingsTab.menuBar.symbolName
                     )
                 }
+                .tag(SettingsTab.menuBar)
 
         }
         .frame(width: 720, height: 640)
@@ -170,6 +218,63 @@ struct SettingsView: View {
             HStack(alignment: .top, spacing: 12) {
                 ForEach(OverlayMode.allCases) { mode in
                     displayModeCard(mode)
+                }
+            }
+
+            SettingsGroup {
+                SettingsRow(
+                    title: "Показывать панель",
+                    subtitle: "Общая политика видимости для чёлки и виджета."
+                ) {
+                    Picker("Показывать панель", selection: Binding(
+                        get: {
+                            OverlayVisibilityPolicy(rawValue: visibilityPolicyRawValue) ?? .fallback
+                        },
+                        set: { visibilityPolicyRawValue = $0.rawValue }
+                    )) {
+                        ForEach(OverlayVisibilityPolicy.allCases) { policy in
+                            Text(policy.title).tag(policy)
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(width: 230)
+                }
+            }
+
+            SettingsSectionHeader(
+                title: "Пресеты",
+                subtitle: "Быстрая настройка характера и стиля обеих поверхностей."
+            )
+
+            SettingsGroup {
+                SettingsRow(
+                    title: "Поведение",
+                    subtitle: "Скорость раскрытия и уведомления о новых треках."
+                ) {
+                    Picker("Поведение", selection: behaviorPresetSelection) {
+                        Text("Пользовательский").tag("")
+                        ForEach(BehaviorPreset.allCases) { preset in
+                            Text(preset.title).tag(preset.rawValue)
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(width: 190)
+                }
+
+                SettingsRowDivider()
+
+                SettingsRow(
+                    title: "Стиль",
+                    subtitle: "Контур, цвета обложки и пульсация."
+                ) {
+                    Picker("Стиль", selection: stylePresetSelection) {
+                        Text("Пользовательский").tag("")
+                        ForEach(StylePreset.allCases) { preset in
+                            Text(preset.title).tag(preset.rawValue)
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(width: 190)
                 }
             }
 

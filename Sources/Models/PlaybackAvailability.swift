@@ -3,5 +3,6 @@ enum PlaybackAvailability: Equatable, Sendable {
     case ready
     case nothingPlaying
     case spotifyNotRunning
+    case automationDenied
     case unavailable
 }

@@ -26,6 +26,14 @@ final class SpotifySpikeModel {
         activeSource?.displayName ?? "Плеер"
     }
 
+    var capabilities: PlaybackCapabilities {
+        activeSource.map(PlaybackCapabilities.capabilities(for:)) ?? []
+    }
+
+    var secondary: PlaybackSecondaryState? {
+        track?.secondary
+    }
+
     func refresh() async {
         activeSource = await provider.activeSource()
 
@@ -44,6 +52,10 @@ final class SpotifySpikeModel {
             snapshotDate = now
             availability = .ready
             statusText = track.isPlaying ? "Играет" : "На паузе"
+        } catch SpotifyPlaybackError.automationDenied {
+            track = nil
+            availability = .automationDenied
+            statusText = SpotifyPlaybackError.automationDenied.localizedDescription
         } catch SpotifyPlaybackError.spotifyNotRunning {
             track = nil
             availability = .spotifyNotRunning
@@ -102,6 +114,32 @@ final class SpotifySpikeModel {
             )
             snapshotDate = Date()
             seekSettlingDeadline = Date().addingTimeInterval(2)
+        } catch {
+            statusText = error.localizedDescription
+        }
+    }
+
+    func setShuffle(_ enabled: Bool) async {
+        do {
+            try await provider.setShuffle(enabled)
+            await refresh()
+        } catch {
+            statusText = error.localizedDescription
+        }
+    }
+
+    func setRepeat(_ mode: RepeatMode) async {
+        do {
+            try await provider.setRepeat(mode)
+            await refresh()
+        } catch {
+            statusText = error.localizedDescription
+        }
+    }
+
+    func setVolume(_ volume: Int) async {
+        do {
+            try await provider.setVolume(volume)
         } catch {
             statusText = error.localizedDescription
         }

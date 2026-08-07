@@ -22,6 +22,12 @@ enum WidgetPreferences {
     static let equalizerSensitivityKey = "widgetEqualizerSensitivity"
     static let lyricsEnabledKey = "widgetLyricsEnabled"
 
+    /// Поведение NSPanel виджета (§20.4): раньше было зашито в коде.
+    static let alwaysOnTopKey = "widgetAlwaysOnTop"
+    static let allSpacesKey = "widgetAllSpaces"
+    static let hideInFullscreenKey = "widgetHideInFullscreen"
+    static let positionLockedKey = "widgetPositionLocked"
+
     /// Отступы floating-виджета от краёв экрана.
     static let topInset = 8.0
     static let edgeMargin = 12.0
@@ -63,6 +69,10 @@ enum WidgetPreferences {
             colorSourceKey: NotchColorSource.fallback.rawValue,
             equalizerSensitivityKey: NotchPreferences.equalizerSensitivityFallback,
             lyricsEnabledKey: NotchPreferences.lyricsEnabledFallback,
+            alwaysOnTopKey: true,
+            allSpacesKey: true,
+            hideInFullscreenKey: false,
+            positionLockedKey: false,
         ])
     }
 

@@ -31,6 +31,14 @@ struct WidgetSettingsView: View {
     private var pulseModeRawValue = NotchPulseMode.fallback.rawValue
     @AppStorage(WidgetPreferences.glassBackgroundKey)
     private var glassBackground = false
+    @AppStorage(WidgetPreferences.alwaysOnTopKey)
+    private var alwaysOnTop = true
+    @AppStorage(WidgetPreferences.allSpacesKey)
+    private var allSpaces = true
+    @AppStorage(WidgetPreferences.hideInFullscreenKey)
+    private var hideInFullscreen = false
+    @AppStorage(WidgetPreferences.positionLockedKey)
+    private var positionLocked = false
 
     private var selectedMode: OverlayMode {
         OverlayMode(rawValue: selectedModeRawValue) ?? .fallback
@@ -94,6 +102,7 @@ struct WidgetSettingsView: View {
             activationCard
             layoutSection
             placementSection
+            windowBehaviorSection
             appearanceSection
         }
     }
@@ -267,6 +276,7 @@ struct WidgetSettingsView: View {
                         UserDefaults.standard.removeObject(
                             forKey: WidgetPreferences.originTopYKey
                         )
+                        WidgetPlacementStore.removeAll(layout: selectedLayout)
                     }
                 }
             }
@@ -367,6 +377,57 @@ struct WidgetSettingsView: View {
         .help(position.title)
         .accessibilityLabel(position.title)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    // MARK: Поведение окна
+
+    private var windowBehaviorSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            SettingsSectionHeader(
+                title: "Поведение окна",
+                subtitle: "Как виджет ведёт себя относительно других окон и Spaces."
+            )
+
+            SettingsGroup {
+                SettingsRow(
+                    title: "Поверх остальных окон",
+                    subtitle: "Виджет не перекрывается обычными окнами."
+                ) {
+                    Toggle("Поверх остальных окон", isOn: $alwaysOnTop)
+                        .labelsHidden()
+                }
+
+                SettingsRowDivider()
+
+                SettingsRow(
+                    title: "На всех рабочих столах",
+                    subtitle: "Виджет виден на каждом Space."
+                ) {
+                    Toggle("На всех рабочих столах", isOn: $allSpaces)
+                        .labelsHidden()
+                }
+
+                SettingsRowDivider()
+
+                SettingsRow(
+                    title: "Скрывать в полноэкранном режиме",
+                    subtitle: "Не показывать виджет поверх fullscreen-приложений."
+                ) {
+                    Toggle("Скрывать в полноэкранном режиме", isOn: $hideInFullscreen)
+                        .labelsHidden()
+                }
+
+                SettingsRowDivider()
+
+                SettingsRow(
+                    title: "Зафиксировать позицию",
+                    subtitle: "Запрещает случайное перетаскивание виджета."
+                ) {
+                    Toggle("Зафиксировать позицию", isOn: $positionLocked)
+                        .labelsHidden()
+                }
+            }
+        }
     }
 
     // MARK: Оформление

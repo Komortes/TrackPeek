@@ -28,4 +28,22 @@ struct WidgetPreferencesTests {
         let expected = NotchPreferences.compactSize(width: 320, heightAdjustment: 0)
         #expect(size == expected)
     }
+
+    @Test("window policy keys use stable raw strings and defaults")
+    func windowPolicyKeysStable() {
+        #expect(WidgetPreferences.alwaysOnTopKey == "widgetAlwaysOnTop")
+        #expect(WidgetPreferences.allSpacesKey == "widgetAllSpaces")
+        #expect(WidgetPreferences.hideInFullscreenKey == "widgetHideInFullscreen")
+        #expect(WidgetPreferences.positionLockedKey == "widgetPositionLocked")
+
+        let suiteName = "widget-window-policy-defaults"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+        WidgetPreferences.registerDefaults(in: defaults)
+        #expect(defaults.bool(forKey: WidgetPreferences.alwaysOnTopKey))
+        #expect(defaults.bool(forKey: WidgetPreferences.allSpacesKey))
+        #expect(!defaults.bool(forKey: WidgetPreferences.hideInFullscreenKey))
+        #expect(!defaults.bool(forKey: WidgetPreferences.positionLockedKey))
+        defaults.removePersistentDomain(forName: suiteName)
+    }
 }

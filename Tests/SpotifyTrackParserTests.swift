@@ -66,4 +66,21 @@ struct SpotifyTrackParserTests {
             try SpotifyTrackParser.parse(["Jigsaw Falling Into Place"])
         }
     }
+
+    @Test("parses the extended snapshot with shuffle, repeat and volume")
+    func parsesExtendedSnapshot() throws {
+        let track = try SpotifyTrackParser.parse([
+            "Reckoner", "Radiohead", "In Rainbows", "225000", "12.5",
+            "https://example.com/a.jpg", "playing", "true", "off", "80",
+        ])
+        #expect(track.secondary == PlaybackSecondaryState(isShuffling: true, repeatMode: .off, volume: 80))
+    }
+
+    @Test("keeps the legacy 7-field snapshot working without secondary state")
+    func legacySnapshotStillParses() throws {
+        let track = try SpotifyTrackParser.parse([
+            "Reckoner", "Radiohead", "", "225000", "12.5", "", "paused",
+        ])
+        #expect(track.secondary == nil)
+    }
 }

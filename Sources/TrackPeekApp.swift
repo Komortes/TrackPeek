@@ -16,9 +16,21 @@ final class TrackPeekAppDelegate: NSObject, NSApplicationDelegate {
 
         OverlayMode.migrateIfNeeded()
         WidgetPreferences.migrateDefaultsIfNeeded()
+        if let main = NSScreen.main {
+            let layout = NotchWidgetLayout(
+                rawValue: UserDefaults.standard.string(forKey: WidgetPreferences.layoutKey)
+                    ?? NotchWidgetLayout.fallback.rawValue
+            ) ?? .fallback
+            WidgetPlacementStore.migrateLegacyPlacementIfNeeded(
+                display: DisplayIdentity.persistentIdentifier(for: main),
+                layout: layout
+            )
+        }
         NotchPreferences.registerDefaults()
         WidgetPreferences.registerDefaults()
         MenuBarPreferences.registerDefaults()
+
+        UserDefaults.standard.set(false, forKey: OverlayVisibility.temporarilyHiddenKey)
 
         PlaybackCoordinator.shared.start()
 

@@ -7,9 +7,20 @@ struct OnboardingView: View {
     @AppStorage(MediaSourcePreference.storageKey)
     private var mediaSourceRawValue = MediaSourcePreference.fallback.rawValue
 
+    @AppStorage(OverlayMode.storageKey)
+    private var overlayModeRawValue = OverlayMode.fallback.rawValue
+
     @State private var launchAtLoginEnabled = LaunchAtLogin.isEnabled
     @State private var permissionStatus: PermissionStatus = .unknown
     @State private var permissionTask: Task<Void, Never>?
+
+    @Environment(\.openSettings) private var openSettings
+
+    private static var hasNotchedDisplay: Bool {
+        NSScreen.screens.contains {
+            $0.auxiliaryTopLeftArea != nil || $0.auxiliaryTopRightArea != nil
+        }
+    }
 
     private enum PermissionStatus {
         case unknown
@@ -57,6 +68,26 @@ struct OnboardingView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 6) {
+                    Label("Где показывать плеер", systemImage: "macbook.and.iphone")
+                        .font(.subheadline.weight(.semibold))
+
+                    Picker("Где показывать плеер", selection: $overlayModeRawValue) {
+                        ForEach(OverlayMode.allCases) { mode in
+                            Text(mode.title).tag(mode.rawValue)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+
+                    Text(
+                        OverlayMode(rawValue: overlayModeRawValue)?.summary
+                            ?? OverlayMode.fallback.summary
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                }
+
+                VStack(alignment: .leading, spacing: 6) {
                     Label("Доступ к плееру", systemImage: "lock.shield")
                         .font(.subheadline.weight(.semibold))
 
@@ -82,15 +113,48 @@ struct OnboardingView: View {
             .padding(16)
             .background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 10))
 
-            Button("Готово") {
-                onFinish()
+            HStack(spacing: 10) {
+                Button("Настроить подробнее") {
+                    let tab: SettingsTab = switch OverlayMode(rawValue: overlayModeRawValue) {
+                    case .notch: .notch
+                    case .floatingWidget: .widget
+                    default: .general
+                    }
+                    UserDefaults.standard.set(tab.rawValue, forKey: SettingsTab.selectionStorageKey)
+                    SettingsWindowPresentation.present(openSettings: openSettings.callAsFunction)
+                    onFinish()
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.large)
+
+                Button("Готово") {
+                    onFinish()
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .keyboardShortcut(.defaultAction)
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            .keyboardShortcut(.defaultAction)
         }
         .padding(24)
         .frame(width: 380)
+        .onAppear {
+            // Предвыбор поверхности по железу (§21.2): вырез → чёлка,
+            // иначе виджет Mini Bar. Не перетираем уже сделанный выбор.
+            // Также пропускаем предвыбор, если онбординг уже был завершён.
+            guard
+                !UserDefaults.standard.bool(forKey: OnboardingWindowController.completedKey),
+                OverlayMode(rawValue: overlayModeRawValue) == OverlayMode.fallback
+            else { return }
+            if Self.hasNotchedDisplay {
+                overlayModeRawValue = OverlayMode.notch.rawValue
+            } else {
+                overlayModeRawValue = OverlayMode.floatingWidget.rawValue
+                UserDefaults.standard.set(
+                    NotchWidgetLayout.miniBar.rawValue,
+                    forKey: WidgetPreferences.layoutKey
+                )
+            }
+        }
         .onDisappear {
             permissionTask?.cancel()
         }

@@ -42,7 +42,8 @@ struct WidgetSurfaceContent: View {
                 songInfoVisibility: songInfoVisibility,
                 clickEnabled: false,
                 onTogglePin: {},
-                onCollapse: onCollapse
+                onCollapse: onCollapse,
+                showsSecondaryControls: true
             )
         } else if let track = model.track, model.availability == .ready {
             switch layout {

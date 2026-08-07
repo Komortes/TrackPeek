@@ -18,6 +18,10 @@ struct NotchSurfaceContent: View {
     let clickEnabled: Bool
     let onTogglePin: () -> Void
     let onCollapse: () -> Void
+    /// Второстепенные контролы (shuffle/repeat/громкость) — только когда это
+    /// содержимое переиспользуется под карточную раскладку виджета
+    /// (`cardHorizontal`), не в самой чёлке.
+    var showsSecondaryControls = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -326,6 +330,17 @@ struct NotchSurfaceContent: View {
                             sensitivityOverride: appearance.equalizerSensitivityOverride
                         )
                         .frame(width: isNarrow ? 36 : 48, height: 24)
+                    }
+
+                    if showsSecondaryControls,
+                       !model.capabilities.isDisjoint(with: [.shuffle, .repeatTrack, .volume]) {
+                        SecondaryControlsView(
+                            capabilities: model.capabilities,
+                            secondary: model.secondary,
+                            onShuffle: { enabled in Task { await model.setShuffle(enabled) } },
+                            onRepeat: { mode in Task { await model.setRepeat(mode) } },
+                            onVolume: { volume in Task { await model.setVolume(volume) } }
+                        )
                     }
                 }
             }

@@ -61,7 +61,7 @@ struct WidgetVerticalCard: View {
                 WidgetProgressView(context: context, track: track)
             }
 
-            WidgetControls(context: context, track: track, spacing: 10)
+            WidgetControls(context: context, track: track, spacing: 10, showsSecondaryControls: true)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 13)
@@ -399,17 +399,33 @@ struct WidgetControls: View {
     let track: SpotifyTrack
     var spacing: CGFloat = 8
     var compact = false
+    /// Второстепенные контролы (shuffle/repeat/громкость) — только для
+    /// просторных карточных раскладок (cardVertical), не для компактных.
+    var showsSecondaryControls = false
 
     var body: some View {
-        PlaybackControlsView(
-            isPlaying: track.isPlaying,
-            onPrevious: { Task { await context.model.previousTrack() } },
-            onPlayPause: { Task { await context.model.togglePlayback() } },
-            onNext: { Task { await context.model.nextTrack() } },
-            spacing: spacing,
-            compact: compact
-        )
-        .tint(context.accent)
+        VStack(spacing: 8) {
+            PlaybackControlsView(
+                isPlaying: track.isPlaying,
+                onPrevious: { Task { await context.model.previousTrack() } },
+                onPlayPause: { Task { await context.model.togglePlayback() } },
+                onNext: { Task { await context.model.nextTrack() } },
+                spacing: spacing,
+                compact: compact
+            )
+            .tint(context.accent)
+
+            if showsSecondaryControls,
+               !context.model.capabilities.isDisjoint(with: [.shuffle, .repeatTrack, .volume]) {
+                SecondaryControlsView(
+                    capabilities: context.model.capabilities,
+                    secondary: context.model.secondary,
+                    onShuffle: { enabled in Task { await context.model.setShuffle(enabled) } },
+                    onRepeat: { mode in Task { await context.model.setRepeat(mode) } },
+                    onVolume: { volume in Task { await context.model.setVolume(volume) } }
+                )
+            }
+        }
     }
 }
 

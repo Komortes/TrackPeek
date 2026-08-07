@@ -30,6 +30,9 @@ struct SpotifyTrack: Equatable, Sendable {
     let isPlaying: Bool
     /// Источник снапшота; проставляется роутером, парсеры его не знают.
     var source: PlaybackSource?
+    /// Вторичное состояние (shuffle/repeat/volume); проставляется парсером,
+    /// когда источник вернул расширенный снапшот.
+    var secondary: PlaybackSecondaryState?
 
     init(
         title: String,
@@ -72,7 +75,7 @@ enum SpotifyTrackParser {
             throw Error.invalidResponse
         }
 
-        return SpotifyTrack(
+        var track = SpotifyTrack(
             title: values[0],
             artist: values[1],
             album: optionalText(values[2]),
@@ -81,6 +84,14 @@ enum SpotifyTrackParser {
             artworkURL: URL(string: values[5]),
             isPlaying: values[6].caseInsensitiveCompare("playing") == .orderedSame
         )
+        if values.count >= 10 {
+            track.secondary = PlaybackSecondaryState(
+                isShuffling: Bool(values[7]),
+                repeatMode: RepeatMode(rawValue: values[8]),
+                volume: Int(values[9])
+            )
+        }
+        return track
     }
 
     private static func parseTime(_ value: String) -> TimeInterval? {

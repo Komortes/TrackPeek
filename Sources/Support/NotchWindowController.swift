@@ -37,8 +37,10 @@ final class NotchPanelLayoutState {
 final class NotchWindowController: NSObject {
     private let coordinator = PlaybackCoordinator.shared
     private var panelHosts: [Int: NotchPanelHost] = [:]
+    private var isStopped = false
 
     func start() {
+        isStopped = false
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(preferencesDidChange),
@@ -53,9 +55,11 @@ final class NotchWindowController: NSObject {
         )
 
         synchronizePanels()
+        observePlayback()
     }
 
     func stop() {
+        isStopped = true
         NotificationCenter.default.removeObserver(self)
         removeAllPanels()
     }
@@ -77,7 +81,18 @@ final class NotchWindowController: NSObject {
         let mode = OverlayMode(
             rawValue: defaults.string(forKey: OverlayMode.storageKey) ?? OverlayMode.fallback.rawValue
         ) ?? .fallback
-        guard mode == .notch || mode == .floatingWidget else {
+        let policy = OverlayVisibilityPolicy(
+            rawValue: defaults.string(forKey: OverlayVisibilityPolicy.storageKey)
+                ?? OverlayVisibilityPolicy.fallback.rawValue
+        ) ?? .fallback
+
+        guard OverlayVisibility.isVisible(
+            mode: mode,
+            temporarilyHidden: defaults.bool(forKey: OverlayVisibility.temporarilyHiddenKey),
+            policy: policy,
+            availability: coordinator.model.availability,
+            isPlaying: coordinator.model.track?.isPlaying == true
+        ) else {
             removeAllPanels()
             return
         }
@@ -89,7 +104,7 @@ final class NotchWindowController: NSObject {
             rawValue: defaults.string(forKey: targetKey)
                 ?? NotchDisplayTarget.fallback.rawValue
         ) ?? .fallback
-        let targetScreens = screens(for: target)
+        let targetScreens = screens(for: target, mode: mode)
         let targetIDs = Set(targetScreens.compactMap(screenIdentifier))
 
         let staleIDs = panelHosts.keys.filter { !targetIDs.contains($0) }
@@ -116,20 +131,43 @@ final class NotchWindowController: NSObject {
         }
     }
 
-    private func screens(for target: NotchDisplayTarget) -> [NSScreen] {
-        let screens = NSScreen.screens
-        guard let primary = screens.first else { return [] }
-
-        switch target {
-        case .mainDisplay:
-            return [primary]
-        case .notchedDisplay:
-            let notched = screens.first {
-                $0.auxiliaryTopLeftArea != nil || $0.auxiliaryTopRightArea != nil
+    /// Политики whileSourceRunning/whilePlaying зависят от playback-снапшота;
+    /// пересинхронизируем панели при его изменении. withObservationTracking
+    /// одноразовый — перевзводим подписку после каждого срабатывания.
+    private func observePlayback() {
+        withObservationTracking { [weak self] in
+            guard let self else { return }
+            _ = coordinator.model.availability
+            _ = coordinator.model.track?.isPlaying
+        } onChange: { [weak self] in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                guard !isStopped else { return }
+                synchronizePanels()
+                observePlayback()
             }
-            return [notched ?? primary]
-        case .allDisplays:
-            return screens
+        }
+    }
+
+    private func screens(for target: NotchDisplayTarget, mode: OverlayMode) -> [NSScreen] {
+        let screens = NSScreen.screens
+        let descriptors = screens.compactMap { screen -> DisplayDescriptor? in
+            guard let id = screenIdentifier(screen) else { return nil }
+            return DisplayDescriptor(
+                id: id,
+                hasNotch: screen.auxiliaryTopLeftArea != nil
+                    || screen.auxiliaryTopRightArea != nil,
+                isBuiltIn: CGDisplayIsBuiltin(UInt32(id)) != 0
+            )
+        }
+        let ids = OverlayDisplayResolver.resolveIDs(
+            surface: mode == .floatingWidget ? .floatingWidget : .notch,
+            target: target,
+            displays: descriptors
+        )
+        return screens.filter { screen in
+            guard let id = screenIdentifier(screen) else { return false }
+            return ids.contains(id)
         }
     }
 
@@ -227,8 +265,15 @@ private final class NotchPanelHost: NSObject {
             }
 
             let frame = panel.frame
-            UserDefaults.standard.set(Double(frame.origin.x), forKey: WidgetPreferences.originXKey)
-            UserDefaults.standard.set(Double(frame.maxY), forKey: WidgetPreferences.originTopYKey)
+            let layout = NotchWidgetLayout(
+                rawValue: UserDefaults.standard.string(forKey: WidgetPreferences.layoutKey)
+                    ?? NotchWidgetLayout.fallback.rawValue
+            ) ?? .fallback
+            WidgetPlacementStore.save(
+                WidgetPlacement(x: Double(frame.origin.x), topY: Double(frame.maxY)),
+                display: DisplayIdentity.persistentIdentifier(for: screen),
+                layout: layout
+            )
         }
     }
 
@@ -297,19 +342,36 @@ private final class NotchPanelHost: NSObject {
                 : size
 
             let freeMove = defaults.bool(forKey: WidgetPreferences.freeMoveKey)
-            panel.isMovable = freeMove
-            panel.isMovableByWindowBackground = freeMove
+            let locked = defaults.bool(forKey: WidgetPreferences.positionLockedKey)
+            panel.isMovable = freeMove && !locked
+            panel.isMovableByWindowBackground = freeMove && !locked
+
+            panel.level = defaults.bool(forKey: WidgetPreferences.alwaysOnTopKey)
+                ? NSWindow.Level(rawValue: NSWindow.Level.statusBar.rawValue + 1)
+                : .normal
+            var behavior: NSWindow.CollectionBehavior = [.stationary]
+            behavior.insert(
+                defaults.bool(forKey: WidgetPreferences.allSpacesKey)
+                    ? .canJoinAllSpaces
+                    : .moveToActiveSpace
+            )
+            if !defaults.bool(forKey: WidgetPreferences.hideInFullscreenKey) {
+                behavior.insert(.fullScreenAuxiliary)
+            }
+            panel.collectionBehavior = behavior
 
             let bounds = screen.visibleFrame
             let margin = WidgetPreferences.edgeMargin
             var origin: CGPoint
 
             if freeMove,
-               let x = defaults.object(forKey: WidgetPreferences.originXKey) as? Double,
-               let topY = defaults.object(forKey: WidgetPreferences.originTopYKey) as? Double {
+               let stored = WidgetPlacementStore.placement(
+                   display: DisplayIdentity.persistentIdentifier(for: screen),
+                   layout: layout
+               ) {
                 // Пользовательская позиция: закреплён верхний край, чтобы
                 // раскрытие пилюли росло вниз, как у чёлки.
-                origin = CGPoint(x: x, y: topY - widgetSize.height)
+                origin = CGPoint(x: stored.x, y: stored.topY - widgetSize.height)
             } else {
                 let position = NotchWidgetPosition(
                     rawValue: defaults.string(forKey: WidgetPreferences.positionKey)
@@ -333,6 +395,8 @@ private final class NotchPanelHost: NSObject {
             origin.y = min(max(origin.y, bounds.minY), bounds.maxY - widgetSize.height)
             frame = NSRect(origin: origin, size: widgetSize)
         } else {
+            panel.level = NSWindow.Level(rawValue: NSWindow.Level.statusBar.rawValue + 1)
+            panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
             panel.isMovable = false
             panel.isMovableByWindowBackground = false
             frame = NSRect(

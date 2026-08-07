@@ -121,6 +121,31 @@ struct SpotifySpikeModelTests {
         #expect(model.track?.title == "Nude")
     }
 
+    @Test("capabilities follow the resolved active source")
+    func capabilitiesFollowActiveSource() async {
+        let provider = FakeSpotifyProvider(
+            result: .failure(SpotifyPlaybackError.spotifyNotRunning),
+            activeSource: .appleMusic
+        )
+        let model = SpotifySpikeModel(provider: provider)
+
+        #expect(model.capabilities == [])
+        await model.refresh()
+        #expect(model.capabilities == PlaybackCapabilities.capabilities(for: .appleMusic))
+    }
+
+    @Test("revoked automation permission surfaces a dedicated availability state")
+    func automationDeniedSurfaces() async {
+        let provider = FakeSpotifyProvider(
+            result: .failure(SpotifyPlaybackError.automationDenied)
+        )
+        let model = SpotifySpikeModel(provider: provider)
+
+        await model.refresh()
+
+        #expect(model.availability == .automationDenied)
+    }
+
     @Test("seek clamps the requested position to the track duration")
     func seekClampsToDuration() async {
         let provider = FakeSpotifyProvider(
@@ -200,6 +225,12 @@ private actor FakeSpotifyProvider: SpotifyPlaybackProviding {
             )
         )
     }
+
+    func setShuffle(_ enabled: Bool) throws {}
+
+    func setRepeat(_ mode: RepeatMode) throws {}
+
+    func setVolume(_ volume: Int) throws {}
 }
 
 private enum FakeError: LocalizedError {

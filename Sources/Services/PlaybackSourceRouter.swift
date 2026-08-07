@@ -51,6 +51,18 @@ actor PlaybackSourceRouter: SpotifyPlaybackProviding {
         try await activeProvider().seek(to: position)
     }
 
+    func setShuffle(_ enabled: Bool) async throws {
+        try await activeProvider().setShuffle(enabled)
+    }
+
+    func setRepeat(_ mode: RepeatMode) async throws {
+        try await activeProvider().setRepeat(mode)
+    }
+
+    func setVolume(_ volume: Int) async throws {
+        try await activeProvider().setVolume(volume)
+    }
+
     private func fetchAutoTrack() async throws -> SpotifyTrack {
         let primary = candidateOrder().first!
         let secondary: PlaybackSource = primary == .spotify ? .appleMusic : .spotify

@@ -8,6 +8,7 @@ import Testing
 struct NotchConfigurationTests {
     @Test("keeps persisted enum values stable")
     func persistedValuesStayStable() {
+        #expect(NotchDisplayTarget(rawValue: "automatic") == .automatic)
         #expect(NotchDisplayTarget(rawValue: "mainDisplay") == .mainDisplay)
         #expect(NotchDisplayTarget(rawValue: "notchedDisplay") == .notchedDisplay)
         #expect(NotchDisplayTarget(rawValue: "allDisplays") == .allDisplays)
@@ -281,4 +282,7 @@ private actor NotchRenderingSpotifyProvider: SpotifyPlaybackProviding {
     func nextTrack() {}
     func previousTrack() {}
     func seek(to _: TimeInterval) {}
+    func setShuffle(_: Bool) {}
+    func setRepeat(_: RepeatMode) {}
+    func setVolume(_: Int) {}
 }

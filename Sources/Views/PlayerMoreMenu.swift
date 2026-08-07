@@ -40,6 +40,15 @@ struct PlayerActionsMenuItems: View {
 
     @Environment(\.openSettings) private var openSettings
 
+    @AppStorage(OverlayMode.storageKey)
+    private var overlayModeRawValue = OverlayMode.fallback.rawValue
+    @AppStorage(WidgetPreferences.layoutKey)
+    private var widgetLayoutRawValue = NotchWidgetLayout.fallback.rawValue
+    @AppStorage(OverlayVisibility.temporarilyHiddenKey)
+    private var temporarilyHidden = false
+    @AppStorage(SettingsTab.selectionStorageKey)
+    private var selectedSettingsTab = SettingsTab.general.rawValue
+
     var body: some View {
         Group {
             Button("Открыть \(sourceName)", systemImage: "arrow.up.right.square") {
@@ -63,7 +72,41 @@ struct PlayerActionsMenuItems: View {
 
             Divider()
 
+            Picker("Экранный плеер", selection: $overlayModeRawValue) {
+                ForEach(OverlayMode.allCases) { mode in
+                    Text(mode.title).tag(mode.rawValue)
+                }
+            }
+            .pickerStyle(.inline)
+
+            if OverlayMode(rawValue: overlayModeRawValue) == .floatingWidget {
+                Menu("Раскладка виджета") {
+                    Picker("Раскладка виджета", selection: $widgetLayoutRawValue) {
+                        ForEach(NotchWidgetLayout.allCases) { layout in
+                            Text(layout.title).tag(layout.rawValue)
+                        }
+                    }
+                    .pickerStyle(.inline)
+                }
+            }
+
+            if OverlayMode(rawValue: overlayModeRawValue) != .off {
+                Button(
+                    temporarilyHidden ? "Показать панель" : "Временно скрыть",
+                    systemImage: temporarilyHidden ? "eye" : "eye.slash"
+                ) {
+                    temporarilyHidden.toggle()
+                }
+            }
+
+            Divider()
+
             Button("Настройки…", systemImage: "gearshape") {
+                selectedSettingsTab = switch OverlayMode(rawValue: overlayModeRawValue) {
+                case .notch: SettingsTab.notch.rawValue
+                case .floatingWidget: SettingsTab.widget.rawValue
+                default: SettingsTab.general.rawValue
+                }
                 SettingsWindowPresentation.present(openSettings: openSettings.callAsFunction)
             }
 

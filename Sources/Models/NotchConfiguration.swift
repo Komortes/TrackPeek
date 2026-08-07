@@ -2,6 +2,7 @@ import CoreGraphics
 import Foundation
 
 enum NotchDisplayTarget: String, CaseIterable, Identifiable, Sendable {
+    case automatic
     case mainDisplay
     case notchedDisplay
     case allDisplays
@@ -12,6 +13,8 @@ enum NotchDisplayTarget: String, CaseIterable, Identifiable, Sendable {
 
     var title: String {
         switch self {
+        case .automatic:
+            "Автоматически"
         case .mainDisplay:
             "Основной"
         case .notchedDisplay:
@@ -23,6 +26,8 @@ enum NotchDisplayTarget: String, CaseIterable, Identifiable, Sendable {
 
     var symbolName: String {
         switch self {
+        case .automatic:
+            "wand.and.stars"
         case .mainDisplay:
             "display"
         case .notchedDisplay:
