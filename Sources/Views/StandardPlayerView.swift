@@ -9,6 +9,7 @@ struct StandardPlayerView: View {
         VStack(spacing: 12) {
             PlayerHeaderView(
                 track: track,
+                sourceName: model.activeSourceDisplayName,
                 showsPlaybackStatus: options.showsPlaybackStatus,
                 onRefresh: { Task { await model.refresh() } }
             )
@@ -47,6 +48,16 @@ struct StandardPlayerView: View {
                     onNext: { Task { await model.nextTrack() } },
                     spacing: 22
                 )
+
+                if !model.capabilities.isDisjoint(with: [.shuffle, .repeatTrack, .volume]) {
+                    SecondaryControlsView(
+                        capabilities: model.capabilities,
+                        secondary: model.secondary,
+                        onShuffle: { enabled in Task { await model.setShuffle(enabled) } },
+                        onRepeat: { mode in Task { await model.setRepeat(mode) } },
+                        onVolume: { volume in Task { await model.setVolume(volume) } }
+                    )
+                }
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)

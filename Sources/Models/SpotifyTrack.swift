@@ -1,5 +1,25 @@
 import Foundation
 
+/// Конкретный плеер, из которого получен playback-снапшот.
+enum PlaybackSource: String, Sendable, Equatable {
+    case spotify
+    case appleMusic
+
+    var bundleIdentifier: String {
+        switch self {
+        case .spotify: "com.spotify.client"
+        case .appleMusic: "com.apple.Music"
+        }
+    }
+
+    var displayName: String {
+        switch self {
+        case .spotify: "Spotify"
+        case .appleMusic: "Music"
+        }
+    }
+}
+
 struct SpotifyTrack: Equatable, Sendable {
     let title: String
     let artist: String
@@ -8,6 +28,11 @@ struct SpotifyTrack: Equatable, Sendable {
     let position: TimeInterval
     let artworkURL: URL?
     let isPlaying: Bool
+    /// Источник снапшота; проставляется роутером, парсеры его не знают.
+    var source: PlaybackSource?
+    /// Вторичное состояние (shuffle/repeat/volume); проставляется парсером,
+    /// когда источник вернул расширенный снапшот.
+    var secondary: PlaybackSecondaryState?
 
     init(
         title: String,
@@ -16,7 +41,8 @@ struct SpotifyTrack: Equatable, Sendable {
         duration: TimeInterval = 0,
         position: TimeInterval = 0,
         artworkURL: URL? = nil,
-        isPlaying: Bool
+        isPlaying: Bool,
+        source: PlaybackSource? = nil
     ) {
         self.title = title
         self.artist = artist
@@ -25,6 +51,13 @@ struct SpotifyTrack: Equatable, Sendable {
         self.position = position
         self.artworkURL = artworkURL
         self.isPlaying = isPlaying
+        self.source = source
+    }
+
+    func tagged(with source: PlaybackSource) -> SpotifyTrack {
+        var copy = self
+        copy.source = source
+        return copy
     }
 }
 
@@ -42,7 +75,7 @@ enum SpotifyTrackParser {
             throw Error.invalidResponse
         }
 
-        return SpotifyTrack(
+        var track = SpotifyTrack(
             title: values[0],
             artist: values[1],
             album: optionalText(values[2]),
@@ -51,6 +84,14 @@ enum SpotifyTrackParser {
             artworkURL: URL(string: values[5]),
             isPlaying: values[6].caseInsensitiveCompare("playing") == .orderedSame
         )
+        if values.count >= 10 {
+            track.secondary = PlaybackSecondaryState(
+                isShuffling: Bool(values[7]),
+                repeatMode: RepeatMode(rawValue: values[8]),
+                volume: Int(values[9])
+            )
+        }
+        return track
     }
 
     private static func parseTime(_ value: String) -> TimeInterval? {

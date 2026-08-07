@@ -8,6 +8,7 @@ import Testing
 struct NotchConfigurationTests {
     @Test("keeps persisted enum values stable")
     func persistedValuesStayStable() {
+        #expect(NotchDisplayTarget(rawValue: "automatic") == .automatic)
         #expect(NotchDisplayTarget(rawValue: "mainDisplay") == .mainDisplay)
         #expect(NotchDisplayTarget(rawValue: "notchedDisplay") == .notchedDisplay)
         #expect(NotchDisplayTarget(rawValue: "allDisplays") == .allDisplays)
@@ -142,9 +143,10 @@ struct NotchConfigurationTests {
             NotchPlayerView(
                 model: model,
                 audioMonitor: SpotifyAudioMonitor(),
+                lyricsStore: LyricsStore(),
                 pointerState: NotchPointerState(),
                 panelLayoutState: NotchPanelLayoutState(size: size),
-                onExpansionChange: { _ in }
+                onStateChange: { _ in }
             )
             .defaultAppStorage(defaults)
         }
@@ -224,34 +226,45 @@ struct NotchConfigurationTests {
         #expect(!NotchSongInfoVisibility.never.shouldShow(isPlaying: true))
     }
 
-    @Test("expands for enabled hover click or song notification sources")
+    @Test("expands for hover or pin and shows a light notification for new songs")
     func expansionPolicyUsesEnabledSources() {
         #expect(
-            NotchExpansionPolicy.shouldExpand(
+            NotchExpansionPolicy.state(
                 hoverReady: true,
                 hoverEnabled: true,
                 isPinned: false,
                 clickEnabled: true,
                 notificationVisible: false
-            )
+            ) == .expanded
         )
         #expect(
-            !NotchExpansionPolicy.shouldExpand(
+            NotchExpansionPolicy.state(
                 hoverReady: true,
                 hoverEnabled: false,
                 isPinned: true,
                 clickEnabled: false,
                 notificationVisible: false
-            )
+            ) == .collapsed
         )
+        // Новая песня показывает лёгкое уведомление, а не полный плеер.
         #expect(
-            NotchExpansionPolicy.shouldExpand(
+            NotchExpansionPolicy.state(
                 hoverReady: false,
                 hoverEnabled: false,
                 isPinned: false,
                 clickEnabled: false,
                 notificationVisible: true
-            )
+            ) == .notification
+        )
+        // Наведение имеет приоритет над уведомлением.
+        #expect(
+            NotchExpansionPolicy.state(
+                hoverReady: true,
+                hoverEnabled: true,
+                isPinned: false,
+                clickEnabled: false,
+                notificationVisible: true
+            ) == .expanded
         )
     }
 }
@@ -264,8 +277,12 @@ private actor NotchRenderingSpotifyProvider: SpotifyPlaybackProviding {
     }
 
     func fetchCurrentTrack() -> SpotifyTrack { track }
+    func activeSource() -> PlaybackSource { track.source ?? .spotify }
     func playPause() {}
     func nextTrack() {}
     func previousTrack() {}
     func seek(to _: TimeInterval) {}
+    func setShuffle(_: Bool) {}
+    func setRepeat(_: RepeatMode) {}
+    func setVolume(_: Int) {}
 }

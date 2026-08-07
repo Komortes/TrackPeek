@@ -41,6 +41,39 @@ struct PlaybackPositionResolverTests {
         )
     }
 
+    @Test("keeps the predicted position when the fetched one drifts slightly")
+    func smoothsSmallDrift() {
+        #expect(
+            PlaybackPositionResolver.reconciledPosition(
+                fetched: 41.2,
+                predicted: 42.5,
+                isSeekSettling: false
+            ) == 42.5
+        )
+    }
+
+    @Test("accepts the fetched position on large drift (external seek)")
+    func acceptsLargeDrift() {
+        #expect(
+            PlaybackPositionResolver.reconciledPosition(
+                fetched: 90,
+                predicted: 42.5,
+                isSeekSettling: false
+            ) == 90
+        )
+    }
+
+    @Test("ignores stale fetched positions while a seek settles")
+    func ignoresStaleFetchWhileSeekSettles() {
+        #expect(
+            PlaybackPositionResolver.reconciledPosition(
+                fetched: 10,
+                predicted: 95,
+                isSeekSettling: true
+            ) == 95
+        )
+    }
+
     @Test("maps pointer location to a clamped playback position")
     func mapsPointerLocation() {
         #expect(PlaybackPositionResolver.position(at: -10, width: 100, duration: 200) == 0)

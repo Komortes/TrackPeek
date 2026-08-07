@@ -2,13 +2,14 @@ import SwiftUI
 
 struct PlayerHeaderView: View {
     let track: SpotifyTrack?
+    let sourceName: String
     let showsPlaybackStatus: Bool
     let onRefresh: () -> Void
 
     var body: some View {
         HStack(spacing: 8) {
             if showsPlaybackStatus {
-                PlayerStatusBadge(isPlaying: track?.isPlaying == true)
+                PlayerStatusBadge(isPlaying: track?.isPlaying == true, sourceName: sourceName)
             } else {
                 Text("TrackPeek")
                     .font(.system(size: 11, weight: .semibold))
@@ -17,7 +18,7 @@ struct PlayerHeaderView: View {
 
             Spacer()
 
-            PlayerMoreMenu(track: track, onRefresh: onRefresh)
+            PlayerMoreMenu(track: track, sourceName: sourceName, onRefresh: onRefresh)
         }
         .frame(height: 22)
     }
@@ -25,6 +26,7 @@ struct PlayerHeaderView: View {
 
 struct PlayerStatusBadge: View {
     let isPlaying: Bool
+    let sourceName: String
 
     var body: some View {
         HStack(spacing: 6) {
@@ -32,7 +34,7 @@ struct PlayerStatusBadge: View {
                 .fill(isPlaying ? Color.green : Color.secondary)
                 .frame(width: 6, height: 6)
 
-            Text("Spotify")
+            Text(sourceName)
                 .font(.system(size: 11, weight: .medium))
                 .foregroundStyle(.secondary)
         }

@@ -4,11 +4,35 @@ import SwiftUI
 @MainActor
 final class TrackPeekAppDelegate: NSObject, NSApplicationDelegate {
     private var notchWindowController: NotchWindowController?
+    private let onboardingController = OnboardingWindowController()
     let menuBarControlsController = MenuBarControlsController()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // В тест-хосте не поднимаем сервисы приложения: опрос плеера через
+        // AppleScript и оконные контроллеры роняли тест-раннер (EXC_BAD_ACCESS).
+        guard ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil else {
+            return
+        }
+
+        OverlayMode.migrateIfNeeded()
+        WidgetPreferences.migrateDefaultsIfNeeded()
+        if let main = NSScreen.main {
+            let layout = NotchWidgetLayout(
+                rawValue: UserDefaults.standard.string(forKey: WidgetPreferences.layoutKey)
+                    ?? NotchWidgetLayout.fallback.rawValue
+            ) ?? .fallback
+            WidgetPlacementStore.migrateLegacyPlacementIfNeeded(
+                display: DisplayIdentity.persistentIdentifier(for: main),
+                layout: layout
+            )
+        }
         NotchPreferences.registerDefaults()
+        WidgetPreferences.registerDefaults()
         MenuBarPreferences.registerDefaults()
+
+        UserDefaults.standard.set(false, forKey: OverlayVisibility.temporarilyHiddenKey)
+
+        PlaybackCoordinator.shared.start()
 
         let controller = NotchWindowController()
         notchWindowController = controller
@@ -16,11 +40,14 @@ final class TrackPeekAppDelegate: NSObject, NSApplicationDelegate {
 
         menuBarControlsController.start()
         _ = SparkleUpdaterController.shared
+
+        onboardingController.showIfNeeded()
     }
 
     func applicationWillTerminate(_ notification: Notification) {
         notchWindowController?.stop()
         menuBarControlsController.stop()
+        PlaybackCoordinator.shared.stop()
     }
 }
 

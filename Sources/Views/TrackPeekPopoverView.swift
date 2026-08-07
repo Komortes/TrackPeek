@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 
 struct TrackPeekPopoverView: View {
-    @State private var model = SpotifySpikeModel()
+    private let model = PlaybackCoordinator.shared.model
 
     @AppStorage(PlayerLayout.storageKey)
     private var playerLayoutRawValue = PlayerLayout.fallback.rawValue
@@ -66,7 +66,7 @@ struct TrackPeekPopoverView: View {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .stroke(Color(nsColor: .separatorColor).opacity(0.4), lineWidth: 1)
         }
-        .playerContextMenu(track: model.track, onRefresh: requestRefresh)
+        .playerContextMenu(track: model.track, sourceName: model.activeSourceDisplayName, onRefresh: requestRefresh)
         .animation(
             reduceMotion ? nil : .easeOut(duration: 0.2),
             value: model.track?.title
@@ -80,14 +80,9 @@ struct TrackPeekPopoverView: View {
             value: artworkSize
         )
         .task {
-            while !Task.isCancelled {
-                await model.refresh()
-
-                let interval = model.track?.isPlaying == true
-                    ? Duration.seconds(2)
-                    : Duration.seconds(4)
-                try? await Task.sleep(for: interval)
-            }
+            // Опрос ведёт PlaybackCoordinator; при открытии popover просто
+            // подтягиваем свежий снапшот без задержки.
+            await model.refresh()
         }
     }
 
@@ -112,12 +107,14 @@ struct TrackPeekPopoverView: View {
         VStack(spacing: 8) {
             PlayerHeaderView(
                 track: nil,
+                sourceName: model.activeSourceDisplayName,
                 showsPlaybackStatus: showsPlaybackStatus,
                 onRefresh: requestRefresh
             )
 
             PlayerStateView(
                 availability: model.availability,
+                sourceName: model.activeSourceDisplayName,
                 onRetry: requestRefresh
             )
         }

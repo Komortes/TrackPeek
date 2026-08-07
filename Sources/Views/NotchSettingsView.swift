@@ -2,10 +2,8 @@ import Foundation
 import SwiftUI
 
 struct NotchSettingsView: View {
-    @AppStorage(DisplayMode.storageKey)
-    private var selectedModeRawValue = DisplayMode.fallback.rawValue
-    @AppStorage(NotchPreferences.enabledKey)
-    private var isEnabled = NotchPreferences.enabledFallback
+    @AppStorage(OverlayMode.storageKey)
+    private var selectedModeRawValue = OverlayMode.fallback.rawValue
     @AppStorage(NotchPreferences.displayTargetKey)
     private var displayTargetRawValue = NotchDisplayTarget.fallback.rawValue
     @AppStorage(NotchPreferences.widthKey)
@@ -43,8 +41,8 @@ struct NotchSettingsView: View {
     @AppStorage(NotchPreferences.cornerRadiusKey)
     private var cornerRadius = NotchPreferences.cornerRadiusFallback
 
-    private var selectedMode: DisplayMode {
-        DisplayMode(rawValue: selectedModeRawValue) ?? .fallback
+    private var selectedMode: OverlayMode {
+        OverlayMode(rawValue: selectedModeRawValue) ?? .fallback
     }
 
     private var displayTarget: Binding<NotchDisplayTarget> {
@@ -143,18 +141,30 @@ struct NotchSettingsView: View {
         }
     }
 
+    private var isPanelModeActive: Bool {
+        selectedMode == .notch || selectedMode == .floatingWidget
+    }
+
+    private var activationTitle: String {
+        switch selectedMode {
+        case .notch: "Режим чёлки активен"
+        case .floatingWidget: "Режим виджета активен"
+        case .off: "Экранный плеер выключен"
+        }
+    }
+
     private var activationCard: some View {
         HStack(spacing: 12) {
-            Image(systemName: selectedMode == .notch ? "checkmark.circle.fill" : "macbook")
+            Image(systemName: isPanelModeActive ? "checkmark.circle.fill" : "macbook")
                 .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(selectedMode == .notch ? Color.green : Color.accentColor)
+                .foregroundStyle(isPanelModeActive ? Color.green : Color.accentColor)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(selectedMode == .notch ? "Режим чёлки активен" : "Режим пока не выбран")
+                Text(activationTitle)
                     .font(.headline)
 
                 Text(
-                    selectedMode == .notch
+                    isPanelModeActive
                         ? "Панель уже использует настройки ниже."
                         : "Настройки сохранятся; включить панель можно одной кнопкой."
                 )
@@ -164,9 +174,9 @@ struct NotchSettingsView: View {
 
             Spacer()
 
-            if selectedMode != .notch {
+            if !isPanelModeActive {
                 Button("Использовать чёлку") {
-                    selectedModeRawValue = DisplayMode.notch.rawValue
+                    selectedModeRawValue = OverlayMode.notch.rawValue
                 }
                 .buttonStyle(.borderedProminent)
             }
@@ -186,16 +196,6 @@ struct NotchSettingsView: View {
             symbolName: "gearshape"
         ) {
             SettingsGroup {
-                SettingsRow(
-                    title: "Показывать чёлку",
-                    subtitle: "Быстро скрывает панель, сохраняя остальные параметры."
-                ) {
-                    Toggle("Показывать чёлку", isOn: $isEnabled)
-                        .labelsHidden()
-                }
-
-                SettingsRowDivider()
-
                 SettingsRow(
                     title: "Показывать на",
                     subtitle: "Можно выбрать основной, встроенный или все экраны."
@@ -239,19 +239,20 @@ struct NotchSettingsView: View {
                         .labelsHidden()
                 }
 
-                SettingsRowDivider()
+                if hoverEnabled {
+                    SettingsRowDivider()
 
-                SettingsRow(
-                    title: "Задержка наведения",
-                    subtitle: "Небольшая пауза защищает от случайных раскрытий."
-                ) {
-                    SettingsValueSlider(
-                        value: notchHoverDelay,
-                        range: NotchPreferences.hoverDelayRange,
-                        step: NotchPreferences.hoverDelayStep,
-                        text: String(format: "%.2f с", NotchPreferences.clampedHoverDelay(hoverDelay))
-                    )
-                    .disabled(!hoverEnabled)
+                    SettingsRow(
+                        title: "Задержка наведения",
+                        subtitle: "Небольшая пауза защищает от случайных раскрытий."
+                    ) {
+                        SettingsValueSlider(
+                            value: notchHoverDelay,
+                            range: NotchPreferences.hoverDelayRange,
+                            step: NotchPreferences.hoverDelayStep,
+                            text: String(format: "%.2f с", NotchPreferences.clampedHoverDelay(hoverDelay))
+                        )
+                    }
                 }
 
                 SettingsRowDivider()
@@ -282,22 +283,23 @@ struct NotchSettingsView: View {
                         .labelsHidden()
                 }
 
-                SettingsRowDivider()
+                if notificationsEnabled {
+                    SettingsRowDivider()
 
-                SettingsRow(
-                    title: "Длительность",
-                    subtitle: "Сколько времени держать уведомление раскрытым."
-                ) {
-                    SettingsValueSlider(
-                        value: notchNotificationDuration,
-                        range: NotchPreferences.notificationDurationRange,
-                        step: NotchPreferences.notificationDurationStep,
-                        text: String(
-                            format: "%.2f с",
-                            NotchPreferences.clampedNotificationDuration(notificationDuration)
+                    SettingsRow(
+                        title: "Длительность",
+                        subtitle: "Сколько времени держать уведомление раскрытым."
+                    ) {
+                        SettingsValueSlider(
+                            value: notchNotificationDuration,
+                            range: NotchPreferences.notificationDurationRange,
+                            step: NotchPreferences.notificationDurationStep,
+                            text: String(
+                                format: "%.2f с",
+                                NotchPreferences.clampedNotificationDuration(notificationDuration)
+                            )
                         )
-                    )
-                    .disabled(!notificationsEnabled)
+                    }
                 }
             }
         }
@@ -415,23 +417,24 @@ struct NotchSettingsView: View {
                         .labelsHidden()
                 }
 
-                SettingsRowDivider()
+                if outlineShimmer {
+                    SettingsRowDivider()
 
-                SettingsRow(
-                    title: "Толщина контура",
-                    subtitle: "Размер переливающейся обводки."
-                ) {
-                    SettingsValueSlider(
-                        value: notchOutlineWidth,
-                        range: NotchPreferences.outlineWidthRange,
-                        step: NotchPreferences.outlineWidthStep,
-                        text: String(
-                            format: "%.1f px",
-                            NotchPreferences.clampedOutlineWidth(outlineWidth)
+                    SettingsRow(
+                        title: "Толщина контура",
+                        subtitle: "Размер переливающейся обводки."
+                    ) {
+                        SettingsValueSlider(
+                            value: notchOutlineWidth,
+                            range: NotchPreferences.outlineWidthRange,
+                            step: NotchPreferences.outlineWidthStep,
+                            text: String(
+                                format: "%.1f px",
+                                NotchPreferences.clampedOutlineWidth(outlineWidth)
+                            )
                         )
-                    )
+                    }
                 }
-                .disabled(!outlineShimmer)
 
                 SettingsRowDivider()
 

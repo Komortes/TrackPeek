@@ -6,6 +6,10 @@ actor MusicAppleScriptClient: SpotifyPlaybackProviding {
     private var cachedArtworkIdentity: String?
     private var cachedArtworkURL: URL?
 
+    func activeSource() -> PlaybackSource {
+        .appleMusic
+    }
+
     func fetchCurrentTrack() async throws -> SpotifyTrack {
         guard isMusicRunning else {
             throw SpotifyPlaybackError.spotifyNotRunning
@@ -15,19 +19,19 @@ actor MusicAppleScriptClient: SpotifyPlaybackProviding {
             """
             tell application "Music"
                 if player state is stopped then
-                    return {"", "", "", "0", "0", player state as text}
+                    return {"", "", "", "0", "0", player state as text, "", "", ""}
                 end if
 
                 set activeTrack to current track
                 set trackAlbum to album of activeTrack
                 if trackAlbum is missing value then set trackAlbum to ""
 
-                return {name of activeTrack, artist of activeTrack, trackAlbum as text, (duration of activeTrack) as text, (player position) as text, player state as text}
+                return {name of activeTrack, artist of activeTrack, trackAlbum as text, (duration of activeTrack) as text, (player position) as text, player state as text, (shuffle enabled) as text, song repeat as text, (sound volume) as text}
             end tell
             """
         )
 
-        let values = (1 ... 6).compactMap { descriptor.atIndex($0)?.stringValue }
+        let values = (1 ... 9).compactMap { descriptor.atIndex($0)?.stringValue }
 
         guard
             values.count >= 6,
@@ -49,7 +53,7 @@ actor MusicAppleScriptClient: SpotifyPlaybackProviding {
             )
         }
 
-        return SpotifyTrack(
+        var track = SpotifyTrack(
             title: title,
             artist: artist,
             album: album,
@@ -58,6 +62,14 @@ actor MusicAppleScriptClient: SpotifyPlaybackProviding {
             artworkURL: artworkURL,
             isPlaying: isPlaying
         )
+        if values.count >= 9 {
+            track.secondary = PlaybackSecondaryState(
+                isShuffling: Bool(values[6]),
+                repeatMode: RepeatMode(rawValue: values[7]),
+                volume: Int(values[8])
+            )
+        }
+        return track
     }
 
     func playPause() async throws {
@@ -98,6 +110,22 @@ actor MusicAppleScriptClient: SpotifyPlaybackProviding {
         _ = try await execute(
             "tell application \"Music\" to set player position to \(value)"
         )
+    }
+
+    func setShuffle(_ enabled: Bool) async throws {
+        guard isMusicRunning else { throw SpotifyPlaybackError.spotifyNotRunning }
+        _ = try await execute("tell application \"Music\" to set shuffle enabled to \(enabled)")
+    }
+
+    func setRepeat(_ mode: RepeatMode) async throws {
+        guard isMusicRunning else { throw SpotifyPlaybackError.spotifyNotRunning }
+        _ = try await execute("tell application \"Music\" to set song repeat to \(mode.rawValue)")
+    }
+
+    func setVolume(_ volume: Int) async throws {
+        guard isMusicRunning else { throw SpotifyPlaybackError.spotifyNotRunning }
+        let clamped = min(max(volume, 0), 100)
+        _ = try await execute("tell application \"Music\" to set sound volume to \(clamped)")
     }
 
     private var isMusicRunning: Bool {
@@ -154,6 +182,10 @@ actor MusicAppleScriptClient: SpotifyPlaybackProviding {
         } catch AppleScriptExecutionError.timedOut {
             throw SpotifyPlaybackError.scriptFailed("Music не отвечает")
         } catch let AppleScriptExecutionError.scriptFailed(message) {
+            if message.contains("-1743") || message.localizedCaseInsensitiveContains("not authorized")
+                || message.localizedCaseInsensitiveContains("не разрешено") {
+                throw SpotifyPlaybackError.automationDenied
+            }
             throw SpotifyPlaybackError.scriptFailed(message)
         }
     }

@@ -2,6 +2,7 @@ import CoreGraphics
 import Foundation
 
 enum NotchDisplayTarget: String, CaseIterable, Identifiable, Sendable {
+    case automatic
     case mainDisplay
     case notchedDisplay
     case allDisplays
@@ -12,6 +13,8 @@ enum NotchDisplayTarget: String, CaseIterable, Identifiable, Sendable {
 
     var title: String {
         switch self {
+        case .automatic:
+            "Автоматически"
         case .mainDisplay:
             "Основной"
         case .notchedDisplay:
@@ -23,6 +26,8 @@ enum NotchDisplayTarget: String, CaseIterable, Identifiable, Sendable {
 
     var symbolName: String {
         switch self {
+        case .automatic:
+            "wand.and.stars"
         case .mainDisplay:
             "display"
         case .notchedDisplay:
@@ -30,6 +35,148 @@ enum NotchDisplayTarget: String, CaseIterable, Identifiable, Sendable {
         case .allDisplays:
             "rectangle.on.rectangle"
         }
+    }
+}
+
+enum NotchWidgetPosition: String, CaseIterable, Identifiable, Sendable {
+    // Старые raw-значения оставлены для совместимости с сохранёнными настройками.
+    case topLeading = "leading"
+    case topCenter = "center"
+    case topTrailing = "trailing"
+    case bottomLeading
+    case bottomCenter
+    case bottomTrailing
+
+    static let fallback: NotchWidgetPosition = .topCenter
+
+    var id: String { rawValue }
+
+    var isBottom: Bool {
+        switch self {
+        case .bottomLeading, .bottomCenter, .bottomTrailing:
+            true
+        case .topLeading, .topCenter, .topTrailing:
+            false
+        }
+    }
+
+    /// Горизонтальное выравнивание: -1 слева, 0 центр, 1 справа.
+    var horizontalAlignment: Int {
+        switch self {
+        case .topLeading, .bottomLeading: -1
+        case .topCenter, .bottomCenter: 0
+        case .topTrailing, .bottomTrailing: 1
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .topLeading: "Сверху слева"
+        case .topCenter: "Сверху по центру"
+        case .topTrailing: "Сверху справа"
+        case .bottomLeading: "Снизу слева"
+        case .bottomCenter: "Снизу по центру"
+        case .bottomTrailing: "Снизу справа"
+        }
+    }
+}
+
+enum NotchWidgetLayout: String, CaseIterable, Identifiable, Sendable {
+    case pill
+    case miniBar
+    case cardHorizontal
+    case cardVertical
+    case artworkSquare
+    case lyricsCard
+    case karaokeCard
+    case equalizerCard
+
+    static let fallback: NotchWidgetLayout = .pill
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .pill:
+            "Пилюля"
+        case .miniBar:
+            "Мини-строка"
+        case .cardHorizontal:
+            "Обложка сбоку"
+        case .cardVertical:
+            "Обложка сверху"
+        case .artworkSquare:
+            "Квадрат-обложка"
+        case .lyricsCard:
+            "Текст песни"
+        case .karaokeCard:
+            "Караоке"
+        case .equalizerCard:
+            "Эквалайзер"
+        }
+    }
+
+    var summary: String {
+        switch self {
+        case .pill:
+            "Компактная полоска, раскрывается при наведении."
+        case .miniBar:
+            "Тонкая строка: обложка, название и кнопки."
+        case .cardHorizontal:
+            "Полный плеер постоянного размера."
+        case .cardVertical:
+            "Вертикальная карточка с крупной обложкой."
+        case .artworkSquare:
+            "Только обложка; управление появляется при наведении."
+        case .lyricsCard:
+            "Компактный плеер с синхронизированным текстом."
+        case .karaokeCard:
+            "Крупный текст песни в несколько строк."
+        case .equalizerCard:
+            "Живая волна во всю карточку."
+        }
+    }
+
+    /// Карточные раскладки не сворачиваются — панель всегда развёрнута.
+    var isAlwaysExpanded: Bool {
+        self != .pill
+    }
+
+    /// Группа назначения — используется, чтобы сначала выбрать смысл,
+    /// а затем конкретный визуальный вариант внутри него.
+    var family: NotchWidgetLayoutFamily {
+        switch self {
+        case .pill, .miniBar:
+            .compact
+        case .cardHorizontal, .cardVertical, .artworkSquare:
+            .fullPlayer
+        case .lyricsCard, .karaokeCard:
+            .lyrics
+        case .equalizerCard:
+            .visualizer
+        }
+    }
+}
+
+enum NotchWidgetLayoutFamily: String, CaseIterable, Identifiable, Sendable {
+    case compact
+    case fullPlayer
+    case lyrics
+    case visualizer
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .compact: "Компактные"
+        case .fullPlayer: "Полный плеер"
+        case .lyrics: "Текст песни"
+        case .visualizer: "Визуализация"
+        }
+    }
+
+    var layouts: [NotchWidgetLayout] {
+        NotchWidgetLayout.allCases.filter { $0.family == self }
     }
 }
 
@@ -105,7 +252,6 @@ enum NotchPulseMode: String, CaseIterable, Identifiable, Sendable {
 }
 
 enum NotchPreferences {
-    static let enabledKey = "notchEnabled"
     static let displayTargetKey = "notchDisplayTarget"
     static let widthKey = "notchWidth"
     static let heightAdjustmentKey = "notchHeightAdjustment"
@@ -124,8 +270,8 @@ enum NotchPreferences {
     static let pulseModeKey = "notchPulseMode"
     static let colorSourceKey = "notchColorSource"
     static let cornerRadiusKey = "notchCornerRadius"
+    static let lyricsEnabledKey = "notchLyricsEnabled"
 
-    static let enabledFallback = true
     static let widthFallback = 320.0
     static let widthRange = 240.0 ... 420.0
     static let widthStep = 5.0
@@ -154,10 +300,10 @@ enum NotchPreferences {
     static let cornerRadiusFallback = 12.0
     static let cornerRadiusRange = 0.0 ... 20.0
     static let cornerRadiusStep = 1.0
+    static let lyricsEnabledFallback = false
 
     static func registerDefaults(in defaults: UserDefaults = .standard) {
         defaults.register(defaults: [
-            enabledKey: enabledFallback,
             displayTargetKey: NotchDisplayTarget.fallback.rawValue,
             widthKey: widthFallback,
             heightAdjustmentKey: heightAdjustmentFallback,
@@ -176,6 +322,7 @@ enum NotchPreferences {
             pulseModeKey: NotchPulseMode.fallback.rawValue,
             colorSourceKey: NotchColorSource.fallback.rawValue,
             cornerRadiusKey: cornerRadiusFallback,
+            lyricsEnabledKey: lyricsEnabledFallback,
         ])
     }
 
@@ -220,6 +367,15 @@ enum NotchPreferences {
             height: 176 + clampedHeightAdjustment(heightAdjustment)
         )
     }
+
+    /// Размер лёгкого уведомления о новом треке.
+    static func notificationSize(width: Double, heightAdjustment: Double) -> CGSize {
+        CGSize(
+            width: min(clampedWidth(width) + 48, expandedSize(width: width, heightAdjustment: heightAdjustment).width),
+            height: 64 + clampedHeightAdjustment(heightAdjustment)
+        )
+    }
+
 }
 
 enum NotchResponsiveLayout {
@@ -260,11 +416,45 @@ enum NotchResponsiveLayout {
 }
 
 enum NotchMotion {
-    static let resizeDuration = 0.42
+    /// Раскрытие и закрытие асимметричны: панель быстро подтверждает
+    /// намерение пользователя (ease-out) и чуть быстрее освобождает экран
+    /// обратно (ease-in) — симметричные 0.42 с ощущались медленно вместе
+    /// с задержкой наведения.
+    static let expandDuration = 0.30
+    static let collapseDuration = 0.24
     static let hoverExitGrace = 0.14
+
+    /// Оставлено для мест, которым конкретное направление недоступно.
+    static let resizeDuration = 0.42
+}
+
+/// Состояние панели: свернута, лёгкое уведомление о новом треке или полный плеер.
+enum NotchPanelState: Equatable, Sendable {
+    case collapsed
+    case notification
+    case expanded
 }
 
 enum NotchExpansionPolicy {
+    /// Приоритет: ручная фиксация > наведение > уведомление > свернуто.
+    /// Уведомление о новой песне больше не раскрывает полный плеер —
+    /// оно показывает лёгкий вариант без контролов.
+    static func state(
+        hoverReady: Bool,
+        hoverEnabled: Bool,
+        isPinned: Bool,
+        clickEnabled: Bool,
+        notificationVisible: Bool
+    ) -> NotchPanelState {
+        if (isPinned && clickEnabled) || (hoverReady && hoverEnabled) {
+            return .expanded
+        }
+        if notificationVisible {
+            return .notification
+        }
+        return .collapsed
+    }
+
     static func shouldExpand(
         hoverReady: Bool,
         hoverEnabled: Bool,
@@ -272,8 +462,12 @@ enum NotchExpansionPolicy {
         clickEnabled: Bool,
         notificationVisible: Bool
     ) -> Bool {
-        (hoverReady && hoverEnabled)
-            || (isPinned && clickEnabled)
-            || notificationVisible
+        state(
+            hoverReady: hoverReady,
+            hoverEnabled: hoverEnabled,
+            isPinned: isPinned,
+            clickEnabled: clickEnabled,
+            notificationVisible: notificationVisible
+        ) == .expanded
     }
 }

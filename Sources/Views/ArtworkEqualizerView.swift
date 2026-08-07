@@ -4,10 +4,27 @@ extension AudioSpectrum: VectorArithmetic {}
 
 private struct EqualizerShape: Shape {
     var spectrum: AudioSpectrum
+    /// Число столбиков; при значении больше числа полос спектра значения
+    /// линейно интерполируются — волна выглядит детальнее.
+    var barCount = AudioSpectrum.bandCount
+    /// Позволяет поверхности передать собственную чувствительность вместо
+    /// общего notch-значения.
+    var sensitivityOverride: Double? = nil
 
     var animatableData: AudioSpectrum {
         get { spectrum }
         set { spectrum = newValue }
+    }
+
+    private func value(at index: Int) -> Double {
+        guard barCount != AudioSpectrum.bandCount else { return spectrum[index] }
+
+        let position = Double(index) / Double(max(barCount - 1, 1))
+            * Double(AudioSpectrum.bandCount - 1)
+        let lower = Int(position.rounded(.down))
+        let upper = min(lower + 1, AudioSpectrum.bandCount - 1)
+        let fraction = position - Double(lower)
+        return spectrum[lower] + (spectrum[upper] - spectrum[lower]) * fraction
     }
 
     func path(in rect: CGRect) -> Path {
@@ -15,12 +32,12 @@ private struct EqualizerShape: Shape {
         let spacing = min(1, rect.width * 0.018)
         let barWidth = max(
             1,
-            (rect.width - spacing * CGFloat(AudioSpectrum.bandCount - 1))
-                / CGFloat(AudioSpectrum.bandCount)
+            (rect.width - spacing * CGFloat(barCount - 1))
+                / CGFloat(barCount)
         )
 
-        for index in 0 ..< AudioSpectrum.bandCount {
-            let height = max(2.5, rect.height * spectrum[index])
+        for index in 0 ..< barCount {
+            let height = max(2.5, rect.height * value(at: index))
             let barRect = CGRect(
                 x: CGFloat(index) * (barWidth + spacing),
                 y: rect.maxY - height,
@@ -43,6 +60,10 @@ struct ArtworkEqualizerView: View {
     let isVisible: Bool
     let isColored: Bool
     let palette: ArtworkPalette
+    var barCount = AudioSpectrum.bandCount
+    /// Позволяет поверхности передать собственную чувствительность вместо
+    /// общего notch-значения.
+    var sensitivityOverride: Double? = nil
 
     @AppStorage(NotchPreferences.equalizerSensitivityKey)
     private var equalizerSensitivity = NotchPreferences.equalizerSensitivityFallback
@@ -53,7 +74,9 @@ struct ArtworkEqualizerView: View {
         guard isPlaying, isVisible, !reduceMotion else { return .resting }
         let spectrum = audioMonitor.spectrum
 
-        let sensitivity = NotchPreferences.clampedEqualizerSensitivity(equalizerSensitivity)
+        let sensitivity = NotchPreferences.clampedEqualizerSensitivity(
+            sensitivityOverride ?? equalizerSensitivity
+        )
         guard sensitivity != 1 else { return spectrum }
 
         let scaledValues = (0 ..< AudioSpectrum.bandCount).map { spectrum[$0] * sensitivity }
@@ -76,7 +99,7 @@ struct ArtworkEqualizerView: View {
     }
 
     var body: some View {
-        EqualizerShape(spectrum: targetSpectrum)
+        EqualizerShape(spectrum: targetSpectrum, barCount: barCount)
             .fill(fillStyle)
             .animation(
                 reduceMotion

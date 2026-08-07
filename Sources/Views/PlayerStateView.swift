@@ -3,16 +3,8 @@ import SwiftUI
 
 struct PlayerStateView: View {
     let availability: PlaybackAvailability
+    let sourceName: String
     let onRetry: () -> Void
-
-    @AppStorage(MediaSourcePreference.storageKey)
-    private var sourceRawValue = MediaSourcePreference.fallback.rawValue
-
-    private var sourceName: String {
-        (MediaSourcePreference(rawValue: sourceRawValue) ?? .fallback) == .appleMusic
-            ? "Music"
-            : "Spotify"
-    }
 
     var body: some View {
         VStack(spacing: 10) {
@@ -48,7 +40,7 @@ struct PlayerStateView: View {
     @ViewBuilder
     private var action: some View {
         switch availability {
-        case .spotifyNotRunning:
+        case .spotifyNotRunning, .nothingPlaying:
             Button("Открыть \(sourceName)") {
                 PlayerAppLauncher.openActiveSource()
             }
@@ -58,7 +50,23 @@ struct PlayerStateView: View {
             Button("Повторить", action: onRetry)
                 .buttonStyle(.bordered)
                 .controlSize(.small)
-        case .loading, .ready, .nothingPlaying:
+        case .automationDenied:
+            VStack(spacing: 6) {
+                Button("Повторить", action: onRetry)
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+
+                Button("Открыть Настройки конфиденциальности") {
+                    if let url = URL(
+                        string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation"
+                    ) {
+                        NSWorkspace.shared.open(url)
+                    }
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+            }
+        case .loading, .ready:
             EmptyView()
         }
     }
@@ -71,6 +79,8 @@ struct PlayerStateView: View {
             "Ничего не воспроизводится"
         case .spotifyNotRunning:
             "\(sourceName) не запущен"
+        case .automationDenied:
+            "Нет доступа к плееру"
         case .unavailable:
             "Не удалось прочитать состояние"
         case .ready:
@@ -83,9 +93,11 @@ struct PlayerStateView: View {
         case .loading:
             ""
         case .nothingPlaying:
-            "Запустите воспроизведение в Spotify"
+            "Запустите воспроизведение в \(sourceName)"
         case .spotifyNotRunning:
             "Откройте \(sourceName), чтобы продолжить"
+        case .automationDenied:
+            "Разрешение Automation отозвано. Включите его для TrackPeek заново."
         case .unavailable:
             "Попробуйте обновить информацию о треке"
         case .ready:
@@ -99,6 +111,8 @@ struct PlayerStateView: View {
             "music.note"
         case .spotifyNotRunning:
             "music.note.slash"
+        case .automationDenied:
+            "lock.slash"
         case .unavailable:
             "exclamationmark.triangle"
         case .loading, .ready:

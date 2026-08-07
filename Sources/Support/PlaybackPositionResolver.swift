@@ -12,6 +12,22 @@ enum PlaybackPositionResolver {
         return min(max(snapshotPosition + elapsed, 0), max(duration, 0))
     }
 
+    /// Сглаживает рассинхрон между интерполируемой позицией и свежим значением
+    /// из AppleScript: небольшие расхождения (задержка самого скрипта) не должны
+    /// дёргать таймлайн, крупные (внешний seek, смена трека) — принимаются сразу.
+    static func reconciledPosition(
+        fetched: TimeInterval,
+        predicted: TimeInterval,
+        isSeekSettling: Bool,
+        tolerance: TimeInterval = 1.5
+    ) -> TimeInterval {
+        if isSeekSettling {
+            return predicted
+        }
+
+        return abs(fetched - predicted) <= tolerance ? predicted : fetched
+    }
+
     static func position(
         at location: CGFloat,
         width: CGFloat,

@@ -1,49 +1,65 @@
 import Foundation
 
-enum DisplayMode: String, CaseIterable, Identifiable, Sendable {
-    case menuBar
+/// Экранный плеер поверх рабочего стола. Menu Bar существует всегда и не
+/// является режимом: OverlayMode определяет только видимость NSPanel.
+enum OverlayMode: String, CaseIterable, Identifiable, Sendable {
+    case off
     case notch
     case floatingWidget
 
-    static let fallback: DisplayMode = .menuBar
-    static let storageKey = "displayMode"
+    static let fallback: OverlayMode = .off
+    static let storageKey = "overlayMode"
+
+    /// Ключ старой модели с тремя взаимоисключающими режимами.
+    static let legacyStorageKey = "displayMode"
 
     var id: String { rawValue }
 
-    var isAvailable: Bool {
-        self != .floatingWidget
-    }
-
     var title: String {
         switch self {
-        case .menuBar:
-            "Menu Bar"
+        case .off:
+            "Только Menu Bar"
         case .notch:
-            "Notch"
+            "Чёлка"
         case .floatingWidget:
-            "Floating Widget"
+            "Виджет"
         }
     }
 
     var summary: String {
         switch self {
-        case .menuBar:
-            "Трек, анимация звука и управление прямо в строке меню."
+        case .off:
+            "Без экранной панели: трек и управление в строке меню."
         case .notch:
             "Компактная чёлка, которая раскрывается при наведении."
         case .floatingWidget:
-            "Свободный виджет поверх окон с несколькими вариантами оформления."
+            "Пилюля или карточка у края любого экрана."
         }
     }
 
     var symbolName: String {
         switch self {
-        case .menuBar:
+        case .off:
             "menubar.rectangle"
         case .notch:
             "macbook"
         case .floatingWidget:
             "rectangle.on.rectangle"
         }
+    }
+
+    /// Переносит сохранённый выбор из старой модели `displayMode`.
+    static func migrateIfNeeded(in defaults: UserDefaults = .standard) {
+        guard defaults.string(forKey: storageKey) == nil,
+              let legacy = defaults.string(forKey: legacyStorageKey) else {
+            return
+        }
+
+        let migrated: OverlayMode = switch legacy {
+        case "notch": .notch
+        case "floatingWidget": .floatingWidget
+        default: .off
+        }
+        defaults.set(migrated.rawValue, forKey: storageKey)
     }
 }

@@ -35,17 +35,19 @@ enum SettingsWindowPresentation {
 /// menu, so all surfaces (popover, notch) expose the same actions consistently.
 struct PlayerActionsMenuItems: View {
     let track: SpotifyTrack?
+    let sourceName: String
     let onRefresh: () -> Void
 
     @Environment(\.openSettings) private var openSettings
-    @AppStorage(MediaSourcePreference.storageKey)
-    private var sourceRawValue = MediaSourcePreference.fallback.rawValue
 
-    private var sourceName: String {
-        (MediaSourcePreference(rawValue: sourceRawValue) ?? .fallback) == .appleMusic
-            ? "Music"
-            : "Spotify"
-    }
+    @AppStorage(OverlayMode.storageKey)
+    private var overlayModeRawValue = OverlayMode.fallback.rawValue
+    @AppStorage(WidgetPreferences.layoutKey)
+    private var widgetLayoutRawValue = NotchWidgetLayout.fallback.rawValue
+    @AppStorage(OverlayVisibility.temporarilyHiddenKey)
+    private var temporarilyHidden = false
+    @AppStorage(SettingsTab.selectionStorageKey)
+    private var selectedSettingsTab = SettingsTab.general.rawValue
 
     var body: some View {
         Group {
@@ -70,7 +72,41 @@ struct PlayerActionsMenuItems: View {
 
             Divider()
 
+            Picker("Экранный плеер", selection: $overlayModeRawValue) {
+                ForEach(OverlayMode.allCases) { mode in
+                    Text(mode.title).tag(mode.rawValue)
+                }
+            }
+            .pickerStyle(.inline)
+
+            if OverlayMode(rawValue: overlayModeRawValue) == .floatingWidget {
+                Menu("Раскладка виджета") {
+                    Picker("Раскладка виджета", selection: $widgetLayoutRawValue) {
+                        ForEach(NotchWidgetLayout.allCases) { layout in
+                            Text(layout.title).tag(layout.rawValue)
+                        }
+                    }
+                    .pickerStyle(.inline)
+                }
+            }
+
+            if OverlayMode(rawValue: overlayModeRawValue) != .off {
+                Button(
+                    temporarilyHidden ? "Показать панель" : "Временно скрыть",
+                    systemImage: temporarilyHidden ? "eye" : "eye.slash"
+                ) {
+                    temporarilyHidden.toggle()
+                }
+            }
+
+            Divider()
+
             Button("Настройки…", systemImage: "gearshape") {
+                selectedSettingsTab = switch OverlayMode(rawValue: overlayModeRawValue) {
+                case .notch: SettingsTab.notch.rawValue
+                case .floatingWidget: SettingsTab.widget.rawValue
+                default: SettingsTab.general.rawValue
+                }
                 SettingsWindowPresentation.present(openSettings: openSettings.callAsFunction)
             }
 
@@ -88,11 +124,12 @@ struct PlayerActionsMenuItems: View {
 
 struct PlayerMoreMenu: View {
     let track: SpotifyTrack?
+    let sourceName: String
     let onRefresh: () -> Void
 
     var body: some View {
         Menu {
-            PlayerActionsMenuItems(track: track, onRefresh: onRefresh)
+            PlayerActionsMenuItems(track: track, sourceName: sourceName, onRefresh: onRefresh)
         } label: {
             Image(systemName: "ellipsis")
                 .font(.system(size: 13, weight: .semibold))
@@ -111,17 +148,22 @@ struct PlayerMoreMenu: View {
 /// surface, so users don't have to hunt for the small "…" button.
 struct PlayerContextMenuModifier: ViewModifier {
     let track: SpotifyTrack?
+    let sourceName: String
     let onRefresh: () -> Void
 
     func body(content: Content) -> some View {
         content.contextMenu {
-            PlayerActionsMenuItems(track: track, onRefresh: onRefresh)
+            PlayerActionsMenuItems(track: track, sourceName: sourceName, onRefresh: onRefresh)
         }
     }
 }
 
 extension View {
-    func playerContextMenu(track: SpotifyTrack?, onRefresh: @escaping () -> Void) -> some View {
-        modifier(PlayerContextMenuModifier(track: track, onRefresh: onRefresh))
+    func playerContextMenu(
+        track: SpotifyTrack?,
+        sourceName: String,
+        onRefresh: @escaping () -> Void
+    ) -> some View {
+        modifier(PlayerContextMenuModifier(track: track, sourceName: sourceName, onRefresh: onRefresh))
     }
 }

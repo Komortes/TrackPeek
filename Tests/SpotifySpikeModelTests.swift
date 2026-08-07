@@ -90,6 +90,21 @@ struct SpotifySpikeModelTests {
         #expect(model.track?.title == "House of Cards")
     }
 
+    @Test("refresh exposes the resolved active source even when the track is nil")
+    func refreshExposesActiveSourceOnFailure() async {
+        let provider = FakeSpotifyProvider(
+            result: .failure(SpotifyPlaybackError.spotifyNotRunning),
+            activeSource: .appleMusic
+        )
+        let model = SpotifySpikeModel(provider: provider)
+
+        await model.refresh()
+
+        #expect(model.track == nil)
+        #expect(model.activeSource == .appleMusic)
+        #expect(model.activeSourceDisplayName == "Music")
+    }
+
     @Test("previous track refreshes the playback snapshot")
     func previousTrackRefreshesSnapshot() async {
         let provider = FakeSpotifyProvider(
@@ -104,6 +119,31 @@ struct SpotifySpikeModelTests {
         await model.previousTrack()
 
         #expect(model.track?.title == "Nude")
+    }
+
+    @Test("capabilities follow the resolved active source")
+    func capabilitiesFollowActiveSource() async {
+        let provider = FakeSpotifyProvider(
+            result: .failure(SpotifyPlaybackError.spotifyNotRunning),
+            activeSource: .appleMusic
+        )
+        let model = SpotifySpikeModel(provider: provider)
+
+        #expect(model.capabilities == [])
+        await model.refresh()
+        #expect(model.capabilities == PlaybackCapabilities.capabilities(for: .appleMusic))
+    }
+
+    @Test("revoked automation permission surfaces a dedicated availability state")
+    func automationDeniedSurfaces() async {
+        let provider = FakeSpotifyProvider(
+            result: .failure(SpotifyPlaybackError.automationDenied)
+        )
+        let model = SpotifySpikeModel(provider: provider)
+
+        await model.refresh()
+
+        #expect(model.availability == .automationDenied)
     }
 
     @Test("seek clamps the requested position to the track duration")
@@ -132,19 +172,26 @@ private actor FakeSpotifyProvider: SpotifyPlaybackProviding {
     private var result: Result<SpotifyTrack, Swift.Error>
     private let nextTrackValue: SpotifyTrack?
     private let previousTrackValue: SpotifyTrack?
+    private let resolvedActiveSource: PlaybackSource
 
     init(
         result: Result<SpotifyTrack, Swift.Error>,
         nextTrack: SpotifyTrack? = nil,
-        previousTrack: SpotifyTrack? = nil
+        previousTrack: SpotifyTrack? = nil,
+        activeSource: PlaybackSource = .spotify
     ) {
         self.result = result
         self.nextTrackValue = nextTrack
         self.previousTrackValue = previousTrack
+        self.resolvedActiveSource = activeSource
     }
 
     func fetchCurrentTrack() throws -> SpotifyTrack {
         try result.get()
+    }
+
+    func activeSource() -> PlaybackSource {
+        resolvedActiveSource
     }
 
     func playPause() throws {}
@@ -178,6 +225,12 @@ private actor FakeSpotifyProvider: SpotifyPlaybackProviding {
             )
         )
     }
+
+    func setShuffle(_ enabled: Bool) throws {}
+
+    func setRepeat(_ mode: RepeatMode) throws {}
+
+    func setVolume(_ volume: Int) throws {}
 }
 
 private enum FakeError: LocalizedError {
