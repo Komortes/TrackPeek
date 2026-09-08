@@ -94,6 +94,7 @@
 		F4CFBD58963C9B5B66CC2698 /* CompactHorizontalPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51F98CDF26F841562F2AC26B /* CompactHorizontalPlayerView.swift */; };
 		F562620C41D11D7F7FA84BA6 /* StandardPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3935E51796CE25D6C6ADC118 /* StandardPlayerView.swift */; };
 		F89DE812E338E8D15DDC0674 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 598F3923E9543BF69E4AD2E9 /* Sparkle */; };
+		D4B6092ED2EA5A7E214B725E /* WidgetEdgeCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D957561B4C6B5CB30AE9185 /* WidgetEdgeCard.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -198,6 +199,7 @@
 		F55E19ACF769720342C96D39 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		F72A0A219630C5DB27BE8D4C /* PlayerPresentationOptions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerPresentationOptions.swift; sourceTree = "<group>"; };
 		FB2AF7C2B506820995D1EE41 /* WidgetCardViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetCardViews.swift; sourceTree = "<group>"; };
+		6D957561B4C6B5CB30AE9185 /* WidgetEdgeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetEdgeCard.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -336,6 +338,7 @@
 				6DCB9F0DDF8C2AC5DD9162D5 /* TrackInfoView.swift */,
 				3772FE1A4355B17E8E736E36 /* TrackPeekPopoverView.swift */,
 				FB2AF7C2B506820995D1EE41 /* WidgetCardViews.swift */,
+				6D957561B4C6B5CB30AE9185 /* WidgetEdgeCard.swift */,
 				7B103E29B3063662B9920226 /* WidgetSettingsView.swift */,
 				4379E9CFC7FB0B1EAD5DDA9A /* Overlay */,
 			);
@@ -572,6 +575,7 @@
 				59FF79536A31C39DF66929EF /* TrackPeekApp.swift in Sources */,
 				9950167554F0AF9D0CDDE9B5 /* TrackPeekPopoverView.swift in Sources */,
 				C741E44D3DA385A7B817321C /* WidgetCardViews.swift in Sources */,
+				D4B6092ED2EA5A7E214B725E /* WidgetEdgeCard.swift in Sources */,
 				D809E57D337F42E9B6C538FE /* WidgetPreferences.swift in Sources */,
 				30B18A2501414C2E810A676D /* PlayerPresets.swift in Sources */,
 				750CACF6335D40048AE55D61 /* PlaybackCapabilities.swift in Sources */,

@@ -84,11 +84,15 @@ struct LRCLibLyricsClient: LyricsProviding {
     }
 
     func fetchLyrics(for request: LyricsRequest) async throws -> TrackLyrics? {
+        guard request.duration.isFinite, request.duration >= 0,
+              let duration = Int(exactly: request.duration.rounded()) else {
+            throw URLError(.badURL)
+        }
         var components = URLComponents(string: "https://lrclib.net/api/get")!
         var query = [
             URLQueryItem(name: "track_name", value: request.title),
             URLQueryItem(name: "artist_name", value: request.artist),
-            URLQueryItem(name: "duration", value: String(Int(request.duration.rounded()))),
+            URLQueryItem(name: "duration", value: String(duration)),
         ]
         if let album = request.album, !album.isEmpty {
             query.append(URLQueryItem(name: "album_name", value: album))
@@ -96,6 +100,7 @@ struct LRCLibLyricsClient: LyricsProviding {
         components.queryItems = query
 
         var urlRequest = URLRequest(url: components.url!)
+        urlRequest.timeoutInterval = 12
         urlRequest.setValue(
             "TrackPeek (https://github.com/Komortes/TrackPeek)",
             forHTTPHeaderField: "User-Agent"

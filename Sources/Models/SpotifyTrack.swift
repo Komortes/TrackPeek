@@ -25,7 +25,7 @@ struct SpotifyTrack: Equatable, Sendable {
     let artist: String
     let album: String?
     let duration: TimeInterval
-    let position: TimeInterval
+    private(set) var position: TimeInterval
     let artworkURL: URL?
     let isPlaying: Bool
     /// Источник снапшота; проставляется роутером, парсеры его не знают.
@@ -52,6 +52,12 @@ struct SpotifyTrack: Equatable, Sendable {
         self.artworkURL = artworkURL
         self.isPlaying = isPlaying
         self.source = source
+    }
+
+    func withPosition(_ position: TimeInterval) -> SpotifyTrack {
+        var copy = self
+        copy.position = position
+        return copy
     }
 
     func tagged(with source: PlaybackSource) -> SpotifyTrack {
@@ -95,7 +101,9 @@ enum SpotifyTrackParser {
     }
 
     private static func parseTime(_ value: String) -> TimeInterval? {
-        Double(value.replacingOccurrences(of: ",", with: "."))
+        guard let number = Double(value.replacingOccurrences(of: ",", with: ".")),
+              number.isFinite else { return nil }
+        return number
     }
 
     private static func optionalText(_ value: String) -> String? {

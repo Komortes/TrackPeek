@@ -3,6 +3,9 @@ import SwiftUI
 struct WidgetSettingsView: View {
     @AppStorage(OverlayMode.storageKey)
     private var selectedModeRawValue = OverlayMode.fallback.rawValue
+    @AppStorage(WidgetPreferences.edgeOnRightKey)
+    private var edgeOnRight = true
+
     @AppStorage(WidgetPreferences.layoutKey)
     private var widgetLayoutRawValue = NotchWidgetLayout.fallback.rawValue
     @AppStorage(WidgetPreferences.positionKey)
@@ -235,7 +238,19 @@ struct WidgetSettingsView: View {
             subtitle: "Где держать виджет и можно ли его перетаскивать.",
             symbolName: "arrow.up.and.down.and.arrow.left.and.right"
         ) {
-            positionSchematic
+            if selectedLayout == .edge {
+                Picker("Край экрана", selection: $edgeOnRight) {
+                    Text("Слева").tag(false)
+                    Text("Справа").tag(true)
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 240)
+                Text("72 × 224 pt · по центру выбранного края, с учётом Dock.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else {
+                positionSchematic
+            }
 
             SettingsGroup {
                 SettingsRow(
@@ -261,6 +276,7 @@ struct WidgetSettingsView: View {
                 ) {
                     Toggle("Свободное перемещение", isOn: $freeMoveEnabled)
                         .labelsHidden()
+                        .disabled(selectedLayout == .edge)
                 }
 
                 SettingsRowDivider()
@@ -438,6 +454,23 @@ struct WidgetSettingsView: View {
             subtitle: "Эффекты виджета — независимо от настроек чёлки.",
             symbolName: "paintpalette"
         ) {
+            if selectedLayout == .edge {
+                SettingsGroup {
+                    SettingsRow(title: "Цветной прогресс", subtitle: "Небольшой акцент под кнопками.") {
+                        Toggle("Цветной прогресс", isOn: $coloredProgress).labelsHidden()
+                    }
+                    SettingsRowDivider()
+                    SettingsRow(title: "Источник цвета", subtitle: "Палитра обложки или системный акцент.") {
+                        Picker("Источник цвета", selection: colorSource) {
+                            ForEach(NotchColorSource.allCases) { source in
+                                Text(source.title).tag(source)
+                            }
+                        }.labelsHidden().frame(width: 190)
+                    }
+                }
+                Text("Edge сохраняет постоянный размер и спокойное оформление без эквалайзера и пульсации.")
+                    .font(.caption).foregroundStyle(.secondary)
+            } else {
             SettingsGroup {
                 SettingsRow(
                     title: "Ширина",
@@ -557,6 +590,7 @@ struct WidgetSettingsView: View {
                     .frame(width: 150)
                 }
             }
+            }
         }
     }
 }
@@ -591,6 +625,17 @@ struct WidgetLayoutPreview: View {
                         miniBars
                     }
                 }
+        case .edge:
+            card(width: 24, height: 70) {
+                VStack(spacing: 5) {
+                    miniSquare(16)
+                    Image(systemName: "backward.fill")
+                    Image(systemName: "play.circle.fill")
+                    Image(systemName: "forward.fill")
+                }
+                .font(.system(size: 6, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.85))
+            }
         case .miniBar:
             Capsule()
                 .fill(Color.black)

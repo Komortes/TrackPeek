@@ -3,22 +3,26 @@ import SwiftUI
 struct PlaybackControlButtonStyle: ButtonStyle {
     let isPrimary: Bool
     var isHovered = false
+    var compact = false
+    @Environment(\.isEnabled) private var isEnabled
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .frame(
-                width: isPrimary ? 38 : 32,
-                height: isPrimary ? 38 : 32
+                width: compact ? 32 : (isPrimary ? 40 : 32),
+                height: compact ? 32 : (isPrimary ? 40 : 32)
             )
+            .contentShape(Circle())
+            .opacity(isEnabled ? 1 : 0.4)
             .foregroundStyle(isPrimary ? Color.white : Color.primary)
             .background {
                 Circle()
                     .fill(
                         isPrimary
                             ? Color.accentColor.opacity(isHovered ? 1 : 0.9)
-                            : Color.primary.opacity(isHovered ? 0.1 : 0.035)
+                            : Color.primary.opacity(isHovered ? 0.12 : 0.045)
                     )
             }
             .overlay {
@@ -33,7 +37,7 @@ struct PlaybackControlButtonStyle: ButtonStyle {
             .scaleEffect(
                 reduceMotion
                     ? 1
-                    : (configuration.isPressed ? 0.97 : (isHovered ? 1.025 : 1))
+                    : (configuration.isPressed ? 0.94 : 1)
             )
             .animation(
                 reduceMotion

@@ -63,7 +63,7 @@ struct PlaybackControlsView: View {
     }
 }
 
-private struct PlaybackControlButton: View {
+struct PlaybackControlButton: View {
     let symbol: String
     let label: String
     let isPrimary: Bool
@@ -88,7 +88,8 @@ private struct PlaybackControlButton: View {
         .buttonStyle(
             PlaybackControlButtonStyle(
                 isPrimary: isPrimary,
-                isHovered: isHovered
+                isHovered: isHovered,
+                compact: compact
             )
         )
         .onHover { hovering in

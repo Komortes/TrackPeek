@@ -115,6 +115,7 @@ struct ArtworkEqualizerView: View {
                     : .smooth(duration: PlayerMotion.equalizerDuration, extraBounce: 0),
                 value: palette
             )
+            .audioSpectrumDemand(audioMonitor, enabled: isPlaying && isVisible && !reduceMotion)
             .accessibilityHidden(true)
     }
 }
@@ -122,5 +123,39 @@ struct ArtworkEqualizerView: View {
 extension ArtworkColor {
     var swiftUIColor: Color {
         Color(red: red, green: green, blue: blue)
+    }
+}
+
+
+private struct AudioSurfaceVisibleKey: EnvironmentKey {
+    static let defaultValue = true
+}
+
+extension EnvironmentValues {
+    var audioSurfaceVisible: Bool {
+        get { self[AudioSurfaceVisibleKey.self] }
+        set { self[AudioSurfaceVisibleKey.self] = newValue }
+    }
+}
+
+private struct AudioSpectrumDemand: ViewModifier {
+    let monitor: SpotifyAudioMonitor
+    let enabled: Bool
+    @Environment(\.audioSurfaceVisible) private var surfaceVisible
+    @State private var consumerID = UUID()
+
+    private var active: Bool { enabled && surfaceVisible }
+
+    func body(content: Content) -> some View {
+        content
+            .onAppear { monitor.setConsumer(consumerID, active: active) }
+            .onChange(of: active) { _, active in monitor.setConsumer(consumerID, active: active) }
+            .onDisappear { monitor.setConsumer(consumerID, active: false) }
+    }
+}
+
+extension View {
+    func audioSpectrumDemand(_ monitor: SpotifyAudioMonitor, enabled: Bool) -> some View {
+        modifier(AudioSpectrumDemand(monitor: monitor, enabled: enabled))
     }
 }

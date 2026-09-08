@@ -88,6 +88,7 @@ struct SettingsView: View {
         NotchPreferences.lyricsEnabledKey,
         WidgetPreferences.positionKey,
         WidgetPreferences.layoutKey,
+        WidgetPreferences.edgeOnRightKey,
         WidgetPreferences.freeMoveKey,
         WidgetPreferences.originXKey,
         WidgetPreferences.originTopYKey,

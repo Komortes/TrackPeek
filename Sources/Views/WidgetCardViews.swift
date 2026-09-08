@@ -39,7 +39,8 @@ struct WidgetVerticalCard: View {
 
             VStack(spacing: 1) {
                 Text(track.title)
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .help("\(track.title) — \(track.artist)")
+                    .font(.system(size: 13, weight: .semibold))
                     .lineLimit(1)
 
                 Text(track.artist)
@@ -138,7 +139,7 @@ struct WidgetMiniBar: View {
                     .lineLimit(1)
 
                 Text(track.artist)
-                    .font(.system(size: 8.5, weight: .medium, design: .rounded))
+                    .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
@@ -183,32 +184,33 @@ struct WidgetArtworkSquare: View {
             )
             .onTapGesture { PlayerAppLauncher.openActiveSource() }
 
-            if isHovering {
-                VStack(spacing: 6) {
-                    Text("\(track.title) · \(track.artist)")
-                        .font(.system(size: 10, weight: .semibold, design: .rounded))
+            VStack(alignment: .leading, spacing: 9) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(track.title)
+                        .font(.system(size: 12, weight: .semibold))
+                        .lineLimit(2)
+                    Text(track.artist)
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.75))
                         .lineLimit(1)
-                        .foregroundStyle(.white)
+                }
+                .help("\(track.title) — \(track.artist)")
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-                    WidgetControls(context: context, track: track, spacing: 12)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.horizontal, 12)
-                .padding(.top, 14)
-                .padding(.bottom, 10)
-                .background {
-                    LinearGradient(
-                        colors: [.clear, .black.opacity(0.72), .black.opacity(0.88)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                }
-                .transition(
-                    reduceMotion
-                        ? .opacity
-                        : .move(edge: .bottom).combined(with: .opacity)
+                WidgetControls(context: context, track: track, spacing: 12, compact: true)
+                    .frame(maxWidth: .infinity)
+            }
+            .foregroundStyle(.white)
+            .padding(.horizontal, 14)
+            .padding(.top, 30)
+            .padding(.bottom, 12)
+            .background {
+                LinearGradient(
+                    colors: [.clear, .black.opacity(0.72), .black.opacity(isHovering ? 0.94 : 0.86)],
+                    startPoint: .top, endPoint: .bottom
                 )
             }
+
         }
         .frame(width: size.width, height: size.height)
         .contentShape(Rectangle())
@@ -285,7 +287,7 @@ struct WidgetKaraokeCard: View {
     }
 
     private func syncedKaraoke(_ lines: [LyricsLine]) -> some View {
-        TimelineView(.periodic(from: .now, by: 0.25)) { timelineContext in
+        TimelineView(.animation(minimumInterval: 0.25, paused: !track.isPlaying)) { timelineContext in
             let livePosition = PlaybackPositionResolver.livePosition(
                 snapshotPosition: track.position,
                 snapshotDate: context.model.snapshotDate,

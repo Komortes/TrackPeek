@@ -128,30 +128,59 @@ final class SpotifyAudioMonitor: NSObject {
     @ObservationIgnored private var activeBundleIdentifier =
         PlaybackSource.spotify.bundleIdentifier
 
+    @ObservationIgnored private var playbackRequested = false
+    @ObservationIgnored private var consumers: Set<UUID> = []
+    @ObservationIgnored private var generation = 0
+
+    var isAnalysisRequested: Bool { playbackRequested && !consumers.isEmpty }
+
+    deinit { engine.stop() }
+
+    func setConsumer(_ id: UUID, active: Bool) {
+        if active { consumers.insert(id) } else { consumers.remove(id) }
+        synchronizeDemand()
+    }
+
     func start() {
+        playbackRequested = true
+        synchronizeDemand()
+    }
+
+    func stop() {
+        playbackRequested = false
+        synchronizeDemand()
+    }
+
+    private func synchronizeDemand() {
+        if isAnalysisRequested { startEngine() } else { stopEngine() }
+    }
+
+    private func startEngine() {
         guard processTimer == nil else { return }
         guard #available(macOS 14.2, *) else { return }
         guard ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil else {
             return
         }
 
+        generation &+= 1
+        let generation = generation
         engine.start { [weak self] spectrum in
             DispatchQueue.main.async { [weak self] in
-                self?.spectrum = spectrum
+                guard let self, self.generation == generation, self.isAnalysisRequested else { return }
+                self.spectrum = spectrum
             }
         }
         synchronizeProcess()
-        processTimer = Timer.scheduledTimer(
-            timeInterval: 1,
-            target: self,
-            selector: #selector(processTimerDidFire),
-            userInfo: nil,
-            repeats: true
-        )
+        processTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] timer in
+            guard let self else { timer.invalidate(); return }
+            MainActor.assumeIsolated { self.synchronizeProcess() }
+        }
         processTimer?.tolerance = 0.1
     }
 
-    func stop() {
+    private func stopEngine() {
+        guard processTimer != nil else { return }
+        generation &+= 1
         processTimer?.invalidate()
         processTimer = nil
         engine.stop()
@@ -162,10 +191,6 @@ final class SpotifyAudioMonitor: NSObject {
         let bundleIdentifier = (source ?? .spotify).bundleIdentifier
         guard bundleIdentifier != activeBundleIdentifier else { return }
         activeBundleIdentifier = bundleIdentifier
-        synchronizeProcess()
-    }
-
-    @objc private func processTimerDidFire() {
         synchronizeProcess()
     }
 

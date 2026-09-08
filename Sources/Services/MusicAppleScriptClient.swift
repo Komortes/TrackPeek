@@ -154,7 +154,7 @@ actor MusicAppleScriptClient: SpotifyPlaybackProviding {
             return nil
         }
 
-        let filename = "trackpeek-music-artwork-\(abs(trackIdentity.hashValue)).jpg"
+        let filename = "trackpeek-music-artwork-\(UInt(bitPattern: trackIdentity.hashValue)).jpg"
         let url = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
 
         do {
@@ -173,7 +173,9 @@ actor MusicAppleScriptClient: SpotifyPlaybackProviding {
     }
 
     private func parseNumber(_ value: String) -> Double? {
-        Double(value.replacingOccurrences(of: ",", with: "."))
+        guard let number = Double(value.replacingOccurrences(of: ",", with: ".")),
+              number.isFinite else { return nil }
+        return number
     }
 
     private func execute(_ source: String) async throws -> NSAppleEventDescriptor {
