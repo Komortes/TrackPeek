@@ -17,6 +17,7 @@ final class SpotifySpikeModel {
     /// После нашего seek AppleScript какое-то время может возвращать старую
     /// позицию — до этого момента доверяем оптимистичной локальной позиции.
     private var seekSettlingDeadline: Date?
+    @ObservationIgnored private var refreshGeneration = 0
 
     init(provider: any SpotifyPlaybackProviding = PlaybackSourceRouter()) {
         self.provider = provider
@@ -35,10 +36,16 @@ final class SpotifySpikeModel {
     }
 
     func refresh() async {
-        activeSource = await provider.activeSource()
+        refreshGeneration += 1
+        let generation = refreshGeneration
+        let resolvedSource = await provider.activeSource()
+        guard generation == refreshGeneration, !Task.isCancelled else { return }
+        activeSource = resolvedSource
 
         do {
             let track = try await provider.fetchCurrentTrack()
+            guard generation == refreshGeneration, !Task.isCancelled else { return }
+            activeSource = track.source ?? activeSource
 
             guard !track.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
                 self.track = nil
@@ -53,14 +60,17 @@ final class SpotifySpikeModel {
             availability = .ready
             statusText = track.isPlaying ? "Играет" : "На паузе"
         } catch SpotifyPlaybackError.automationDenied {
+            guard generation == refreshGeneration, !Task.isCancelled else { return }
             track = nil
             availability = .automationDenied
             statusText = SpotifyPlaybackError.automationDenied.localizedDescription
         } catch SpotifyPlaybackError.spotifyNotRunning {
+            guard generation == refreshGeneration, !Task.isCancelled else { return }
             track = nil
             availability = .spotifyNotRunning
             statusText = SpotifyPlaybackError.spotifyNotRunning.localizedDescription
         } catch {
+            guard generation == refreshGeneration, !Task.isCancelled else { return }
             track = nil
             availability = .unavailable
             statusText = error.localizedDescription
@@ -103,15 +113,7 @@ final class SpotifySpikeModel {
 
         do {
             try await provider.seek(to: position)
-            self.track = SpotifyTrack(
-                title: track.title,
-                artist: track.artist,
-                album: track.album,
-                duration: track.duration,
-                position: position,
-                artworkURL: track.artworkURL,
-                isPlaying: track.isPlaying
-            )
+            self.track = track.withPosition(position)
             snapshotDate = Date()
             seekSettlingDeadline = Date().addingTimeInterval(2)
         } catch {
@@ -148,6 +150,7 @@ final class SpotifySpikeModel {
     private func reconciled(_ fetched: SpotifyTrack, now: Date) -> SpotifyTrack {
         guard
             let current = track,
+            current.source == fetched.source,
             current.title == fetched.title,
             current.artist == fetched.artist,
             abs(current.duration - fetched.duration) < 1,
@@ -176,14 +179,6 @@ final class SpotifySpikeModel {
             isSeekSettling: isSeekSettling
         )
 
-        return SpotifyTrack(
-            title: fetched.title,
-            artist: fetched.artist,
-            album: fetched.album,
-            duration: fetched.duration,
-            position: position,
-            artworkURL: fetched.artworkURL,
-            isPlaying: fetched.isPlaying
-        )
+        return fetched.withPosition(position)
     }
 }

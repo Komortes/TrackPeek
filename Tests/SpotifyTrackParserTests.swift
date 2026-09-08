@@ -84,3 +84,14 @@ struct SpotifyTrackParserTests {
         #expect(track.secondary == nil)
     }
 }
+
+extension SpotifyTrackParserTests {
+    @Test("rejects non-finite timestamps")
+    func rejectsNonFiniteTimes() {
+        for invalid in ["nan", "inf", "-inf", "1e999"] {
+            #expect(throws: SpotifyTrackParser.Error.self) {
+                try SpotifyTrackParser.parse(["Song", "Artist", "Album", invalid, "0", "", "playing"])
+            }
+        }
+    }
+}

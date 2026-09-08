@@ -60,3 +60,71 @@ struct TrackLyricsTests {
         #expect(TrackLyrics.currentIndex(in: lines, position: 500) == 2)
     }
 }
+
+@MainActor
+@Suite("Lyrics cache lifecycle")
+struct LyricsStoreLifecycleTests {
+    @Test("transient failures can be retried")
+    func retriesFailures() async {
+        let provider = RetryLyricsProvider()
+        let store = LyricsStore(provider: provider)
+        let track = SpotifyTrack(title: "Song", artist: "Artist", isPlaying: true)
+        store.prepare(for: track)
+        for _ in 0..<1000 {
+            if store.state(for: track) == .unavailable { break }
+            await Task.yield()
+        }
+        #expect(store.state(for: track) == .unavailable)
+        store.prepare(for: track)
+        for _ in 0..<1000 {
+            if case .loaded = store.state(for: track) { break }
+            await Task.yield()
+        }
+        #expect(store.state(for: track) == .loaded(TrackLyrics(syncedLines: [], plainText: "Lyrics")))
+    }
+
+    @Test("cache evicts old lyrics after 48 tracks")
+    func boundsCache() async {
+        let provider = RetryLyricsProvider(failFirst: false)
+        let store = LyricsStore(provider: provider)
+        for index in 0..<49 {
+            let track = SpotifyTrack(title: "Song \(index)", artist: "Artist", isPlaying: true)
+            store.prepare(for: track)
+            for _ in 0..<1000 {
+                if case .loaded = store.state(for: track) { break }
+                await Task.yield()
+            }
+            #expect(store.state(for: track) == .loaded(TrackLyrics(syncedLines: [], plainText: "Lyrics")))
+        }
+        let first = SpotifyTrack(title: "Song 0", artist: "Artist", isPlaying: true)
+        #expect(store.state(for: first) == .loading)
+    }
+}
+
+private actor RetryLyricsProvider: LyricsProviding {
+    private var failFirst: Bool
+    init(failFirst: Bool = true) { self.failFirst = failFirst }
+    func fetchLyrics(for request: LyricsRequest) async throws -> TrackLyrics? {
+        if failFirst {
+            failFirst = false
+            throw URLError(.notConnectedToInternet)
+        }
+        return TrackLyrics(syncedLines: [], plainText: "Lyrics")
+    }
+}
+
+@Test("lyrics requests reject durations that cannot be converted to integers")
+func invalidLyricsDuration() async {
+    for duration in [Double.nan, .infinity, -.infinity, -1, 1e100] {
+        do {
+            _ = try await LRCLibLyricsClient().fetchLyrics(for: LyricsRequest(
+                title: "Song", artist: "Artist", album: nil, duration: duration
+            ))
+            Issue.record("Expected invalid duration to be rejected")
+        } catch let error as URLError {
+            #expect(error.code == .badURL)
+        } catch {
+            Issue.record("Unexpected error: \(error)")
+        }
+    }
+}

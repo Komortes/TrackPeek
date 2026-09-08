@@ -240,3 +240,74 @@ private enum FakeError: LocalizedError {
         "Spotify не запущен."
     }
 }
+
+extension SpotifySpikeModelTests {
+    @Test("polling and seeking preserve source and secondary controls")
+    func preservesSnapshotMetadata() async {
+        var track = SpotifyTrack(title: "Song", artist: "Artist", duration: 180,
+                                 position: 20, isPlaying: true, source: .appleMusic)
+        track.secondary = PlaybackSecondaryState(isShuffling: true, repeatMode: .all, volume: 42)
+        let model = SpotifySpikeModel(provider: FakeSpotifyProvider(result: .success(track)))
+        await model.refresh()
+        await model.refresh()
+        #expect(model.activeSource == .appleMusic)
+        #expect(model.track?.source == .appleMusic)
+        #expect(model.track?.secondary == track.secondary)
+        await model.seek(to: 60)
+        #expect(model.track?.source == .appleMusic)
+        #expect(model.track?.secondary == track.secondary)
+    }
+
+    @Test("AppleScript timeout returns before a blocking native script finishes")
+    func scriptTimeout() async {
+        let clock = ContinuousClock()
+        let start = clock.now
+        do {
+            _ = try await AppleScriptExecutor.execute("delay 1\nreturn 1", timeout: .milliseconds(50))
+            Issue.record("Expected a timeout")
+        } catch AppleScriptExecutionError.timedOut {
+            #expect(start.duration(to: clock.now) < .milliseconds(700))
+        } catch {
+            Issue.record("Unexpected error: \(error)")
+        }
+    }
+}
+
+extension SpotifySpikeModelTests {
+    @Test("a late poll cannot replace a newer snapshot")
+    func ignoresStalePoll() async {
+        let provider = DelayedSpotifyProvider()
+        let model = SpotifySpikeModel(provider: provider)
+        let first = Task { await model.refresh() }
+        while !(await provider.isWaiting) { await Task.yield() }
+        await model.refresh()
+        await provider.finishFirst()
+        await first.value
+        #expect(model.track?.title == "New")
+    }
+}
+
+private actor DelayedSpotifyProvider: SpotifyPlaybackProviding {
+    private var pending: CheckedContinuation<SpotifyTrack, Never>?
+    private var calls = 0
+    var isWaiting: Bool { pending != nil }
+    func fetchCurrentTrack() async throws -> SpotifyTrack {
+        calls += 1
+        if calls == 1 {
+            return await withCheckedContinuation { pending = $0 }
+        }
+        return SpotifyTrack(title: "New", artist: "Artist", isPlaying: true)
+    }
+    func finishFirst() {
+        pending?.resume(returning: SpotifyTrack(title: "Old", artist: "Artist", isPlaying: true))
+        pending = nil
+    }
+    func activeSource() -> PlaybackSource { .spotify }
+    func playPause() throws { }
+    func nextTrack() throws { }
+    func previousTrack() throws { }
+    func seek(to position: TimeInterval) throws { }
+    func setShuffle(_ enabled: Bool) throws { }
+    func setRepeat(_ mode: RepeatMode) throws { }
+    func setVolume(_ volume: Int) throws { }
+}

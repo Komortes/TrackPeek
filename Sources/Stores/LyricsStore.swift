@@ -12,7 +12,13 @@ final class LyricsStore {
 
     private let provider: any LyricsProviding
     private var cache: [LyricsRequest: State] = [:]
-    private var tasks: [LyricsRequest: Task<Void, Never>] = [:]
+    private var cacheOrder: [LyricsRequest] = []
+    private var retryableRequests: Set<LyricsRequest> = []
+    @ObservationIgnored private var task: Task<Void, Never>?
+    private var activeRequest: LyricsRequest?
+    private let maximumCacheEntries = 48
+
+    deinit { task?.cancel() }
 
     init(provider: any LyricsProviding = LRCLibLyricsClient()) {
         self.provider = provider
@@ -26,25 +32,44 @@ final class LyricsStore {
     /// Запускает загрузку текста, если её ещё не было; вызывать из .task.
     func prepare(for track: SpotifyTrack) {
         let request = request(for: track)
-        guard cache[request] == nil, tasks[request] == nil else { return }
+        guard activeRequest != request else { return }
+        task?.cancel()
+        task = nil
+        activeRequest = nil
+        guard cache[request] == nil || retryableRequests.contains(request) else { return }
 
-        tasks[request] = Task { [weak self] in
+        activeRequest = request
+        let provider = provider
+        task = Task { [weak self] in
             let state: State
+            var shouldRetry = false
             do {
-                if let lyrics = try await self?.provider.fetchLyrics(for: request) {
+                if let lyrics = try await provider.fetchLyrics(for: request) {
                     state = .loaded(lyrics)
                 } else {
                     state = .unavailable
                 }
             } catch {
-                // Сетевой сбой: не считаем «текста нет навсегда», просто
-                // не кэшируем успех; повторная попытка — при новом prepare.
                 state = .unavailable
+                shouldRetry = true
             }
 
-            guard !Task.isCancelled else { return }
-            self?.cache[request] = state
-            self?.tasks[request] = nil
+            guard !Task.isCancelled, let self else { return }
+            cache[request] = state
+            if shouldRetry {
+                retryableRequests.insert(request)
+            } else {
+                retryableRequests.remove(request)
+            }
+            cacheOrder.removeAll { $0 == request }
+            cacheOrder.append(request)
+            while cacheOrder.count > maximumCacheEntries {
+                let evicted = cacheOrder.removeFirst()
+                cache.removeValue(forKey: evicted)
+                retryableRequests.remove(evicted)
+            }
+            activeRequest = nil
+            task = nil
         }
     }
 
