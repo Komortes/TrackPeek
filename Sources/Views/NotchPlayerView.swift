@@ -303,9 +303,11 @@ struct NotchPlayerView: View {
             switch colorSource {
             case .artwork:
                 artworkPalette = .fallback
-                artworkPalette = await ArtworkPaletteLoader.shared.palette(
+                let palette = await ArtworkPaletteLoader.shared.palette(
                     for: model.track?.artworkURL
                 )
+                guard !Task.isCancelled else { return }
+                artworkPalette = palette
             case .systemAccent:
                 artworkPalette = .systemAccent
             }

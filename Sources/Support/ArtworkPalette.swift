@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import ImageIO
 
 struct ArtworkColor: Hashable, Sendable {
     let red: Double
@@ -153,6 +154,15 @@ actor ArtworkPaletteLoader {
     private let maximumCacheEntries = 48
     private var cache: [URL: ArtworkPalette] = [:]
     private var cacheOrder: [URL] = []
+    private var inFlight: [URL: Task<ArtworkPalette?, Never>] = [:]
+    private let loadData: @Sendable (URL) async throws -> Data
+    static let maximumDataBytes = 8_000_000
+
+    init(loadData: @escaping @Sendable (URL) async throws -> Data = ArtworkPaletteLoader.readData) {
+        self.loadData = loadData
+    }
+
+    deinit { for task in inFlight.values { task.cancel() } }
 
     func palette(for url: URL?) async -> ArtworkPalette {
         guard
@@ -168,32 +178,49 @@ actor ArtworkPaletteLoader {
             return cached
         }
 
-        do {
-            let data: Data
-            if scheme == "file" {
-                data = try Data(contentsOf: url)
-                guard data.count <= 8_000_000 else { return .fallback }
-            } else {
-                var request = URLRequest(url: url)
-                request.timeoutInterval = 12
-                request.cachePolicy = .returnCacheDataElseLoad
-                let (responseData, response) = try await URLSession.shared.data(for: request)
-                guard
-                    let response = response as? HTTPURLResponse,
-                    200 ... 299 ~= response.statusCode,
-                    responseData.count <= 8_000_000
-                else {
-                    return .fallback
-                }
-                data = responseData
-            }
-
-            let palette = extractPalette(from: data)
-            store(palette, for: url)
-            return palette
-        } catch {
-            return .fallback
+        if let task = inFlight[url] { return await task.value ?? .fallback }
+        guard inFlight.count < 4, !Task.isCancelled else { return .fallback }
+        let loadData = loadData
+        let task = Task.detached(priority: .utility) { () -> ArtworkPalette? in
+            do {
+                let data = try await loadData(url)
+                try Task.checkCancellation()
+                guard data.count <= Self.maximumDataBytes else { return nil }
+                return autoreleasepool { Self.extractPalette(from: data) }
+            } catch { return nil }
         }
+        inFlight[url] = task
+        let palette = await task.value
+        inFlight[url] = nil
+        if let palette { store(palette, for: url) }
+        return palette ?? .fallback
+    }
+
+    nonisolated static func readData(_ url: URL) async throws -> Data {
+        if url.isFileURL {
+            let handle = try FileHandle(forReadingFrom: url)
+            defer { try? handle.close() }
+            let data = try handle.read(upToCount: maximumDataBytes + 1) ?? Data()
+            guard data.count <= maximumDataBytes else { throw URLError(.dataLengthExceedsMaximum) }
+            return data
+        }
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 12
+        request.cachePolicy = .returnCacheDataElseLoad
+        let (bytes, response) = try await URLSession.shared.bytes(for: request)
+        defer { bytes.task.cancel() }
+        guard let http = response as? HTTPURLResponse, 200...299 ~= http.statusCode else {
+            throw URLError(.badServerResponse)
+        }
+        guard response.expectedContentLength <= maximumDataBytes else {
+            throw URLError(.dataLengthExceedsMaximum)
+        }
+        var data = Data()
+        for try await byte in bytes {
+            guard data.count < maximumDataBytes else { throw URLError(.dataLengthExceedsMaximum) }
+            data.append(byte)
+        }
+        return data
     }
 
     private func store(_ palette: ArtworkPalette, for url: URL) {
@@ -206,8 +233,21 @@ actor ArtworkPaletteLoader {
         }
     }
 
-    private func extractPalette(from data: Data) -> ArtworkPalette {
-        guard let bitmap = NSBitmapImageRep(data: data) else { return .fallback }
+    nonisolated static func thumbnail(from data: Data) -> CGImage? {
+        guard let source = CGImageSourceCreateWithData(
+            data as CFData, [kCGImageSourceShouldCache: false] as CFDictionary
+        ) else { return nil }
+        return CGImageSourceCreateThumbnailAtIndex(source, 0, [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceThumbnailMaxPixelSize: 64,
+            kCGImageSourceShouldCacheImmediately: true,
+        ] as CFDictionary)
+    }
+
+    private nonisolated static func extractPalette(from data: Data) -> ArtworkPalette? {
+        guard let image = thumbnail(from: data) else { return nil }
+        let bitmap = NSBitmapImageRep(cgImage: image)
 
         let columns = 10
         let rows = 10
