@@ -1,4 +1,5 @@
 import Testing
+import Foundation
 @testable import TrackPeek
 
 @Suite("Audio spectrum")
@@ -29,5 +30,39 @@ struct AudioSpectrumTests {
         #expect(AudioSpectrum.resting[0] > 0)
         #expect(AudioSpectrum.resting[3] > AudioSpectrum.resting[0])
         #expect(AudioSpectrum.resting[6] > 0)
+    }
+}
+
+@MainActor
+@Suite("Audio monitor demand")
+struct AudioMonitorDemandTests {
+    @Test("playback alone does not request audio analysis")
+    func noConsumers() {
+        let monitor = SpotifyAudioMonitor()
+        monitor.start()
+        #expect(!monitor.isAnalysisRequested)
+        monitor.stop()
+    }
+
+    @Test("analysis requires playback and at least one visible consumer")
+    func multipleConsumers() {
+        let monitor = SpotifyAudioMonitor()
+        let first = UUID()
+        let second = UUID()
+        monitor.setConsumer(first, active: true)
+        #expect(!monitor.isAnalysisRequested)
+        monitor.start()
+        #expect(monitor.isAnalysisRequested)
+        monitor.setConsumer(second, active: true)
+        monitor.setConsumer(first, active: false)
+        #expect(monitor.isAnalysisRequested)
+        monitor.setConsumer(second, active: false)
+        #expect(!monitor.isAnalysisRequested)
+        monitor.setConsumer(first, active: true)
+        monitor.stop()
+        #expect(!monitor.isAnalysisRequested)
+        monitor.start()
+        #expect(monitor.isAnalysisRequested)
+        monitor.stop()
     }
 }

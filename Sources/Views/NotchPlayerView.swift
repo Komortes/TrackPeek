@@ -264,6 +264,12 @@ struct NotchPlayerView: View {
             height: panelLayoutState.size.height,
             alignment: .top
         )
+        .audioSpectrumDemand(
+            audioMonitor,
+            enabled: pulseMode != .off && !reduceMotion
+                && model.track?.isPlaying == true && model.availability == .ready
+        )
+        .environment(\.audioSurfaceVisible, panelLayoutState.isVisible)
         .contentShape(Rectangle())
         .environment(\.colorScheme, .dark)
         .playerContextMenu(track: model.track, sourceName: model.activeSourceDisplayName) {

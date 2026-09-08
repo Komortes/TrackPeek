@@ -13,6 +13,7 @@ final class NotchPointerState {
 @Observable
 final class NotchPanelLayoutState {
     private(set) var size: CGSize
+    var isVisible = false
 
     init(size: CGSize) {
         self.size = size
@@ -244,10 +245,13 @@ private final class NotchPanelHost: NSObject {
     }
 
     func show() {
+        layoutState.isVisible = true
         panel.orderFrontRegardless()
     }
 
     func close() {
+        layoutState.isVisible = false
+        panel.contentView = nil
         NotificationCenter.default.removeObserver(self)
         panel.orderOut(nil)
     }

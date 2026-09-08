@@ -285,7 +285,7 @@ struct WidgetKaraokeCard: View {
     }
 
     private func syncedKaraoke(_ lines: [LyricsLine]) -> some View {
-        TimelineView(.periodic(from: .now, by: 0.25)) { timelineContext in
+        TimelineView(.animation(minimumInterval: 0.25, paused: !track.isPlaying)) { timelineContext in
             let livePosition = PlaybackPositionResolver.livePosition(
                 snapshotPosition: track.position,
                 snapshotDate: context.model.snapshotDate,

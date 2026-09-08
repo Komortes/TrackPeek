@@ -45,7 +45,7 @@ struct NotchLyricsView: View {
     }
 
     private func syncedLyrics(_ lines: [LyricsLine]) -> some View {
-        TimelineView(.periodic(from: .now, by: 0.25)) { context in
+        TimelineView(.animation(minimumInterval: 0.25, paused: !isPlaying)) { context in
             let livePosition = PlaybackPositionResolver.livePosition(
                 snapshotPosition: position,
                 snapshotDate: snapshotDate,
