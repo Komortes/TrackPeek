@@ -347,8 +347,8 @@ private final class NotchPanelHost: NSObject {
 
             let freeMove = defaults.bool(forKey: WidgetPreferences.freeMoveKey)
             let locked = defaults.bool(forKey: WidgetPreferences.positionLockedKey)
-            panel.isMovable = freeMove && !locked
-            panel.isMovableByWindowBackground = freeMove && !locked
+            panel.isMovable = layout != .edge && freeMove && !locked
+            panel.isMovableByWindowBackground = layout != .edge && freeMove && !locked
 
             panel.level = defaults.bool(forKey: WidgetPreferences.alwaysOnTopKey)
                 ? NSWindow.Level(rawValue: NSWindow.Level.statusBar.rawValue + 1)
@@ -368,7 +368,12 @@ private final class NotchPanelHost: NSObject {
             let margin = WidgetPreferences.edgeMargin
             var origin: CGPoint
 
-            if freeMove,
+            if layout == .edge {
+                origin = WidgetPreferences.edgeOrigin(
+                    in: bounds, size: widgetSize,
+                    onRight: defaults.bool(forKey: WidgetPreferences.edgeOnRightKey)
+                )
+            } else if freeMove,
                let stored = WidgetPlacementStore.placement(
                    display: DisplayIdentity.persistentIdentifier(for: screen),
                    layout: layout

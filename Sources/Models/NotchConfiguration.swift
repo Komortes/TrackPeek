@@ -84,6 +84,7 @@ enum NotchWidgetPosition: String, CaseIterable, Identifiable, Sendable {
 enum NotchWidgetLayout: String, CaseIterable, Identifiable, Sendable {
     case pill
     case miniBar
+    case edge
     case cardHorizontal
     case cardVertical
     case artworkSquare
@@ -99,6 +100,8 @@ enum NotchWidgetLayout: String, CaseIterable, Identifiable, Sendable {
         switch self {
         case .pill:
             "Пилюля"
+        case .edge:
+            "Edge · Боковая панель"
         case .miniBar:
             "Мини-строка"
         case .cardHorizontal:
@@ -120,6 +123,8 @@ enum NotchWidgetLayout: String, CaseIterable, Identifiable, Sendable {
         switch self {
         case .pill:
             "Компактная полоска, раскрывается при наведении."
+        case .edge:
+            "Узкая панель у края экрана. Только главное."
         case .miniBar:
             "Тонкая строка: обложка, название и кнопки."
         case .cardHorizontal:
@@ -127,7 +132,7 @@ enum NotchWidgetLayout: String, CaseIterable, Identifiable, Sendable {
         case .cardVertical:
             "Вертикальная карточка с крупной обложкой."
         case .artworkSquare:
-            "Только обложка; управление появляется при наведении."
+            "Крупная обложка с читаемой подписью и управлением."
         case .lyricsCard:
             "Компактный плеер с синхронизированным текстом."
         case .karaokeCard:
@@ -146,7 +151,7 @@ enum NotchWidgetLayout: String, CaseIterable, Identifiable, Sendable {
     /// а затем конкретный визуальный вариант внутри него.
     var family: NotchWidgetLayoutFamily {
         switch self {
-        case .pill, .miniBar:
+        case .pill, .miniBar, .edge:
             .compact
         case .cardHorizontal, .cardVertical, .artworkSquare:
             .fullPlayer

@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Содержимое floating-виджета: выбор одной из восьми раскладок. Отделено
+/// Содержимое floating-виджета: выбор компактной или карточной раскладки. Отделено
 /// от `NotchPlayerView` так же, как `NotchSurfaceContent` — получает уже
 /// разрешённые `OverlayAppearance`/палитру и не касается `@AppStorage`.
 struct WidgetSurfaceContent: View {
@@ -49,6 +49,8 @@ struct WidgetSurfaceContent: View {
             switch layout {
             case .pill, .cardHorizontal:
                 EmptyView()
+            case .edge:
+                WidgetEdgeCard(context: context, track: track)
             case .miniBar:
                 WidgetMiniBar(context: context, track: track)
             case .cardVertical:
@@ -72,6 +74,8 @@ struct WidgetSurfaceContent: View {
             case .equalizerCard:
                 WidgetEqualizerCard(context: context, track: track)
             }
+        } else if layout == .edge {
+            WidgetEdgeUnavailable(model: model)
         } else {
             PlayerStateView(availability: model.availability, sourceName: model.activeSourceDisplayName) {
                 Task { await model.refresh() }

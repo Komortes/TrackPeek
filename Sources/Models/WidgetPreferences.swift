@@ -6,6 +6,7 @@ import Foundation
 /// см. §9.3/§10.6 в docs/superpowers/trackpeek-modes-product-analysis.md.
 enum WidgetPreferences {
     static let positionKey = "notchWidgetPosition"
+    static let edgeOnRightKey = "widgetEdgeOnRight"
     static let layoutKey = "notchWidgetLayout"
     static let freeMoveKey = "notchWidgetFreeMove"
     static let originXKey = "notchWidgetOriginX"
@@ -58,6 +59,7 @@ enum WidgetPreferences {
             positionKey: NotchWidgetPosition.fallback.rawValue,
             layoutKey: NotchWidgetLayout.fallback.rawValue,
             freeMoveKey: false,
+            edgeOnRightKey: true,
             outlineShimmerKey: NotchPreferences.outlineShimmerFallback,
             outlineWidthKey: NotchPreferences.outlineWidthFallback,
             pulseModeKey: NotchPulseMode.fallback.rawValue,
@@ -76,6 +78,14 @@ enum WidgetPreferences {
         ])
     }
 
+    static func edgeOrigin(in bounds: CGRect, size: CGSize, onRight: Bool) -> CGPoint {
+        CGPoint(
+            x: onRight ? max(bounds.minX, bounds.maxX - size.width - edgeMargin)
+                : min(bounds.minX + edgeMargin, max(bounds.minX, bounds.maxX - size.width)),
+            y: max(bounds.minY, bounds.midY - size.height / 2)
+        )
+    }
+
     /// Постоянный размер карточных раскладок floating-виджета.
     static func cardSize(
         layout: NotchWidgetLayout,
@@ -85,6 +95,8 @@ enum WidgetPreferences {
         switch layout {
         case .pill:
             NotchPreferences.compactSize(width: width, heightAdjustment: heightAdjustment)
+        case .edge:
+            CGSize(width: 72, height: 224)
         case .miniBar:
             CGSize(width: max(NotchPreferences.clampedWidth(width) + 20, 340), height: 44)
         case .cardHorizontal:

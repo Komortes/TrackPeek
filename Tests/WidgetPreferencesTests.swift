@@ -47,3 +47,29 @@ struct WidgetPreferencesTests {
         defaults.removePersistentDomain(forName: suiteName)
     }
 }
+
+extension WidgetPreferencesTests {
+    @Test("Edge keeps its narrow fixed size independently of other templates")
+    func edgeSize() {
+        for width in [260.0, 320, 500] {
+            #expect(WidgetPreferences.cardSize(layout: .edge, width: width, heightAdjustment: 40)
+                    == CGSize(width: 72, height: 224))
+        }
+        #expect(NotchWidgetLayout.edge.family == .compact)
+        #expect(NotchWidgetLayout.edge.isAlwaysExpanded)
+    }
+
+    @Test("Edge placement respects the visible frame on either display edge")
+    func edgePlacement() {
+        let bounds = CGRect(x: -1920, y: 25, width: 1860, height: 1000)
+        let size = CGSize(width: 72, height: 224)
+        let left = WidgetPreferences.edgeOrigin(in: bounds, size: size, onRight: false)
+        let right = WidgetPreferences.edgeOrigin(in: bounds, size: size, onRight: true)
+        #expect(left.x == bounds.minX + 12)
+        #expect(right.x + size.width == bounds.maxX - 12)
+        #expect(left.y + size.height / 2 == bounds.midY)
+        #expect(left.y == right.y)
+        #expect(bounds.contains(CGRect(origin: left, size: size)))
+        #expect(bounds.contains(CGRect(origin: right, size: size)))
+    }
+}

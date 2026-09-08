@@ -102,7 +102,8 @@ struct NotchPlayerView: View {
     }
 
     private var pulseMode: NotchPulseMode {
-        NotchPulseMode(
+        guard cardLayout != .edge else { return .off }
+        return NotchPulseMode(
             rawValue: isPillMode ? widgetPulseModeRawValue : pulseModeRawValue
         ) ?? .fallback
     }
@@ -114,7 +115,7 @@ struct NotchPlayerView: View {
             coloredWaveform: isPillMode ? widgetColoredWaveform : coloredWaveform,
             colorSource: colorSource,
             pulseMode: pulseMode,
-            outlineShimmer: isPillMode ? widgetOutlineShimmer : outlineShimmer,
+            outlineShimmer: cardLayout == .edge ? false : (isPillMode ? widgetOutlineShimmer : outlineShimmer),
             outlineWidth: isPillMode ? widgetOutlineWidth : outlineWidth,
             equalizerSensitivityOverride: sensitivityOverride,
             lyricsEnabled: isPillMode ? $widgetLyricsEnabled : $lyricsEnabled
@@ -135,7 +136,8 @@ struct NotchPlayerView: View {
 
     /// Нужна ли загрузка текста: включён тумблер или выбрана лирическая раскладка.
     private var lyricsNeeded: Bool {
-        appearance.lyricsEnabled.wrappedValue
+        guard cardLayout != .edge else { return false }
+        return appearance.lyricsEnabled.wrappedValue
             || cardLayout == .lyricsCard
             || cardLayout == .karaokeCard
     }
@@ -240,7 +242,7 @@ struct NotchPlayerView: View {
                 OverlayChromeConfiguration(
                     containerSize: proxy.size,
                     revealProgress: revealProgress,
-                    cornerRadius: cornerRadius,
+                    cornerRadius: cardLayout == .edge ? 20 : cornerRadius,
                     isPillMode: isPillMode,
                     palette: artworkPalette,
                     pulseMode: pulseMode,
@@ -251,7 +253,7 @@ struct NotchPlayerView: View {
                     shimmerAngle: shimmerAngle,
                     coloredWaveform: appearance.coloredWaveform,
                     isExpanded: isExpanded,
-                    glassBackgroundURL: (isPillMode && widgetGlassBackground)
+                    glassBackgroundURL: (isPillMode && widgetGlassBackground && cardLayout != .edge)
                         ? model.track?.artworkURL
                         : nil,
                     reduceMotion: reduceMotion,
