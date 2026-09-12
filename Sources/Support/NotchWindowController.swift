@@ -101,11 +101,10 @@ final class NotchWindowController: NSObject {
         let targetKey = mode == .floatingWidget
             ? WidgetPreferences.displayTargetKey
             : NotchPreferences.displayTargetKey
-        let target = NotchDisplayTarget(
-            rawValue: defaults.string(forKey: targetKey)
-                ?? NotchDisplayTarget.fallback.rawValue
-        ) ?? .fallback
-        let targetScreens = screens(for: target, mode: mode)
+        let selection = defaults.string(forKey: targetKey) ?? NotchDisplayTarget.fallback.rawValue
+        let target = NotchDisplayTarget(rawValue: selection) ?? .fallback
+        let targetScreens = screens(for: target, mode: mode,
+                                    selectedDisplayID: DisplaySelection.persistentID(from: selection))
         let targetIDs = Set(targetScreens.compactMap(screenIdentifier))
 
         let staleIDs = panelHosts.keys.filter { !targetIDs.contains($0) }
@@ -117,7 +116,7 @@ final class NotchWindowController: NSObject {
             guard let identifier = screenIdentifier(screen) else { continue }
 
             if let host = panelHosts[identifier] {
-                host.updateLayout()
+                host.updateLayout(on: screen)
                 host.show()
             } else {
                 let host = NotchPanelHost(
@@ -150,7 +149,7 @@ final class NotchWindowController: NSObject {
         }
     }
 
-    private func screens(for target: NotchDisplayTarget, mode: OverlayMode) -> [NSScreen] {
+    private func screens(for target: NotchDisplayTarget, mode: OverlayMode, selectedDisplayID: String?) -> [NSScreen] {
         let screens = NSScreen.screens
         let descriptors = screens.compactMap { screen -> DisplayDescriptor? in
             guard let id = screenIdentifier(screen) else { return nil }
@@ -158,13 +157,15 @@ final class NotchWindowController: NSObject {
                 id: id,
                 hasNotch: screen.auxiliaryTopLeftArea != nil
                     || screen.auxiliaryTopRightArea != nil,
-                isBuiltIn: CGDisplayIsBuiltin(UInt32(id)) != 0
+                isBuiltIn: CGDisplayIsBuiltin(UInt32(id)) != 0,
+                persistentID: DisplayIdentity.persistentIdentifier(for: screen)
             )
         }
         let ids = OverlayDisplayResolver.resolveIDs(
             surface: mode == .floatingWidget ? .floatingWidget : .notch,
             target: target,
-            displays: descriptors
+            displays: descriptors,
+            selectedDisplayID: selectedDisplayID
         )
         return screens.filter { screen in
             guard let id = screenIdentifier(screen) else { return false }
@@ -188,7 +189,9 @@ private final class NotchPanelHost: NSObject {
     private let panel: NotchPanel
     private let pointerState = NotchPointerState()
     private let layoutState: NotchPanelLayoutState
-    private let screen: NSScreen
+    private var screen: NSScreen
+    private var dragTask: Task<Void, Never>?
+    private var isDragging = false
     private var panelState: NotchPanelState = .collapsed
     /// Отличает программные setFrame от перетаскивания пользователем.
     private var isApplyingLayout = false
@@ -250,6 +253,8 @@ private final class NotchPanelHost: NSObject {
     }
 
     func close() {
+        dragTask?.cancel()
+        dragTask = nil
         layoutState.isVisible = false
         panel.contentView = nil
         NotificationCenter.default.removeObserver(self)
@@ -258,30 +263,46 @@ private final class NotchPanelHost: NSObject {
 
     /// Пользователь перетащил виджет — запоминаем позицию (верхний край,
     /// чтобы раскрытие пилюли по-прежнему росло вниз).
-    @objc nonisolated private func panelDidMove(_ notification: Notification) {
-        Task { @MainActor [weak self] in
-            guard
-                let self,
-                !isApplyingLayout,
-                UserDefaults.standard.bool(forKey: WidgetPreferences.freeMoveKey)
-            else {
-                return
+    @objc private func panelDidMove(_ notification: Notification) {
+        guard !isApplyingLayout, NSEvent.pressedMouseButtons & 1 != 0,
+              UserDefaults.standard.bool(forKey: WidgetPreferences.freeMoveKey),
+              dragTask == nil else { return }
+        isDragging = true
+        dragTask = Task { @MainActor [weak self] in
+            // Preserve native dragging across display boundaries. Do not recreate
+            // or clamp the panel until the mouse is released.
+            while NSEvent.pressedMouseButtons & 1 != 0 {
+                do { try await Task.sleep(for: .milliseconds(100)) }
+                catch { return }
             }
-
-            let frame = panel.frame
-            let layout = NotchWidgetLayout(
-                rawValue: UserDefaults.standard.string(forKey: WidgetPreferences.layoutKey)
-                    ?? NotchWidgetLayout.fallback.rawValue
-            ) ?? .fallback
-            WidgetPlacementStore.save(
-                WidgetPlacement(x: Double(frame.origin.x), topY: Double(frame.maxY)),
-                display: DisplayIdentity.persistentIdentifier(for: screen),
-                layout: layout
-            )
+            guard !Task.isCancelled, let self else { return }
+            isDragging = false
+            dragTask = nil
+            finishMoving()
         }
     }
 
-    func updateLayout() {
+    private func finishMoving() {
+        let defaults = UserDefaults.standard
+        let layout = NotchWidgetLayout(rawValue: defaults.string(forKey: WidgetPreferences.layoutKey)
+                                     ?? NotchWidgetLayout.fallback.rawValue) ?? .fallback
+        guard layout != .edge else { return }
+        let showsAll = defaults.string(forKey: WidgetPreferences.displayTargetKey)
+            == NotchDisplayTarget.allDisplays.rawValue
+        let destination = showsAll ? screen : (panel.screen ?? screen)
+        let destinationID = DisplayIdentity.persistentIdentifier(for: destination)
+        WidgetPlacementStore.save(
+            WidgetPlacement(x: panel.frame.origin.x, topY: panel.frame.maxY),
+            display: destinationID, layout: layout
+        )
+        if !showsAll, destinationID != DisplayIdentity.persistentIdentifier(for: screen) {
+            defaults.set(DisplaySelection.value(for: destinationID), forKey: WidgetPreferences.displayTargetKey)
+        }
+    }
+
+    func updateLayout(on screen: NSScreen) {
+        guard !isDragging else { return }
+        self.screen = screen
         updateLayout(animated: false)
     }
 
@@ -309,6 +330,7 @@ private final class NotchPanelHost: NSObject {
     }
 
     private func updateLayout(animated: Bool) {
+        guard !isDragging else { return }
         let defaults = UserDefaults.standard
         let mode = OverlayMode(
             rawValue: defaults.string(forKey: OverlayMode.storageKey) ?? OverlayMode.fallback.rawValue

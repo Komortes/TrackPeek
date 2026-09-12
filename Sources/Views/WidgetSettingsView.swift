@@ -62,12 +62,6 @@ struct WidgetSettingsView: View {
         )
     }
 
-    private var displayTarget: Binding<NotchDisplayTarget> {
-        Binding(
-            get: { NotchDisplayTarget(rawValue: displayTargetRawValue) ?? .mainDisplay },
-            set: { displayTargetRawValue = $0.rawValue }
-        )
-    }
 
     private var widgetWidth: Binding<Double> {
         Binding(
@@ -259,15 +253,7 @@ struct WidgetSettingsView: View {
                     title: "Показывать на",
                     subtitle: "Экран, на котором живёт виджет."
                 ) {
-                    Picker("Экран", selection: displayTarget) {
-                        ForEach(NotchDisplayTarget.allCases) { target in
-                            Label(target.title, systemImage: target.symbolName)
-                                .tag(target)
-                        }
-                    }
-                    .labelsHidden()
-                    .pickerStyle(.segmented)
-                    .frame(width: 330)
+                    DisplayTargetPicker(selection: $displayTargetRawValue)
                 }
 
                 if selectedLayout != .edge {

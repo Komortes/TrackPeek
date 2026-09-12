@@ -45,12 +45,6 @@ struct NotchSettingsView: View {
         OverlayMode(rawValue: selectedModeRawValue) ?? .fallback
     }
 
-    private var displayTarget: Binding<NotchDisplayTarget> {
-        Binding(
-            get: { NotchDisplayTarget(rawValue: displayTargetRawValue) ?? .fallback },
-            set: { displayTargetRawValue = $0.rawValue }
-        )
-    }
 
     private var songInfoVisibility: Binding<NotchSongInfoVisibility> {
         Binding(
@@ -200,15 +194,7 @@ struct NotchSettingsView: View {
                     title: "Показывать на",
                     subtitle: "Можно выбрать основной, встроенный или все экраны."
                 ) {
-                    Picker("Экран", selection: displayTarget) {
-                        ForEach(NotchDisplayTarget.allCases) { target in
-                            Label(target.title, systemImage: target.symbolName)
-                                .tag(target)
-                        }
-                    }
-                    .labelsHidden()
-                    .pickerStyle(.segmented)
-                    .frame(width: 330)
+                    DisplayTargetPicker(selection: $displayTargetRawValue)
                 }
 
                 SettingsRowDivider()

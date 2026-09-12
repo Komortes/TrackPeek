@@ -6,6 +6,7 @@ struct DisplayDescriptor: Equatable, Sendable {
     var id: Int
     var hasNotch: Bool
     var isBuiltIn: Bool
+    var persistentID: String? = nil
 }
 
 enum OverlaySurface: Sendable {
@@ -20,9 +21,14 @@ enum OverlayDisplayResolver {
     static func resolveIDs(
         surface: OverlaySurface,
         target: NotchDisplayTarget,
-        displays: [DisplayDescriptor]
+        displays: [DisplayDescriptor],
+        selectedDisplayID: String? = nil
     ) -> [Int] {
         guard let first = displays.first else { return [] }
+
+        if let selectedDisplayID {
+            return [displays.first(where: { $0.persistentID == selectedDisplayID })?.id ?? first.id]
+        }
 
         switch target {
         case .automatic:
@@ -41,5 +47,19 @@ enum OverlayDisplayResolver {
         case .allDisplays:
             return displays.map(\.id)
         }
+    }
+}
+
+
+/// Keeps the legacy policy values while allowing an explicit, persistent display.
+enum DisplaySelection {
+    private static let prefix = "display:"
+
+    static func value(for persistentID: String) -> String { prefix + persistentID }
+
+    static func persistentID(from value: String) -> String? {
+        guard value.hasPrefix(prefix) else { return nil }
+        let id = String(value.dropFirst(prefix.count))
+        return id.isEmpty ? nil : id
     }
 }

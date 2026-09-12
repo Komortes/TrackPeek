@@ -124,3 +124,44 @@ struct SettingsValueSlider: View {
         }
     }
 }
+
+
+/// Updates immediately when displays are connected, removed or rearranged.
+struct DisplayTargetPicker: View {
+    @Binding var selection: String
+    @State private var displays = ConnectedDisplayChoice.current()
+
+    private var selectedDisplayIsMissing: Bool {
+        guard let id = DisplaySelection.persistentID(from: selection) else { return false }
+        return !displays.contains { $0.id == id }
+    }
+
+    var body: some View {
+        VStack(alignment: .trailing, spacing: 5) {
+            Picker("Экран", selection: $selection) {
+                ForEach(displays) { display in
+                    Text(display.title).tag(DisplaySelection.value(for: display.id))
+                }
+                if selectedDisplayIsMissing {
+                    Text("Выбранный монитор отключён").tag(selection)
+                }
+                Divider()
+                ForEach(NotchDisplayTarget.allCases) { target in
+                    Label(target.title, systemImage: target.symbolName).tag(target.rawValue)
+                }
+            }
+            .pickerStyle(.menu)
+            .labelsHidden()
+            .accessibilityLabel("Монитор для плеера")
+            if selectedDisplayIsMissing {
+                Text("Пока используется основной. Выбор сохранён до подключения.")
+                    .font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .frame(width: 300)
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didChangeScreenParametersNotification)) { _ in
+            displays = ConnectedDisplayChoice.current()
+        }
+    }
+}

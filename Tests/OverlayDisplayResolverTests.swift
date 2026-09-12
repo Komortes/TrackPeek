@@ -67,3 +67,40 @@ struct OverlayDisplayResolverTests {
         #expect(NotchDisplayTarget(rawValue: "automatic") == .automatic)
     }
 }
+
+extension OverlayDisplayResolverTests {
+    @Test("selects either of two ordinary monitors by persistent identifier")
+    func selectsSpecificFlatDisplay() {
+        let displays = [
+            DisplayDescriptor(id: 10, hasNotch: false, isBuiltIn: false, persistentID: "monitor-a"),
+            DisplayDescriptor(id: 20, hasNotch: false, isBuiltIn: false, persistentID: "monitor-b"),
+        ]
+        for surface in [OverlaySurface.notch, .floatingWidget] {
+            #expect(OverlayDisplayResolver.resolveIDs(surface: surface, target: .automatic,
+                displays: displays, selectedDisplayID: "monitor-a") == [10])
+            #expect(OverlayDisplayResolver.resolveIDs(surface: surface, target: .automatic,
+                displays: displays, selectedDisplayID: "monitor-b") == [20])
+        }
+    }
+
+    @Test("missing selected display falls back and reconnects despite changed numeric ID")
+    func reconnectsSelectedDisplay() {
+        let primary = DisplayDescriptor(id: 10, hasNotch: false, isBuiltIn: false, persistentID: "a")
+        let reconnected = DisplayDescriptor(id: 99, hasNotch: false, isBuiltIn: false, persistentID: "b")
+        #expect(OverlayDisplayResolver.resolveIDs(surface: .floatingWidget, target: .automatic,
+            displays: [primary], selectedDisplayID: "b") == [10])
+        #expect(OverlayDisplayResolver.resolveIDs(surface: .floatingWidget, target: .automatic,
+            displays: [reconnected, primary], selectedDisplayID: "b") == [99])
+        #expect(OverlayDisplayResolver.resolveIDs(surface: .floatingWidget, target: .automatic,
+            displays: [], selectedDisplayID: "b").isEmpty)
+    }
+
+    @Test("specific monitor preferences coexist with legacy policies")
+    func selectionEncoding() {
+        #expect(DisplaySelection.persistentID(from: DisplaySelection.value(for: "monitor-uuid")) == "monitor-uuid")
+        for target in NotchDisplayTarget.allCases {
+            #expect(DisplaySelection.persistentID(from: target.rawValue) == nil)
+        }
+        #expect(DisplaySelection.persistentID(from: "display:") == nil)
+    }
+}
