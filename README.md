@@ -3,91 +3,120 @@
 
   # TrackPeek
 
-  **A notch-style now-playing player for macOS.**
-  Control Spotify and Apple Music without leaving whatever you're doing.
+  **Spotify and Apple Music controls for your menu bar, notch, and desktop.**
+  See what's playing without leaving your current app.
 
   ![macOS 14+](https://img.shields.io/badge/macOS-14%2B-black?logo=apple)
-  ![Swift](https://img.shields.io/badge/Swift-5.10-F05138?logo=swift&logoColor=white)
+  ![Swift 6](https://img.shields.io/badge/Swift-6-F05138?logo=swift&logoColor=white)
   ![Spotify](https://img.shields.io/badge/Spotify-supported-1DB954?logo=spotify&logoColor=white)
   ![Apple Music](https://img.shields.io/badge/Apple%20Music-supported-FA243C?logo=applemusic&logoColor=white)
-
 </div>
 
----
-
-TrackPeek lives in your Mac's notch and menu bar. Hover the notch to peek at the current track, control playback, and watch a live equalizer react to the music — all without switching apps. It is not a music client: it remote-controls the Spotify or Apple Music app you already run.
+TrackPeek controls the Spotify and Apple Music desktop apps already running on your Mac. Use the menu bar alone, expand a notch player on hover, or keep a floating widget on a monitor of your choice. A physical notch is not required for the menu bar or widgets.
 
 ## Features
 
-- **Notch player** — a Dynamic Island-style surface around the MacBook notch: hover to expand into a full mini-player with artwork, progress, and controls.
-- **Live equalizer** — bars animate from the actual audio level of the music, with sensitivity settings.
-- **Menu bar player** — icon, track title, or artist in the menu bar (configurable), with a compact popover player and optional dedicated prev / play-pause / next buttons.
-- **Three popover layouts** — Standard, Compact Horizontal, and Artwork Vertical, previewable in Settings.
-- **Adaptive accent colors** — the UI picks up a palette from the current album artwork; the color source is configurable.
-- **Spotify & Apple Music** — auto-detects which player is active, or pin a preferred source in Settings.
-- **Launch at login** and **automatic updates** via [Sparkle](https://sparkle-project.org).
+- **Menu bar player** — optional track title, equalizer, and dedicated previous / play-pause / next buttons. The popover has Standard, Compact, and Artwork layouts.
+- **Notch player** — a compact surface that expands to show artwork, progress, and playback controls.
+- **Nine widget layouts** — Pill, Mini Bar, Edge, horizontal and vertical cards, Artwork Square, Lyrics, Karaoke, and Equalizer.
+- **Edge** — a narrow vertical controller on either side of the screen, with permanent playback buttons and track details available from the artwork.
+- **Multiple monitors** — choose a connected display by name, use an automatic placement policy, or show a panel on all screens. A selected monitor is remembered across reconnections.
+- **Playback controls** — previous/next, play/pause, and seeking; larger layouts also expose shuffle, repeat, and volume where supported by the source.
+- **Lyrics** — synchronized lyrics and karaoke from LRCLIB when available.
+- **Artwork colors and live audio** — configurable accents, equalizer sensitivity, and visual effects. Audio analysis stops on pause and when no visible surface needs it; Reduce Motion is respected.
+- **Spotify and Apple Music** — automatic source selection or a preferred player in Settings.
+- **Launch at login** and **update checks** through [Sparkle](https://sparkle-project.org).
 
-<!-- Screenshots: add docs/screenshots/*.png and reference them here
-<div align="center">
-  <img src="docs/screenshots/notch.png" width="600">
-  <img src="docs/screenshots/popover.png" width="380">
-</div>
--->
+## Install and get started
 
-## Install
+1. Download `TrackPeek-<version>.zip` from [Releases](https://github.com/Komortes/TrackPeek/releases).
+2. Unzip it, move `TrackPeek.app` to `/Applications`, and open it.
+3. Start Spotify or Apple Music. Allow **Automation** access when macOS asks so TrackPeek can read playback state and send controls.
+4. Use onboarding or Settings to choose the player and surface. The menu bar remains available when the desktop overlay is off.
+5. For a particular monitor, open **Settings → Widget → Show on** (`Настройки → Виджет → Показывать на`) and select its name. The notch settings have the same selector.
 
-1. Download the latest `TrackPeek-x.y.zip` from [Releases](https://github.com/Komortes/TrackPeek/releases).
-2. Unzip and drag `TrackPeek.app` into `/Applications`.
-3. First launch: macOS Gatekeeper will warn that the app is from an unidentified developer. **Right-click the app → Open → Open**, or run:
+The app requires **macOS 14 or later**. The live equalizer requires **macOS 14.2 or later** and audio-capture permission when requested.
 
-   ```sh
-   xattr -dr com.apple.quarantine /Applications/TrackPeek.app
-   ```
+If macOS blocks a downloaded build because its developer cannot be verified, follow [Apple's guidance for opening an app from an unknown developer](https://support.apple.com/en-asia/guide/mac-help/mh40616/mac), provided you trust the download. The repository currently uses Apple Development signing; the release script does not perform notarization.
 
-4. When TrackPeek first talks to Spotify or Apple Music, macOS asks for an **Automation** permission — allow it.
+## Displays and placement
 
-TrackPeek updates itself afterwards via the built-in Sparkle updater.
+- **Named monitor:** stays selected across reconnections. If disconnected, the panel temporarily uses the primary display and returns when the selected monitor reconnects.
+- **Automatic:** the widget prefers an external display; the notch surface appears only on a display with a physical notch.
+- **Primary / Notched / All displays:** the existing placement policies remain available.
+- **Free movement:** enable it in Widget settings to drag ordinary widgets by their background. Moving a single widget to another monitor saves that destination. Edge uses the monitor and left/right selectors instead of free dragging.
 
-> **Note:** the app is currently signed with a development certificate, which is why the Gatekeeper step above is needed.
+See [display selection details](docs/product/display-selection.md) for behavior and verification notes.
+
+## Privacy and network use
+
+Playback state and commands use local **AppleScript / Apple Events**. TrackPeek does not require a separate Spotify or Apple Music web login.
+
+Some features use the network:
+
+- Lyrics requests send the track title, artist, duration, and album (when available) to **LRCLIB**.
+- Remote artwork is loaded from the URL supplied by the player. Apple Music artwork is read from the local app and written to a temporary file.
+- Sparkle checks the configured GitHub release feed and downloads updates.
+
+TrackPeek does not keep a listening-history database. Artwork palettes and lyrics use bounded in-memory caches; this is separate from system/network caches.
 
 ## Build from source
 
-Requirements: macOS 14+, Xcode 15+, [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`).
+Use **Xcode with Swift 6 support** and [XcodeGen](https://github.com/yonaskolb/XcodeGen). The current development toolchain is Xcode 26.6. The helper script and commands below target **Apple silicon (`arm64`)**.
 
 ```sh
-git clone git@github.com:Komortes/TrackPeek.git
+brew install xcodegen
+git clone https://github.com/Komortes/TrackPeek.git
 cd TrackPeek
-xcodegen generate          # regenerate TrackPeek.xcodeproj from project.yml
-script/build_and_run.sh    # Debug build + launch
 ```
 
-Run the test suite:
+Before building, set `DEVELOPMENT_TEAM` in **both targets** in `project.yml` to your own Apple development team. Configure `CODE_SIGN_STYLE` and the signing identity for your local setup; the checked-in values belong to the maintainer. A matching signing certificate must be available in Keychain.
 
 ```sh
-swift test
+xcodegen generate
+./script/build_and_run.sh --verify
 ```
 
-Cut a release build (bumps the version, zips the app, signs the Sparkle appcast):
+The script stops any running TrackPeek process, builds the Debug app, and launches it from `.build/xcode/Build/Products/Debug/TrackPeek.app`. It also supports `--debug`, `--logs`, and `--telemetry`. You can open `TrackPeek.xcodeproj` in Xcode to select a different build destination or configure signing interactively; regenerating the project replaces manual project-file changes with `project.yml` settings.
+
+### Tests
+
+Build and run the app-hosted tests through the Xcode project:
 
 ```sh
-script/release.sh 1.1
+xcodebuild \
+  -project TrackPeek.xcodeproj \
+  -scheme TrackPeek \
+  -configuration Debug \
+  -destination 'platform=macOS,arch=arm64' \
+  -derivedDataPath .build/xcode \
+  test
 ```
 
-## How it works
+The root `Package.swift` is not the app's supported build/test entry point: it does not configure the app's Objective-C++ bridge, Sparkle dependency, or test target.
 
-- Playback state and control go through **AppleScript / Apple Events** to the Spotify and Apple Music apps — no Web API, no account login, everything stays local.
-- A `PlaybackSourceRouter` picks the active player and falls back per your source preference.
-- The equalizer reads the system audio level of the player process via a small Objective-C++ analyzer.
-- The notch surface is a borderless `NSPanel` positioned around the physical notch; the rest of the UI is SwiftUI (`MenuBarExtra` + popover).
+### Preparing a release
+
+For maintainers with the app-signing identity and the Sparkle signing key matching the configured public key:
+
+```sh
+./script/release.sh 1.1
+```
+
+This changes `MARKETING_VERSION` in `project.yml`, regenerates the Xcode project, builds the app, and creates a ZIP and signed appcast in `.build/release/1.1/`. It prints the publishing command; it does **not** publish a GitHub release or notarize the app. Review the version changes and generated artifacts before publishing.
 
 ## Project layout
 
-```
+```text
 Sources/
-  Models/     — playback state, layout & notch configuration
-  Services/   — AppleScript clients, source routing, audio monitoring
-  Stores/     — observable app state
-  Support/    — windowing, Sparkle, launch-at-login, palette extraction
-  Views/      — notch player, popover layouts, settings
-Tests/        — unit tests (swift test)
+  Models/     — playback state, layouts, display selection, preferences
+  Services/   — AppleScript clients, source routing, audio and lyrics
+  Stores/     — shared playback state and bounded lyrics cache
+  Support/    — windows, display identity, updates, palette extraction
+  Views/      — notch, widgets, menu bar, popover layouts, settings
+Tests/        — app-hosted tests run with xcodebuild
+script/       — build/run and release helpers
+project.yml   — XcodeGen project definition
 ```
+
+[Product roadmap](docs/product/ROADMAP.md) · [Stability and resource review](docs/reviews/2026-09-08-stability.md)
