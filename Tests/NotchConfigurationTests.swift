@@ -286,3 +286,44 @@ private actor NotchRenderingSpotifyProvider: SpotifyPlaybackProviding {
     func setRepeat(_: RepeatMode) {}
     func setVolume(_: Int) {}
 }
+
+extension NotchConfigurationTests {
+    @Test("renders Edge and artwork card at their minimum sizes")
+    @MainActor
+    func rendersCompactWidgetLayouts() async throws {
+        let track = SpotifyTrack(
+            title: "Очень длинное название композиции — Acoustic Session at Midnight",
+            artist: "Исполнитель с длинным именем / Another Artist",
+            duration: 240, position: 65, isPlaying: false
+        )
+        let model = SpotifySpikeModel(provider: NotchRenderingSpotifyProvider(track: track))
+        await model.refresh()
+        let context = WidgetCardContext(
+            model: model, lyricsStore: LyricsStore(), audioMonitor: SpotifyAudioMonitor(),
+            palette: .fallback, coloredProgress: true, equalizerSensitivity: 1
+        )
+        let content = HStack(alignment: .top, spacing: 24) {
+            WidgetEdgeCard(context: context, track: track)
+                .frame(width: 72, height: 224)
+                .background(.black, in: RoundedRectangle(cornerRadius: 20))
+            WidgetArtworkSquare(context: context, track: track,
+                                size: CGSize(width: 190, height: 190), isHovering: false)
+                .clipShape(RoundedRectangle(cornerRadius: 18))
+            WidgetEdgeUnavailable(model: SpotifySpikeModel())
+                .frame(width: 72, height: 224)
+                .background(.black, in: RoundedRectangle(cornerRadius: 20))
+        }
+        .environment(\.colorScheme, .dark)
+        .padding(24)
+        .background(Color(red: 0.12, green: 0.13, blue: 0.15))
+        let renderer = ImageRenderer(content: content)
+        renderer.scale = 2
+        let image = try #require(renderer.cgImage)
+        #expect(image.width == 860)
+        #expect(image.height == 544)
+        let bitmap = NSBitmapImageRep(cgImage: image)
+        let png = try #require(bitmap.representation(using: .png, properties: [:]))
+        try png.write(to: FileManager.default.temporaryDirectory
+            .appendingPathComponent("trackpeek-widget-layouts.png"))
+    }
+}
