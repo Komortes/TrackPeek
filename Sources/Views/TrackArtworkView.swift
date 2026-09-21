@@ -20,10 +20,7 @@ struct TrackArtworkView: View {
     }
 
     var body: some View {
-        AsyncImage(
-            url: url,
-            transaction: Transaction(animation: .easeInOut(duration: 0.2))
-        ) { phase in
+        SharedArtworkImage(url: url, pointSize: size) { phase in
             switch phase {
             case let .success(image):
                 image

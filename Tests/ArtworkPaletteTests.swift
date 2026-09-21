@@ -71,10 +71,10 @@ struct ArtworkLoadingTests {
     @Test("large artwork is downsampled before palette extraction")
     func thumbnailSize() throws {
         let data = Self.imageData()
-        let image = try #require(ArtworkPaletteLoader.thumbnail(from: data))
+        let image = try #require(ArtworkImageLoader.thumbnail(from: data, pixels: 64))
         #expect(image.width <= 64)
         #expect(image.height <= 64)
-        #expect(ArtworkPaletteLoader.thumbnail(from: Data("invalid".utf8)) == nil)
+        #expect(ArtworkImageLoader.thumbnail(from: Data("invalid".utf8), pixels: 64) == nil)
     }
 
     @Test("concurrent requests for one URL share their load")
@@ -95,9 +95,9 @@ struct ArtworkLoadingTests {
     func oversizedFile() async throws {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: url) }
-        try Data(count: ArtworkPaletteLoader.maximumDataBytes + 1).write(to: url)
+        try Data(count: ArtworkDataLoader.maximumDataBytes + 1).write(to: url)
         do {
-            _ = try await ArtworkPaletteLoader.readData(url)
+            _ = try await ArtworkDataLoader.readData(url)
             Issue.record("Expected an oversized-file error")
         } catch let error as URLError {
             #expect(error.code == .dataLengthExceedsMaximum)

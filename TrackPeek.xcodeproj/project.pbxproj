@@ -95,6 +95,10 @@
 		F562620C41D11D7F7FA84BA6 /* StandardPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3935E51796CE25D6C6ADC118 /* StandardPlayerView.swift */; };
 		F89DE812E338E8D15DDC0674 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 598F3923E9543BF69E4AD2E9 /* Sparkle */; };
 		D4B6092ED2EA5A7E214B725E /* WidgetEdgeCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D957561B4C6B5CB30AE9185 /* WidgetEdgeCard.swift */; };
+		64E7E4CC9DD49D5FEB67E567 /* ArtworkDataLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = C45F9175EDE10BD5ED8B8243 /* ArtworkDataLoader.swift */; };
+		B800B74870FEBBF08094F0D2 /* ArtworkImageLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81B1EDF50DBD281C8A1EEEA0 /* ArtworkImageLoader.swift */; };
+		33D5650BAF4BD39734F1472F /* SharedArtworkImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B19E7AA4A14569E963FAC075 /* SharedArtworkImage.swift */; };
+		38C076D281CF66E4F80B27FD /* ArtworkImageLoaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F622A8FD3761374D7EB0D921 /* ArtworkImageLoaderTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -200,6 +204,10 @@
 		F72A0A219630C5DB27BE8D4C /* PlayerPresentationOptions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerPresentationOptions.swift; sourceTree = "<group>"; };
 		FB2AF7C2B506820995D1EE41 /* WidgetCardViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetCardViews.swift; sourceTree = "<group>"; };
 		6D957561B4C6B5CB30AE9185 /* WidgetEdgeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetEdgeCard.swift; sourceTree = "<group>"; };
+		C45F9175EDE10BD5ED8B8243 /* ArtworkDataLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtworkDataLoader.swift; sourceTree = "<group>"; };
+		81B1EDF50DBD281C8A1EEEA0 /* ArtworkImageLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtworkImageLoader.swift; sourceTree = "<group>"; };
+		B19E7AA4A14569E963FAC075 /* SharedArtworkImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedArtworkImage.swift; sourceTree = "<group>"; };
+		F622A8FD3761374D7EB0D921 /* ArtworkImageLoaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtworkImageLoaderTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -269,6 +277,7 @@
 		2EA68A0EBB7FAF74B71F80A7 /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				F622A8FD3761374D7EB0D921 /* ArtworkImageLoaderTests.swift */,
 				70E7BE8E732C82A286DEA68B /* ArtworkPaletteTests.swift */,
 				9C4E08596060F3BDFCF80C9F /* AudioSpectrumTests.swift */,
 				7AEE2828C90080275021F97D /* DisplayModeTests.swift */,
@@ -314,6 +323,7 @@
 		4778CEE53CF1313A1D3ED7DF /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				B19E7AA4A14569E963FAC075 /* SharedArtworkImage.swift */,
 				6DBB5FD7BFE39B87B01A3F92 /* ArtworkEqualizerView.swift */,
 				4F3E7D8A59B5448360AFC1C8 /* ArtworkVerticalPlayerView.swift */,
 				51F98CDF26F841562F2AC26B /* CompactHorizontalPlayerView.swift */,
@@ -383,6 +393,8 @@
 		943762F836434F7360ABCAF6 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				81B1EDF50DBD281C8A1EEEA0 /* ArtworkImageLoader.swift */,
+				C45F9175EDE10BD5ED8B8243 /* ArtworkDataLoader.swift */,
 				DC7753408492977BC8B4377A /* AppleScriptExecutor.swift */,
 				EE907C37D68AD439DF9938B8 /* LyricsService.swift */,
 				A2B10E58EF36AA4F39CEC385 /* MusicAppleScriptClient.swift */,
@@ -496,6 +508,7 @@
 				972BCF260E35167E2A864A65 /* AudioSpectrumTests.swift in Sources */,
 				303525109FD5E22CB1650754 /* DisplayModeTests.swift in Sources */,
 				A554E6559908AA5C6AC96C82 /* LyricsServiceTests.swift in Sources */,
+				38C076D281CF66E4F80B27FD /* ArtworkImageLoaderTests.swift in Sources */,
 				92F16DF92496377E8BB451EF /* NotchConfigurationTests.swift in Sources */,
 				E0185B1D3461B6862517AED7 /* NotchInteractionStateTests.swift in Sources */,
 				23C00D6AF44832BCD3CD4AF4 /* PlaybackPositionResolverTests.swift in Sources */,
@@ -525,6 +538,9 @@
 				5EBFE448316D9261A6F6C2CA /* DisplayMode.swift in Sources */,
 				AE82F2BA496F3C0805CA1B36 /* LaunchAtLogin.swift in Sources */,
 				BE8603AA444695880DC6AB2C /* LyricsService.swift in Sources */,
+				33D5650BAF4BD39734F1472F /* SharedArtworkImage.swift in Sources */,
+				B800B74870FEBBF08094F0D2 /* ArtworkImageLoader.swift in Sources */,
+				64E7E4CC9DD49D5FEB67E567 /* ArtworkDataLoader.swift in Sources */,
 				28BF8DB0AA66ABEC422FE60D /* LyricsStore.swift in Sources */,
 				E55C7438C294E986994A5F57 /* MediaSourcePreference.swift in Sources */,
 				295446788434F4E896A30941 /* MenuBarControlsController.swift in Sources */,

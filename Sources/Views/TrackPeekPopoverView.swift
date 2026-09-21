@@ -130,20 +130,13 @@ private struct PopoverBackground: View {
     let style: PopoverBackgroundStyle
     let artworkURL: URL?
 
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
     var body: some View {
         ZStack {
             Rectangle()
                 .fill(.ultraThinMaterial)
 
             if style == .artworkBlur, let artworkURL {
-                AsyncImage(
-                    url: artworkURL,
-                    transaction: Transaction(
-                        animation: reduceMotion ? nil : .easeInOut(duration: 0.28)
-                    )
-                ) { phase in
+                SharedArtworkImage(url: artworkURL, pointSize: 64, maximumPixelSize: 128) { phase in
                     if case let .success(image) = phase {
                         image
                             .resizable()

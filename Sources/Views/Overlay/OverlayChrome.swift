@@ -84,7 +84,7 @@ struct OverlayChrome: ViewModifier {
                 !configuration.reduceTransparency
             {
                 // «Стекло»: размытая обложка вместо чёрного фона карточки.
-                AsyncImage(url: configuration.glassBackgroundURL) { phase in
+                SharedArtworkImage(url: configuration.glassBackgroundURL, pointSize: 64, maximumPixelSize: 128) { phase in
                     if case let .success(image) = phase {
                         image
                             .resizable()
