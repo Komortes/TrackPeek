@@ -9,6 +9,7 @@ struct NotchLyricsView: View {
     let isPlaying: Bool
     let snapshotDate: Date
     var tint: Color = .white
+    var onRetry: (() -> Void)? = nil
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -19,6 +20,16 @@ struct NotchLyricsView: View {
                 placeholder("Ищем текст…", systemImage: "ellipsis")
             case .unavailable:
                 placeholder("Текст не найден", systemImage: "quote.bubble")
+            case .failed:
+                HStack(spacing: 8) {
+                    placeholder("Не удалось загрузить текст", systemImage: "wifi.exclamationmark")
+                    if let onRetry {
+                        Button(action: onRetry) { Image(systemName: "arrow.clockwise") }
+                            .buttonStyle(.plain)
+                            .help("Повторить загрузку текста")
+                            .accessibilityLabel("Повторить загрузку текста")
+                    }
+                }
             case .loaded(let lyrics):
                 if lyrics.isSynced {
                     syncedLyrics(lyrics.syncedLines)

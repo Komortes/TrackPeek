@@ -66,6 +66,19 @@ struct LyricsRequest: Equatable, Hashable, Sendable {
     let artist: String
     let album: String?
     let duration: TimeInterval
+
+    init(title: String, artist: String, album: String?, duration: TimeInterval) {
+        self.title = title
+        self.artist = artist
+        self.album = album?.isEmpty == true ? nil : album
+        // Match the actual LRCLIB query: metadata polling can vary fractions
+        // of a second without changing which lyrics we are requesting.
+        self.duration = duration.isFinite && duration >= 0 ? duration.rounded() : duration
+    }
+
+    init(track: SpotifyTrack) {
+        self.init(title: track.title, artist: track.artist, album: track.album, duration: track.duration)
+    }
 }
 
 protocol LyricsProviding: Sendable {

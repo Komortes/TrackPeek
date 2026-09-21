@@ -148,7 +148,7 @@ struct NotchPlayerView: View {
     }
 
     private struct LyricsTaskKey: Equatable {
-        let identity: String?
+        let request: LyricsRequest?
         let enabled: Bool
     }
 
@@ -303,7 +303,7 @@ struct NotchPlayerView: View {
                 duration: NotchPreferences.clampedNotificationDuration(notificationDuration)
             )
         }
-        .task(id: LyricsTaskKey(identity: trackIdentity, enabled: lyricsNeeded)) {
+        .task(id: LyricsTaskKey(request: model.track.map(LyricsRequest.init(track:)), enabled: lyricsNeeded)) {
             guard lyricsNeeded, let track = model.track else { return }
             lyricsStore.prepare(for: track)
         }

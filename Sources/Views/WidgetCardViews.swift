@@ -56,7 +56,8 @@ struct WidgetVerticalCard: View {
                     duration: track.duration,
                     isPlaying: track.isPlaying,
                     snapshotDate: context.model.snapshotDate,
-                    tint: context.progressTint
+                    tint: context.progressTint,
+                    onRetry: { context.lyricsStore.prepare(for: track) }
                 )
             } else {
                 WidgetProgressView(context: context, track: track)
@@ -105,7 +106,8 @@ struct WidgetLyricsCard: View {
                     duration: track.duration,
                     isPlaying: track.isPlaying,
                     snapshotDate: context.model.snapshotDate,
-                    tint: context.progressTint
+                    tint: context.progressTint,
+                    onRetry: { context.lyricsStore.prepare(for: track) }
                 )
             }
 
@@ -263,6 +265,13 @@ struct WidgetKaraokeCard: View {
             karaokePlaceholder("Ищем текст…")
         case .unavailable:
             karaokePlaceholder("Текст не найден")
+        case .failed:
+            VStack(spacing: 6) {
+                karaokePlaceholder("Не удалось загрузить текст")
+                Button("Повторить") { context.lyricsStore.prepare(for: track) }
+                    .buttonStyle(.plain)
+                    .font(.system(size: 11, weight: .medium))
+            }
         case .loaded(let lyrics):
             if lyrics.isSynced {
                 syncedKaraoke(lyrics.syncedLines)
