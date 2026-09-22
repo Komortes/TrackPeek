@@ -25,6 +25,8 @@ TrackPeek controls the Spotify and Apple Music desktop apps already running on y
 - **Lyrics** — synchronized lyrics and karaoke from LRCLIB when available.
 - **Artwork colors and live audio** — configurable accents, equalizer sensitivity, and visual effects. Audio analysis stops on pause and when no visible surface needs it; Reduce Motion is respected.
 - **Spotify and Apple Music** — automatic source selection or a preferred player in Settings.
+- **Connection recovery** — reconnects after sleep or player restarts, backs off after temporary errors, and keeps the last track visibly marked as stale with its progress stopped.
+- **Diagnostics** — Settings → General (`Основные`) shows connection, Automation, polling, and audio-analysis status, with a manual check and a copyable technical report.
 - **Launch at login** and **update checks** through [Sparkle](https://sparkle-project.org).
 
 ## Install and get started
@@ -58,7 +60,9 @@ Some features use the network:
 - Remote artwork is loaded from the URL supplied by the player. Apple Music artwork is read from the local app and written to a temporary file.
 - Sparkle checks the configured GitHub release feed and downloads updates.
 
-TrackPeek does not keep a listening-history database. Artwork palettes and lyrics use bounded in-memory caches; this is separate from system/network caches.
+TrackPeek does not keep a listening-history database. Artwork data, decoded images, palettes, and lyrics use bounded in-memory caches. Artwork downloads share an ephemeral session without an additional HTTP cache. Diagnostic reports are copied only on request and exclude song metadata, user paths, and raw error messages.
+
+If Automation access is denied, automatic polling stops until you retry or a relevant lifecycle event occurs. Open **Settings → General → Diagnostics** to reach macOS permissions and check again. Recovery does not automatically replay playback commands. A permanently blocked native AppleScript engine still requires a TrackPeek restart; isolating that engine in a helper process is planned.
 
 ## Build from source
 
@@ -77,7 +81,7 @@ xcodegen generate
 ./script/build_and_run.sh --verify
 ```
 
-The script stops any running TrackPeek process, builds the Debug app, and launches it from `.build/xcode/Build/Products/Debug/TrackPeek.app`. It also supports `--debug`, `--logs`, and `--telemetry`. You can open `TrackPeek.xcodeproj` in Xcode to select a different build destination or configure signing interactively; regenerating the project replaces manual project-file changes with `project.yml` settings.
+The script stops any running TrackPeek process, builds the Debug app, and launches it from `.build/xcode/Build/Products/Debug/TrackPeek.app`. To update the copy shown in the app library, quit TrackPeek and replace `/Applications/TrackPeek.app` with the newly built app. It also supports `--debug`, `--logs`, and `--telemetry`. You can open `TrackPeek.xcodeproj` in Xcode to select a different build destination or configure signing interactively; regenerating the project replaces manual project-file changes with `project.yml` settings.
 
 ### Tests
 
