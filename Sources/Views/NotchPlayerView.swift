@@ -238,6 +238,7 @@ struct NotchPlayerView: View {
                     )
                 }
             }
+            .disabled(model.isStale || model.isPerformingCommand)
             .overlayChrome(
                 OverlayChromeConfiguration(
                     containerSize: proxy.size,
@@ -245,10 +246,10 @@ struct NotchPlayerView: View {
                     cornerRadius: cardLayout == .edge ? 20 : cornerRadius,
                     isPillMode: isPillMode,
                     palette: artworkPalette,
-                    pulseMode: pulseMode,
+                    pulseMode: model.isStale ? .off : pulseMode,
                     pulseScale: pulseScale,
                     glowOpacity: glowOpacity,
-                    outlineShimmer: appearance.outlineShimmer,
+                    outlineShimmer: appearance.outlineShimmer && !model.isStale,
                     outlineWidth: appearance.outlineWidth,
                     shimmerAngle: shimmerAngle,
                     coloredWaveform: appearance.coloredWaveform,
@@ -266,6 +267,12 @@ struct NotchPlayerView: View {
             height: panelLayoutState.size.height,
             alignment: .top
         )
+        .overlay(alignment: .topTrailing) {
+            if model.isStale {
+                PlaybackConnectionBadge(model: model, compact: panelLayoutState.size.width < 100 || panelLayoutState.size.height < 100)
+                    .padding(5)
+            }
+        }
         .audioSpectrumDemand(
             audioMonitor,
             enabled: pulseMode != .off && !reduceMotion

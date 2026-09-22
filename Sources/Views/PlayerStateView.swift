@@ -120,3 +120,28 @@ struct PlayerStateView: View {
         }
     }
 }
+
+/// Appears only during a transient failure; the last snapshot remains readable.
+struct PlaybackConnectionBadge: View {
+    let model: SpotifySpikeModel
+    var compact = false
+
+    var body: some View {
+        Button {
+            Task { await model.refresh() }
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                if !compact { Text("Нет связи") }
+            }
+            .font(.system(size: 10, weight: .semibold))
+            .foregroundStyle(.orange)
+            .padding(6)
+            .background(.black.opacity(0.9), in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .disabled(model.isRefreshing)
+        .help("Показан последний трек. Нажмите, чтобы проверить подключение.")
+        .accessibilityLabel("Нет связи с плеером. Показан последний трек. Проверить снова")
+    }
+}

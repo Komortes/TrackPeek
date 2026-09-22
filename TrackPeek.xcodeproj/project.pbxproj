@@ -99,6 +99,9 @@
 		B800B74870FEBBF08094F0D2 /* ArtworkImageLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81B1EDF50DBD281C8A1EEEA0 /* ArtworkImageLoader.swift */; };
 		33D5650BAF4BD39734F1472F /* SharedArtworkImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B19E7AA4A14569E963FAC075 /* SharedArtworkImage.swift */; };
 		38C076D281CF66E4F80B27FD /* ArtworkImageLoaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F622A8FD3761374D7EB0D921 /* ArtworkImageLoaderTests.swift */; };
+		6185A69500E65597C16C54BE /* PlaybackDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09E6F91D1D497301292BAC57 /* PlaybackDiagnostics.swift */; };
+		904CF7BEE7733A5DB20D1350 /* PlaybackDiagnosticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9428922017357641954D6EC2 /* PlaybackDiagnosticsView.swift */; };
+		020E6C132F01A14DDBDC9496 /* PlaybackRecoveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FBC4443E790572A0383E5F4 /* PlaybackRecoveryTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -208,6 +211,9 @@
 		81B1EDF50DBD281C8A1EEEA0 /* ArtworkImageLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtworkImageLoader.swift; sourceTree = "<group>"; };
 		B19E7AA4A14569E963FAC075 /* SharedArtworkImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedArtworkImage.swift; sourceTree = "<group>"; };
 		F622A8FD3761374D7EB0D921 /* ArtworkImageLoaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtworkImageLoaderTests.swift; sourceTree = "<group>"; };
+		09E6F91D1D497301292BAC57 /* PlaybackDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackDiagnostics.swift; sourceTree = "<group>"; };
+		9428922017357641954D6EC2 /* PlaybackDiagnosticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackDiagnosticsView.swift; sourceTree = "<group>"; };
+		7FBC4443E790572A0383E5F4 /* PlaybackRecoveryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackRecoveryTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -234,6 +240,7 @@
 		2036CF9382A7AF15A013988D /* Support */ = {
 			isa = PBXGroup;
 			children = (
+				09E6F91D1D497301292BAC57 /* PlaybackDiagnostics.swift */,
 				89688A253F967111DC7C1EFA /* ArtworkPalette.swift */,
 				32F3580E490DEE11BAFD62F7 /* LaunchAtLogin.swift */,
 				D2FADF750A8534B373D2ECEE /* MenuBarControlsController.swift */,
@@ -277,6 +284,7 @@
 		2EA68A0EBB7FAF74B71F80A7 /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				7FBC4443E790572A0383E5F4 /* PlaybackRecoveryTests.swift */,
 				F622A8FD3761374D7EB0D921 /* ArtworkImageLoaderTests.swift */,
 				70E7BE8E732C82A286DEA68B /* ArtworkPaletteTests.swift */,
 				9C4E08596060F3BDFCF80C9F /* AudioSpectrumTests.swift */,
@@ -323,6 +331,7 @@
 		4778CEE53CF1313A1D3ED7DF /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				9428922017357641954D6EC2 /* PlaybackDiagnosticsView.swift */,
 				B19E7AA4A14569E963FAC075 /* SharedArtworkImage.swift */,
 				6DBB5FD7BFE39B87B01A3F92 /* ArtworkEqualizerView.swift */,
 				4F3E7D8A59B5448360AFC1C8 /* ArtworkVerticalPlayerView.swift */,
@@ -508,6 +517,7 @@
 				972BCF260E35167E2A864A65 /* AudioSpectrumTests.swift in Sources */,
 				303525109FD5E22CB1650754 /* DisplayModeTests.swift in Sources */,
 				A554E6559908AA5C6AC96C82 /* LyricsServiceTests.swift in Sources */,
+				020E6C132F01A14DDBDC9496 /* PlaybackRecoveryTests.swift in Sources */,
 				38C076D281CF66E4F80B27FD /* ArtworkImageLoaderTests.swift in Sources */,
 				92F16DF92496377E8BB451EF /* NotchConfigurationTests.swift in Sources */,
 				E0185B1D3461B6862517AED7 /* NotchInteractionStateTests.swift in Sources */,
@@ -538,6 +548,8 @@
 				5EBFE448316D9261A6F6C2CA /* DisplayMode.swift in Sources */,
 				AE82F2BA496F3C0805CA1B36 /* LaunchAtLogin.swift in Sources */,
 				BE8603AA444695880DC6AB2C /* LyricsService.swift in Sources */,
+				904CF7BEE7733A5DB20D1350 /* PlaybackDiagnosticsView.swift in Sources */,
+				6185A69500E65597C16C54BE /* PlaybackDiagnostics.swift in Sources */,
 				33D5650BAF4BD39734F1472F /* SharedArtworkImage.swift in Sources */,
 				B800B74870FEBBF08094F0D2 /* ArtworkImageLoader.swift in Sources */,
 				64E7E4CC9DD49D5FEB67E567 /* ArtworkDataLoader.swift in Sources */,

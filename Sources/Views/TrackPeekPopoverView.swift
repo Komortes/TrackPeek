@@ -43,8 +43,9 @@ struct TrackPeekPopoverView: View {
 
     var body: some View {
         Group {
-            if let track = model.track, model.availability == .ready {
+            if let track = model.track {
                 player(track)
+                    .disabled(model.isStale || model.isPerformingCommand)
                     .transition(.opacity)
             } else {
                 unavailableContent
@@ -65,6 +66,9 @@ struct TrackPeekPopoverView: View {
         .overlay {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .stroke(Color(nsColor: .separatorColor).opacity(0.4), lineWidth: 1)
+        }
+        .overlay(alignment: .topTrailing) {
+            if model.isStale { PlaybackConnectionBadge(model: model).padding(6) }
         }
         .playerContextMenu(track: model.track, sourceName: model.activeSourceDisplayName, onRefresh: requestRefresh)
         .animation(

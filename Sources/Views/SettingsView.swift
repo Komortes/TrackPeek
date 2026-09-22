@@ -50,13 +50,7 @@ struct SettingsView: View {
     @State private var showsResetConfirmation = false
     @State private var presetRevision = 0
     @State private var launchAtLoginEnabled = LaunchAtLogin.isEnabled
-    @State private var automationStatus: AutomationCheckStatus = .unknown
-    @State private var automationTask: Task<Void, Never>?
     private let onboardingController = OnboardingWindowController()
-
-    private enum AutomationCheckStatus {
-        case unknown, checking, granted, playerNotRunning, failed(String)
-    }
 
     private static let resettableKeys: [String] = [
         OverlayMode.storageKey,
@@ -168,6 +162,7 @@ struct SettingsView: View {
             ) {
                 displayModeSection
                 systemSection
+                PlaybackDiagnosticsView(coordinator: .shared)
                 aboutSection
             }
             .tabItem {
@@ -326,20 +321,6 @@ struct SettingsView: View {
                 SettingsRowDivider()
 
                 SettingsRow(
-                    title: "Доступ к плееру",
-                    subtitle: "TrackPeek управляет Spotify/Music через Apple Events."
-                ) {
-                    HStack(spacing: 8) {
-                        Button("Проверить", action: checkAutomationAccess)
-                            .disabled(isCheckingAccess)
-
-                        automationStatusView
-                    }
-                }
-
-                SettingsRowDivider()
-
-                SettingsRow(
                     title: "Приветственный экран",
                     subtitle: "Пройти онбординг заново: источник, разрешение, автозапуск."
                 ) {
@@ -407,51 +388,6 @@ struct SettingsView: View {
             Button("Отмена", role: .cancel) {}
         } message: {
             Text("Чёлка, плеер и режим отображения вернутся к значениям по умолчанию.")
-        }
-    }
-
-    private var isCheckingAccess: Bool {
-        if case .checking = automationStatus { return true }
-        return false
-    }
-
-    @ViewBuilder
-    private var automationStatusView: some View {
-        switch automationStatus {
-        case .unknown:
-            EmptyView()
-        case .checking:
-            ProgressView().controlSize(.small)
-        case .granted:
-            Label("Доступ есть", systemImage: "checkmark.circle.fill")
-                .foregroundStyle(.green)
-                .font(.caption)
-        case .playerNotRunning:
-            Label("Плеер не запущен", systemImage: "info.circle")
-                .foregroundStyle(.secondary)
-                .font(.caption)
-        case .failed(let message):
-            Label(message, systemImage: "exclamationmark.triangle")
-                .foregroundStyle(.orange)
-                .font(.caption)
-        }
-    }
-
-    private func checkAutomationAccess() {
-        automationTask?.cancel()
-        automationStatus = .checking
-        automationTask = Task { @MainActor in
-            do {
-                _ = try await PlaybackSourceRouter().fetchCurrentTrack()
-                guard !Task.isCancelled else { return }
-                automationStatus = .granted
-            } catch SpotifyPlaybackError.spotifyNotRunning {
-                guard !Task.isCancelled else { return }
-                automationStatus = .playerNotRunning
-            } catch {
-                guard !Task.isCancelled else { return }
-                automationStatus = .failed(error.localizedDescription)
-            }
         }
     }
 

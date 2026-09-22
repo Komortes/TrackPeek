@@ -101,7 +101,7 @@ struct NotchSurfaceContent: View {
 
     @ViewBuilder
     private var compactContent: some View {
-        if let track = model.track, model.availability == .ready {
+        if let track = model.track {
             HStack(spacing: 10) {
                 TrackArtworkView(
                     url: track.artworkURL,
@@ -189,7 +189,7 @@ struct NotchSurfaceContent: View {
 
     @ViewBuilder
     private var expandedContentBody: some View {
-        if let track = model.track, model.availability == .ready {
+        if let track = model.track {
             let isNarrow = containerSize.width < 390
             let artworkSize = NotchResponsiveLayout.artworkSize(in: containerSize)
 

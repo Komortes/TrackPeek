@@ -45,7 +45,7 @@ struct WidgetSurfaceContent: View {
                 onCollapse: onCollapse,
                 showsSecondaryControls: true
             )
-        } else if let track = model.track, model.availability == .ready {
+        } else if let track = model.track {
             switch layout {
             case .pill, .cardHorizontal:
                 EmptyView()
