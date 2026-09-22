@@ -4,12 +4,14 @@ enum AppleScriptExecutionError: LocalizedError {
     case scriptFailed(String)
     case timedOut
     case busy
+    case automationDenied
 
     var errorDescription: String? {
         switch self {
         case let .scriptFailed(message): message
         case .timedOut: "Приложение не отвечает"
         case .busy: "Предыдущая команда плеера ещё выполняется"
+        case .automationDenied: "Нет разрешения Automation"
         }
     }
 }
@@ -66,6 +68,8 @@ enum AppleScriptExecutor {
                         if let errorInfo {
                             if errorInfo["NSAppleScriptErrorNumber"] as? Int == -1712 {
                                 completion.finish(.failure(AppleScriptExecutionError.timedOut))
+                            } else if errorInfo["NSAppleScriptErrorNumber"] as? Int == -1743 {
+                                completion.finish(.failure(AppleScriptExecutionError.automationDenied))
                             } else {
                                 let message = errorInfo["NSAppleScriptErrorMessage"] as? String
                                     ?? "неизвестная ошибка AppleScript"

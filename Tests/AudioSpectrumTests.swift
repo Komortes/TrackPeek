@@ -41,7 +41,9 @@ struct AudioMonitorDemandTests {
         let monitor = SpotifyAudioMonitor()
         monitor.start()
         #expect(!monitor.isAnalysisRequested)
+        #expect(monitor.analysisStatus == .notNeeded)
         monitor.stop()
+        #expect(monitor.analysisStatus == .paused)
     }
 
     @Test("analysis requires playback and at least one visible consumer")

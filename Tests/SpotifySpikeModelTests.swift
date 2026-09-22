@@ -170,6 +170,8 @@ struct SpotifySpikeModelTests {
 
 private actor FakeSpotifyProvider: SpotifyPlaybackProviding {
     private var result: Result<SpotifyTrack, Swift.Error>
+    private(set) var commandCount = 0
+    private var commandError: (any Swift.Error)?
     private let nextTrackValue: SpotifyTrack?
     private let previousTrackValue: SpotifyTrack?
     private let resolvedActiveSource: PlaybackSource
@@ -186,6 +188,14 @@ private actor FakeSpotifyProvider: SpotifyPlaybackProviding {
         self.resolvedActiveSource = activeSource
     }
 
+    func setResult(_ result: Result<SpotifyTrack, Swift.Error>) {
+        self.result = result
+    }
+
+    func setCommandError(_ error: any Swift.Error) {
+        commandError = error
+    }
+
     func fetchCurrentTrack() throws -> SpotifyTrack {
         try result.get()
     }
@@ -194,21 +204,27 @@ private actor FakeSpotifyProvider: SpotifyPlaybackProviding {
         resolvedActiveSource
     }
 
-    func playPause() throws {}
+    func playPause() throws {
+        commandCount += 1
+        if let commandError { throw commandError }
+    }
 
     func nextTrack() throws {
+        commandCount += 1
         if let nextTrackValue {
             result = .success(nextTrackValue)
         }
     }
 
     func previousTrack() throws {
+        commandCount += 1
         if let previousTrackValue {
             result = .success(previousTrackValue)
         }
     }
 
     func seek(to position: TimeInterval) throws {
+        commandCount += 1
         guard case let .success(track) = result else {
             return
         }
@@ -226,11 +242,11 @@ private actor FakeSpotifyProvider: SpotifyPlaybackProviding {
         )
     }
 
-    func setShuffle(_ enabled: Bool) throws {}
+    func setShuffle(_ enabled: Bool) throws { commandCount += 1 }
 
-    func setRepeat(_ mode: RepeatMode) throws {}
+    func setRepeat(_ mode: RepeatMode) throws { commandCount += 1 }
 
-    func setVolume(_ volume: Int) throws {}
+    func setVolume(_ volume: Int) throws { commandCount += 1 }
 }
 
 private enum FakeError: LocalizedError {
@@ -275,12 +291,12 @@ extension SpotifySpikeModelTests {
 
 extension SpotifySpikeModelTests {
     @Test("a late poll cannot replace a newer snapshot")
-    func ignoresStalePoll() async {
+    func ignoresStalePoll() async throws {
         let provider = DelayedSpotifyProvider()
         let model = SpotifySpikeModel(provider: provider)
         let first = Task { await model.refresh() }
-        while !(await provider.isWaiting) { await Task.yield() }
-        await model.refresh()
+        try await waitForFirstFetch(provider)
+        await model.refresh(replacingCurrent: true)
         await provider.finishFirst()
         await first.value
         #expect(model.track?.title == "New")
@@ -289,7 +305,7 @@ extension SpotifySpikeModelTests {
 
 private actor DelayedSpotifyProvider: SpotifyPlaybackProviding {
     private var pending: CheckedContinuation<SpotifyTrack, Never>?
-    private var calls = 0
+    private(set) var calls = 0
     var isWaiting: Bool { pending != nil }
     func fetchCurrentTrack() async throws -> SpotifyTrack {
         calls += 1
@@ -310,4 +326,204 @@ private actor DelayedSpotifyProvider: SpotifyPlaybackProviding {
     func setShuffle(_ enabled: Bool) throws { }
     func setRepeat(_ mode: RepeatMode) throws { }
     func setVolume(_ volume: Int) throws { }
+}
+
+extension SpotifySpikeModelTests {
+    @Test("transient failure freezes the last snapshot and recovery resets backoff")
+    func retainsStaleSnapshotAndRecovers() async throws {
+        var track = SpotifyTrack(title: "Song", artist: "Artist", duration: 180,
+                                 position: 20, isPlaying: true, source: .appleMusic)
+        track.secondary = PlaybackSecondaryState(isShuffling: true, repeatMode: .all, volume: 42)
+        let provider = FakeSpotifyProvider(result: .success(track), activeSource: .appleMusic)
+        let model = SpotifySpikeModel(provider: provider)
+        await model.refresh()
+        let successfulDate = try #require(model.lastSuccessfulRefresh)
+        let originalSnapshotDate = model.snapshotDate
+        #expect(model.nextRefreshDelay == 2)
+
+        await provider.setResult(.failure(SpotifyTrackParser.Error.invalidResponse))
+        await model.refresh()
+
+        let stale = try #require(model.track)
+        #expect(stale.title == track.title)
+        #expect(stale.source == track.source)
+        #expect(stale.secondary == track.secondary)
+        #expect(!stale.isPlaying)
+        let frozenPosition = min(track.duration, track.position + model.snapshotDate.timeIntervalSince(originalSnapshotDate))
+        #expect(abs(stale.position - frozenPosition) < 0.01)
+        #expect(model.isStale)
+        #expect(model.availability == .unavailable)
+        #expect(model.lastSuccessfulRefresh == successfulDate)
+        #expect(model.consecutiveFailures == 1)
+        #expect(model.nextRefreshDelay == 2)
+
+        await model.refresh()
+        #expect(model.track?.position == stale.position)
+        #expect(model.nextRefreshDelay == 4)
+
+        await provider.setResult(.success(track.withPosition(70)))
+        await model.refresh()
+        #expect(model.track?.position == 70)
+        #expect(model.track?.isPlaying == true)
+        #expect(model.availability == .ready)
+        #expect(!model.isStale)
+        #expect(model.consecutiveFailures == 0)
+        #expect(model.nextRefreshDelay == 2)
+        let recoveredDate = try #require(model.lastSuccessfulRefresh)
+        #expect(recoveredDate >= successfulDate)
+    }
+
+    @Test("transient failures back off to a bounded polling interval")
+    func capsRetryDelay() async {
+        let provider = FakeSpotifyProvider(result: .failure(SpotifyTrackParser.Error.invalidResponse))
+        let model = SpotifySpikeModel(provider: provider)
+        for (index, delay) in [2.0, 4, 8, 16, 30, 30, 30].enumerated() {
+            await model.refresh()
+            #expect(model.nextRefreshDelay == delay)
+            #expect(model.consecutiveFailures == index + 1)
+            #expect(!model.isRefreshing)
+        }
+    }
+
+    @Test("denied permission stops polling and a closed player clears the old track")
+    func terminalErrorsClearSnapshot() async {
+        let track = SpotifyTrack(title: "Song", artist: "Artist", isPlaying: true)
+        let provider = FakeSpotifyProvider(result: .success(track))
+        let model = SpotifySpikeModel(provider: provider)
+        await model.refresh()
+        await provider.setResult(.failure(SpotifyPlaybackError.automationDenied))
+        await model.refresh()
+        #expect(model.track == nil)
+        #expect(model.availability == .automationDenied)
+        #expect(model.nextRefreshDelay == nil)
+
+        await provider.setResult(.success(track))
+        await model.refresh()
+        await provider.setResult(.failure(SpotifyPlaybackError.spotifyNotRunning))
+        await model.refresh()
+        #expect(model.track == nil)
+        #expect(model.availability == .spotifyNotRunning)
+        #expect(model.nextRefreshDelay == 30)
+    }
+
+    @Test("paused playback polls less often than playing playback")
+    func pausedPollingInterval() async {
+        let provider = FakeSpotifyProvider(result: .success(
+            SpotifyTrack(title: "Song", artist: "Artist", isPlaying: false)
+        ))
+        let model = SpotifySpikeModel(provider: provider)
+        await model.refresh()
+        #expect(model.nextRefreshDelay == 4)
+        #expect(model.lastSuccessfulRefresh != nil)
+        #expect(!model.isStale)
+    }
+
+    @Test("overlapping refreshes share one fetch")
+    func coalescesRefreshes() async throws {
+        let provider = DelayedSpotifyProvider()
+        let model = SpotifySpikeModel(provider: provider)
+        let first = Task { await model.refresh() }
+        try await waitForFirstFetch(provider)
+        #expect(model.isRefreshing)
+        // This task finishes the suspended provider only after the second caller
+        // has entered refresh and yielded on the same main actor.
+        let finish = Task {
+            await provider.finishFirst()
+        }
+        await model.refresh()
+        await finish.value
+        await first.value
+        #expect(await provider.calls == 1)
+        #expect(model.track?.title == "Old")
+        #expect(!model.isRefreshing)
+    }
+
+    @Test("invalidating a pending refresh prevents a late result from restoring it")
+    func invalidationRejectsLateResult() async throws {
+        let provider = DelayedSpotifyProvider()
+        let model = SpotifySpikeModel(provider: provider)
+        let pending = Task { await model.refresh() }
+        try await waitForFirstFetch(provider)
+        model.invalidate(clearTrack: true)
+        #expect(!model.isRefreshing)
+        await provider.finishFirst()
+        await pending.value
+        #expect(model.track == nil)
+        #expect(model.lastSuccessfulRefresh == nil)
+        await model.refresh()
+        #expect(model.track?.title == "New")
+        #expect(model.availability == .ready)
+    }
+
+    @Test("invalidation retains a frozen snapshot until the selected source changes")
+    func invalidationFreezesOrClearsSnapshot() async {
+        let provider = FakeSpotifyProvider(result: .success(
+            SpotifyTrack(title: "Song", artist: "Artist", duration: 100, position: 20, isPlaying: true)
+        ))
+        let model = SpotifySpikeModel(provider: provider)
+        await model.refresh()
+        model.invalidate()
+        #expect(model.track?.title == "Song")
+        #expect(model.track?.isPlaying == false)
+        #expect(model.isStale)
+        model.invalidate(clearTrack: true)
+        #expect(model.track == nil)
+    }
+
+    @Test("stale controls do not send commands to an unavailable player")
+    func staleControlsAreBlocked() async {
+        let provider = FakeSpotifyProvider(result: .success(
+            SpotifyTrack(title: "Song", artist: "Artist", duration: 100, position: 20, isPlaying: true)
+        ))
+        let model = SpotifySpikeModel(provider: provider)
+        await model.refresh()
+        await provider.setResult(.failure(SpotifyTrackParser.Error.invalidResponse))
+        await model.refresh()
+        let frozenTrack = model.track
+        await model.togglePlayback()
+        await model.nextTrack()
+        await model.previousTrack()
+        await model.seek(to: 50)
+        await model.setShuffle(true)
+        await model.setRepeat(.all)
+        await model.setVolume(80)
+        #expect(await provider.commandCount == 0)
+        #expect(model.track == frozenTrack)
+        #expect(model.isStale)
+    }
+
+    @Test("recovery refreshes never replay an ambiguous failed playback command")
+    func failedCommandIsNotRetried() async {
+        let provider = FakeSpotifyProvider(result: .success(
+            SpotifyTrack(title: "Song", artist: "Artist", isPlaying: true)
+        ))
+        let model = SpotifySpikeModel(provider: provider)
+        await model.refresh()
+        await provider.setCommandError(AppleScriptExecutionError.timedOut)
+        await model.togglePlayback()
+        await model.refresh()
+        await model.refresh()
+        #expect(await provider.commandCount == 1)
+        #expect(model.availability == .ready)
+    }
+}
+
+private func waitForFirstFetch(_ provider: DelayedSpotifyProvider) async throws {
+    let deadline = ContinuousClock.now.advanced(by: .seconds(2))
+    while !(await provider.isWaiting), ContinuousClock.now < deadline {
+        try await Task.sleep(for: .milliseconds(1))
+    }
+    try #require(await provider.isWaiting, "Provider did not start within two seconds")
+}
+
+@Test("Automation denial is classified by error number independently of message language")
+func classifiesAutomationDeniedNumber() async {
+    do {
+        _ = try await AppleScriptExecutor.execute("error \"arbitrary localized message\" number -1743")
+        Issue.record("Expected denied permission")
+    } catch AppleScriptExecutionError.automationDenied {
+        // No TCC request is made: the script only returns a synthetic error.
+    } catch {
+        Issue.record("Unexpected classification: \(error)")
+    }
 }

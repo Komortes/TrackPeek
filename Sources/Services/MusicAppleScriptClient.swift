@@ -181,6 +181,8 @@ actor MusicAppleScriptClient: SpotifyPlaybackProviding {
     private func execute(_ source: String) async throws -> NSAppleEventDescriptor {
         do {
             return try await AppleScriptExecutor.execute(source)
+        } catch AppleScriptExecutionError.automationDenied {
+            throw SpotifyPlaybackError.automationDenied
         } catch AppleScriptExecutionError.timedOut {
             throw SpotifyPlaybackError.scriptFailed("Music не отвечает")
         } catch let AppleScriptExecutionError.scriptFailed(message) {

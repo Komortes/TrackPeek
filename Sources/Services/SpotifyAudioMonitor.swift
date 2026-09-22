@@ -1,6 +1,23 @@
 import AppKit
 import Observation
 
+enum AudioAnalysisStatus: Equatable, Sendable {
+    case paused, notNeeded, starting, running, sourceUnavailable, unsupported
+    case failed(Int)
+
+    var description: String {
+        switch self {
+        case .paused: "Остановлен: нет воспроизведения"
+        case .notNeeded: "Остановлен: нет видимого потребителя"
+        case .starting: "Подключение к аудиопотоку"
+        case .running: "Работает"
+        case .sourceUnavailable: "Нет процесса плеера"
+        case .unsupported: "Требуется macOS 14.2 или новее"
+        case .failed(let code): "Ошибка захвата аудио (\(code))"
+        }
+    }
+}
+
 private final class SpotifyAudioAnalyzerEngine: @unchecked Sendable {
     private let queue = DispatchQueue(
         label: "com.trackpeek.spotify-spectrum",
@@ -13,6 +30,9 @@ private final class SpotifyAudioAnalyzerEngine: @unchecked Sendable {
     private var connectedProcessIdentifier: pid_t?
     private var retryAfter = 0.0
     private var lastPublishedSpectrum: AudioSpectrum?
+    private var lastPublishedStatus: AudioAnalysisStatus?
+    private var failureCount = 0
+    private var lastErrorCode: Int?
     /// Сглаженный уровень на каждую полосу — раздельные коэффициенты для
     /// атаки/спада не дают волне дёргаться, когда очередная сырая выборка
     /// приходит быстрее, чем успела доиграть предыдущая SwiftUI-анимация.
@@ -20,7 +40,7 @@ private final class SpotifyAudioAnalyzerEngine: @unchecked Sendable {
     private static let attackCoefficient = 0.55
     private static let releaseCoefficient = 0.22
 
-    func start(onSpectrum: @escaping @Sendable (AudioSpectrum) -> Void) {
+    func start(onSpectrum: @escaping @Sendable (AudioSpectrum, AudioAnalysisStatus) -> Void) {
         queue.async { [self] in
             guard source == nil else { return }
 
@@ -53,11 +73,16 @@ private final class SpotifyAudioAnalyzerEngine: @unchecked Sendable {
             requestedProcessIdentifier = nil
             connectedProcessIdentifier = nil
             lastPublishedSpectrum = nil
+            lastPublishedStatus = nil
+            retryAfter = 0
+            failureCount = 0
+            lastErrorCode = nil
+            smoothedLevels = nil
         }
     }
 
     private func sample(
-        onSpectrum: @escaping @Sendable (AudioSpectrum) -> Void
+        onSpectrum: @escaping @Sendable (AudioSpectrum, AudioAnalysisStatus) -> Void
     ) {
         let now = CFAbsoluteTimeGetCurrent()
         let processChanged = requestedProcessIdentifier != connectedProcessIdentifier
@@ -66,6 +91,8 @@ private final class SpotifyAudioAnalyzerEngine: @unchecked Sendable {
             analyzer.stop()
             connectedProcessIdentifier = requestedProcessIdentifier
             retryAfter = 0
+            failureCount = 0
+            lastErrorCode = nil
             smoothedLevels = nil
         }
 
@@ -73,8 +100,12 @@ private final class SpotifyAudioAnalyzerEngine: @unchecked Sendable {
            let processIdentifier = requestedProcessIdentifier {
             do {
                 try analyzer.start(forProcessIdentifier: processIdentifier)
+                failureCount = 0
+                lastErrorCode = nil
             } catch {
-                retryAfter = now + 1
+                lastErrorCode = (error as NSError).code
+                failureCount = min(failureCount + 1, 5)
+                retryAfter = now + min(pow(2, Double(failureCount)), 30)
             }
         }
 
@@ -86,10 +117,21 @@ private final class SpotifyAudioAnalyzerEngine: @unchecked Sendable {
             smoothedLevels = nil
             spectrum = .resting
         }
-        guard spectrum != lastPublishedSpectrum else { return }
+        let status: AudioAnalysisStatus
+        if analyzer.isRunning { status = .running }
+        else if let lastErrorCode { status = .failed(lastErrorCode) }
+        else { status = requestedProcessIdentifier == nil ? .sourceUnavailable : .starting }
+        guard spectrum != lastPublishedSpectrum || status != lastPublishedStatus else { return }
 
+        if status != lastPublishedStatus {
+            // Failed/inactive capture needs retries, not thirty wakeups a second.
+            let interval: DispatchTimeInterval = status == .running ? .milliseconds(33) : .seconds(1)
+            source?.schedule(deadline: .now() + interval, repeating: interval,
+                             leeway: status == .running ? .milliseconds(4) : .milliseconds(100))
+        }
         lastPublishedSpectrum = spectrum
-        onSpectrum(spectrum)
+        lastPublishedStatus = status
+        onSpectrum(spectrum, status)
     }
 
     /// Экспоненциальное attack/release-сглаживание по каждой полосе: рост
@@ -119,6 +161,7 @@ private final class SpotifyAudioAnalyzerEngine: @unchecked Sendable {
 @Observable
 final class SpotifyAudioMonitor: NSObject {
     private(set) var spectrum = AudioSpectrum.resting
+    private(set) var analysisStatus: AudioAnalysisStatus = .paused
 
     @ObservationIgnored private let engine = SpotifyAudioAnalyzerEngine()
     @ObservationIgnored private var processTimer: Timer?
@@ -152,22 +195,32 @@ final class SpotifyAudioMonitor: NSObject {
     }
 
     private func synchronizeDemand() {
-        if isAnalysisRequested { startEngine() } else { stopEngine() }
+        if isAnalysisRequested {
+            startEngine()
+        } else {
+            stopEngine()
+            analysisStatus = playbackRequested ? .notNeeded : .paused
+        }
     }
 
     private func startEngine() {
         guard processTimer == nil else { return }
-        guard #available(macOS 14.2, *) else { return }
+        guard #available(macOS 14.2, *) else {
+            analysisStatus = .unsupported
+            return
+        }
+        analysisStatus = .starting
         guard ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil else {
             return
         }
 
         generation &+= 1
         let generation = generation
-        engine.start { [weak self] spectrum in
+        engine.start { [weak self] spectrum, status in
             DispatchQueue.main.async { [weak self] in
                 guard let self, self.generation == generation, self.isAnalysisRequested else { return }
                 self.spectrum = spectrum
+                self.analysisStatus = status
             }
         }
         synchronizeProcess()
@@ -185,6 +238,11 @@ final class SpotifyAudioMonitor: NSObject {
         processTimer = nil
         engine.stop()
         spectrum = .resting
+    }
+
+    func retryIfNeeded() {
+        stopEngine()
+        synchronizeDemand()
     }
 
     func setActiveSource(_ source: PlaybackSource?) {
