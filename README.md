@@ -22,6 +22,7 @@ TrackPeek controls the Spotify and Apple Music desktop apps already running on y
 - **Edge** — a narrow vertical controller on either side of the screen, with permanent playback buttons and track details available from the artwork.
 - **Multiple monitors** — choose a connected display by name, use an automatic placement policy, or show a panel on all screens. A selected monitor is remembered across reconnections.
 - **Playback controls** — previous/next, play/pause, and seeking; larger layouts also expose shuffle, repeat, and volume where supported by the source.
+- **Global shortcuts** — assign play/pause, previous/next, and overlay visibility in Settings → Shortcuts (`Клавиши`), with conflict feedback and an off switch. No keys are assigned by default.
 - **Lyrics** — synchronized lyrics and karaoke from LRCLIB when available.
 - **Artwork colors and live audio** — configurable accents, equalizer sensitivity, and visual effects. Audio analysis stops on pause and when no visible surface needs it; Reduce Motion is respected.
 - **Spotify and Apple Music** — automatic source selection or a preferred player in Settings.
@@ -49,6 +50,16 @@ If macOS blocks a downloaded build because its developer cannot be verified, fol
 - **Free movement:** enable it in Widget settings to drag ordinary widgets by their background. Moving a single widget to another monitor saves that destination. Edge uses the monitor and left/right selectors instead of free dragging.
 
 See [display selection details](docs/product/display-selection.md) for behavior and verification notes.
+
+## Keyboard shortcuts
+
+Open **Settings → Shortcuts (`Клавиши`)**, click an action's field, and press a combination containing **Command or Control**. Escape cancels recording; Delete clears the binding. The global switch releases the shortcuts while keeping your choices. Assignments survive relaunch and use physical key positions; labels follow the current keyboard layout.
+
+TrackPeek checks duplicates, macOS symbolic shortcuts, common app commands, and registration errors. Some application-specific conflicts cannot be detected in advance. If a saved shortcut is unavailable at launch, its row shows an error and a retry button. While recording a new shortcut, TrackPeek temporarily releases its shortcuts.
+
+Playback actions control the current ready source; they do not launch a player or queue commands during an outage. **Show/hide overlay** applies to the selected widget or notch and respects its visibility policy; it does nothing in Menu Bar-only mode.
+
+Shortcuts use system hot-key registration without polling, broad keyboard monitoring, or additional Accessibility/Input Monitoring permissions.
 
 ## Privacy and network use
 
