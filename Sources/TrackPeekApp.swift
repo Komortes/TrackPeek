@@ -39,6 +39,7 @@ final class TrackPeekAppDelegate: NSObject, NSApplicationDelegate {
         controller.start()
 
         menuBarControlsController.start()
+        GlobalShortcutsController.shared.start()
         _ = SparkleUpdaterController.shared
 
         onboardingController.showIfNeeded()
@@ -47,6 +48,7 @@ final class TrackPeekAppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         notchWindowController?.stop()
         menuBarControlsController.stop()
+        GlobalShortcutsController.shared.stop()
         PlaybackCoordinator.shared.stop()
     }
 }

@@ -5,6 +5,7 @@ enum SettingsTab: String, CaseIterable {
     case notch
     case widget
     case menuBar
+    case shortcuts
 
     /// Выбранная вкладка хранится в defaults, чтобы контекстное меню могло
     /// открыть настройки сразу на релевантной странице (§20.5).
@@ -12,6 +13,8 @@ enum SettingsTab: String, CaseIterable {
 
     var title: String {
         switch self {
+        case .shortcuts:
+            "Клавиши"
         case .general:
             "Основные"
         case .notch:
@@ -25,6 +28,8 @@ enum SettingsTab: String, CaseIterable {
 
     var symbolName: String {
         switch self {
+        case .shortcuts:
+            "keyboard"
         case .general:
             "switch.2"
         case .notch:
@@ -53,6 +58,8 @@ struct SettingsView: View {
     private let onboardingController = OnboardingWindowController()
 
     private static let resettableKeys: [String] = [
+        GlobalShortcutsController.bindingsKey,
+        GlobalShortcutsController.enabledKey,
         OverlayMode.storageKey,
         MediaSourcePreference.storageKey,
         "showAlbumName",
@@ -199,6 +206,10 @@ struct SettingsView: View {
                     )
                 }
                 .tag(SettingsTab.menuBar)
+
+            ShortcutSettingsView()
+                .tabItem { Label(SettingsTab.shortcuts.title, systemImage: SettingsTab.shortcuts.symbolName) }
+                .tag(SettingsTab.shortcuts)
 
         }
         .frame(width: 720, height: 640)

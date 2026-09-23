@@ -102,6 +102,11 @@
 		6185A69500E65597C16C54BE /* PlaybackDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09E6F91D1D497301292BAC57 /* PlaybackDiagnostics.swift */; };
 		904CF7BEE7733A5DB20D1350 /* PlaybackDiagnosticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9428922017357641954D6EC2 /* PlaybackDiagnosticsView.swift */; };
 		020E6C132F01A14DDBDC9496 /* PlaybackRecoveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FBC4443E790572A0383E5F4 /* PlaybackRecoveryTests.swift */; };
+		82A151B83CA27A7D35AB7636 /* GlobalShortcut.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22B5C6886778B755CB67060E /* GlobalShortcut.swift */; };
+		5DED6150A8435B7B53C35774 /* CarbonShortcutBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56F0245813482D244D22D3DA /* CarbonShortcutBackend.swift */; };
+		52A8F99541BB34BA94C5800B /* GlobalShortcutsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42ADF16FA22F216F81606448 /* GlobalShortcutsController.swift */; };
+		907CF72D54D1A201B0F3186D /* ShortcutSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25407230CC029F12BC61FDBC /* ShortcutSettingsView.swift */; };
+		8A8C351A6E10042A6FF6824A /* GlobalShortcutsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AC5C8FA1F6C82277CBDAA5A /* GlobalShortcutsTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -214,6 +219,11 @@
 		09E6F91D1D497301292BAC57 /* PlaybackDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackDiagnostics.swift; sourceTree = "<group>"; };
 		9428922017357641954D6EC2 /* PlaybackDiagnosticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackDiagnosticsView.swift; sourceTree = "<group>"; };
 		7FBC4443E790572A0383E5F4 /* PlaybackRecoveryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackRecoveryTests.swift; sourceTree = "<group>"; };
+		22B5C6886778B755CB67060E /* GlobalShortcut.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalShortcut.swift; sourceTree = "<group>"; };
+		56F0245813482D244D22D3DA /* CarbonShortcutBackend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarbonShortcutBackend.swift; sourceTree = "<group>"; };
+		42ADF16FA22F216F81606448 /* GlobalShortcutsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalShortcutsController.swift; sourceTree = "<group>"; };
+		25407230CC029F12BC61FDBC /* ShortcutSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutSettingsView.swift; sourceTree = "<group>"; };
+		6AC5C8FA1F6C82277CBDAA5A /* GlobalShortcutsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalShortcutsTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -240,6 +250,8 @@
 		2036CF9382A7AF15A013988D /* Support */ = {
 			isa = PBXGroup;
 			children = (
+				42ADF16FA22F216F81606448 /* GlobalShortcutsController.swift */,
+				56F0245813482D244D22D3DA /* CarbonShortcutBackend.swift */,
 				09E6F91D1D497301292BAC57 /* PlaybackDiagnostics.swift */,
 				89688A253F967111DC7C1EFA /* ArtworkPalette.swift */,
 				32F3580E490DEE11BAFD62F7 /* LaunchAtLogin.swift */,
@@ -262,6 +274,7 @@
 		21CAC22B9C1B8EAB75544365 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				22B5C6886778B755CB67060E /* GlobalShortcut.swift */,
 				1E5A106A66139EF6481FCB4C /* AudioSpectrum.swift */,
 				5423E7B6B182EEF62F4B5BFB /* DisplayMode.swift */,
 				C0A75A05FD490E508D177F8E /* MediaSourcePreference.swift */,
@@ -284,6 +297,7 @@
 		2EA68A0EBB7FAF74B71F80A7 /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				6AC5C8FA1F6C82277CBDAA5A /* GlobalShortcutsTests.swift */,
 				7FBC4443E790572A0383E5F4 /* PlaybackRecoveryTests.swift */,
 				F622A8FD3761374D7EB0D921 /* ArtworkImageLoaderTests.swift */,
 				70E7BE8E732C82A286DEA68B /* ArtworkPaletteTests.swift */,
@@ -331,6 +345,7 @@
 		4778CEE53CF1313A1D3ED7DF /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				25407230CC029F12BC61FDBC /* ShortcutSettingsView.swift */,
 				9428922017357641954D6EC2 /* PlaybackDiagnosticsView.swift */,
 				B19E7AA4A14569E963FAC075 /* SharedArtworkImage.swift */,
 				6DBB5FD7BFE39B87B01A3F92 /* ArtworkEqualizerView.swift */,
@@ -517,6 +532,7 @@
 				972BCF260E35167E2A864A65 /* AudioSpectrumTests.swift in Sources */,
 				303525109FD5E22CB1650754 /* DisplayModeTests.swift in Sources */,
 				A554E6559908AA5C6AC96C82 /* LyricsServiceTests.swift in Sources */,
+				8A8C351A6E10042A6FF6824A /* GlobalShortcutsTests.swift in Sources */,
 				020E6C132F01A14DDBDC9496 /* PlaybackRecoveryTests.swift in Sources */,
 				38C076D281CF66E4F80B27FD /* ArtworkImageLoaderTests.swift in Sources */,
 				92F16DF92496377E8BB451EF /* NotchConfigurationTests.swift in Sources */,
@@ -548,6 +564,10 @@
 				5EBFE448316D9261A6F6C2CA /* DisplayMode.swift in Sources */,
 				AE82F2BA496F3C0805CA1B36 /* LaunchAtLogin.swift in Sources */,
 				BE8603AA444695880DC6AB2C /* LyricsService.swift in Sources */,
+				907CF72D54D1A201B0F3186D /* ShortcutSettingsView.swift in Sources */,
+				52A8F99541BB34BA94C5800B /* GlobalShortcutsController.swift in Sources */,
+				5DED6150A8435B7B53C35774 /* CarbonShortcutBackend.swift in Sources */,
+				82A151B83CA27A7D35AB7636 /* GlobalShortcut.swift in Sources */,
 				904CF7BEE7733A5DB20D1350 /* PlaybackDiagnosticsView.swift in Sources */,
 				6185A69500E65597C16C54BE /* PlaybackDiagnostics.swift in Sources */,
 				33D5650BAF4BD39734F1472F /* SharedArtworkImage.swift in Sources */,
