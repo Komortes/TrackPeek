@@ -18,7 +18,8 @@ TrackPeek controls the Spotify and Apple Music desktop apps already running on y
 
 - **Menu bar player** — optional track title, equalizer, and dedicated previous / play-pause / next buttons. The popover has Standard, Compact, and Artwork layouts.
 - **Notch player** — a compact surface that expands to show artwork, progress, and playback controls.
-- **Nine widget layouts** — Pill, Mini Bar, Edge, horizontal and vertical cards, Artwork Square, Lyrics, Karaoke, and Equalizer.
+- **Ten widget layouts** — Pill, Mini Bar, Edge, horizontal and vertical cards, Artwork Square, Lyrics, Lyric Strip, Karaoke, and Equalizer.
+- **Lyric Strip** — one synchronized line in a 56 pt-high panel, with controls on hover or keyboard focus. Shows the track title when synchronized lyrics are unavailable; no artwork, equalizer, or animated border.
 - **Edge** — a narrow vertical controller on either side of the screen, with permanent playback buttons and track details available from the artwork.
 - **Multiple monitors** — choose a connected display by name, use an automatic placement policy, or show a panel on all screens. A selected monitor is remembered across reconnections.
 - **Playback controls** — previous/next, play/pause, and seeking; larger layouts also expose shuffle, repeat, and volume where supported by the source.
@@ -50,6 +51,14 @@ If macOS blocks a downloaded build because its developer cannot be verified, fol
 - **Free movement:** enable it in Widget settings to drag ordinary widgets by their background. Moving a single widget to another monitor saves that destination. Edge uses the monitor and left/right selectors instead of free dragging.
 
 See [display selection details](docs/product/display-selection.md) for behavior and verification notes.
+
+## Lyric Strip widget
+
+Choose **Settings → Widget → Lyrics → Lyric Strip** (`Виджет → Текст песни → Строка текста`). Its width is adjustable from 320 to 500 pt; its height stays at 56 pt. Use the existing placement controls to put it near the bottom of your chosen monitor or enable free movement.
+
+The current lyric stays visible on pause. Before the first line, without synchronized lyrics, or during loading, the strip shows the current title and artist. Hover over the text to read its full version and status. A failed lyrics request exposes a retry button. Playback controls appear on hover, when the panel has keyboard focus, or with VoiceOver. With the strip focused, Space toggles playback and Left/Right changes tracks; configured global shortcuts also remain available.
+
+The strip shares the lyrics cache with the other surfaces and schedules updates at lyric timestamps only while visible and playing. It does not request artwork palettes, audio analysis, pulse effects, or a shimmering outline. Other layouts retain their appearance settings.
 
 ## Keyboard shortcuts
 
