@@ -16,8 +16,8 @@ TrackPeek controls the Spotify and Apple Music desktop apps already running on y
 
 ## Features
 
-- **Menu bar player** — optional track title, equalizer, and dedicated previous / play-pause / next buttons. The popover has Standard, Compact, and Artwork layouts.
-- **Notch player** — a compact surface that expands to show artwork, progress, and playback controls.
+- **Menu bar player** — optional track title, equalizer, and dedicated previous / play-pause / next buttons. The popover has Standard, Compact, Artwork, and Lyrics layouts.
+- **Notch player** — choose the full artwork player or Focus, a smaller layout with title, playback controls, and progress, without artwork or visual effects.
 - **Ten widget layouts** — Pill, Mini Bar, Edge, horizontal and vertical cards, Artwork Square, Lyrics, Lyric Strip, Karaoke, and Equalizer.
 - **Lyric Strip** — one synchronized line in a 56 pt-high panel, with controls on hover or keyboard focus. Shows the track title when synchronized lyrics are unavailable; no artwork, equalizer, or animated border.
 - **Edge** — a narrow vertical controller on either side of the screen, with permanent playback buttons and track details available from the artwork.
@@ -51,6 +51,13 @@ If macOS blocks a downloaded build because its developer cannot be verified, fol
 - **Free movement:** enable it in Widget settings to drag ordinary widgets by their background. Moving a single widget to another monitor saves that destination. Edge uses the monitor and left/right selectors instead of free dragging.
 
 See [display selection details](docs/product/display-selection.md) for behavior and verification notes.
+
+## Focus notch and Lyrics popover
+
+- **Settings → Notch → Layout → Focus** (`Чёлка → Раскладка чёлки → Фокус`) selects the restrained notch layout. Its collapsed title avoids the camera gap on notched displays, and expanded controls sit below the safe top area. Width and height correction remain adjustable; the full player's effect settings are preserved.
+- **Settings → Menu Bar → Player window → Lyrics** (`Menu Bar → Окно плеера → Текст`) opens a fixed-size reading panel. Synchronized lyrics show the current line and nearby lines, updating at lyric boundaries; plain text is manually scrollable and selectable. Missing lyrics and network failures have separate states, with retry for failures. Playback and seeking remain at the bottom.
+
+Both layouts retain the existing menus and playback source. Lyrics uses the shared store, a neutral system background, and no artwork. Its lyric schedule and progress updates stop when the view closes; Focus creates its progress view only while expanded. Neither layout changes widget selection or overwrites other layouts' appearance choices.
 
 ## Lyric Strip widget
 
