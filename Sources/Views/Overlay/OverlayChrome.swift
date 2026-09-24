@@ -23,6 +23,7 @@ struct OverlayChromeConfiguration {
     let glassBackgroundURL: URL?
     let reduceMotion: Bool
     let reduceTransparency: Bool
+    var backgroundOpacity: Double = 0.985
 }
 
 struct OverlayChrome: ViewModifier {
@@ -76,7 +77,7 @@ struct OverlayChrome: ViewModifier {
 
     private var background: some View {
         ZStack {
-            Color.black.opacity(0.985)
+            Color.black.opacity(configuration.reduceTransparency ? 1 : configuration.backgroundOpacity)
 
             if
                 configuration.isPillMode,

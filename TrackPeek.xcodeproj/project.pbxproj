@@ -107,6 +107,9 @@
 		52A8F99541BB34BA94C5800B /* GlobalShortcutsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42ADF16FA22F216F81606448 /* GlobalShortcutsController.swift */; };
 		907CF72D54D1A201B0F3186D /* ShortcutSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25407230CC029F12BC61FDBC /* ShortcutSettingsView.swift */; };
 		8A8C351A6E10042A6FF6824A /* GlobalShortcutsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AC5C8FA1F6C82277CBDAA5A /* GlobalShortcutsTests.swift */; };
+		54938C533836D1007CA9E383 /* LyricStripPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B42E1A7318048649FB0C9203 /* LyricStripPresentation.swift */; };
+		8B51AA350EB507B07D82BCE1 /* WidgetLyricStrip.swift in Sources */ = {isa = PBXBuildFile; fileRef = C62E6F6EC28F7F1667D68572 /* WidgetLyricStrip.swift */; };
+		84E602F466B26793724BF540 /* LyricStripTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B621410D3415081225C3A122 /* LyricStripTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -224,6 +227,9 @@
 		42ADF16FA22F216F81606448 /* GlobalShortcutsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalShortcutsController.swift; sourceTree = "<group>"; };
 		25407230CC029F12BC61FDBC /* ShortcutSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutSettingsView.swift; sourceTree = "<group>"; };
 		6AC5C8FA1F6C82277CBDAA5A /* GlobalShortcutsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalShortcutsTests.swift; sourceTree = "<group>"; };
+		B42E1A7318048649FB0C9203 /* LyricStripPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LyricStripPresentation.swift; sourceTree = "<group>"; };
+		C62E6F6EC28F7F1667D68572 /* WidgetLyricStrip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetLyricStrip.swift; sourceTree = "<group>"; };
+		B621410D3415081225C3A122 /* LyricStripTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LyricStripTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -250,6 +256,7 @@
 		2036CF9382A7AF15A013988D /* Support */ = {
 			isa = PBXGroup;
 			children = (
+				B42E1A7318048649FB0C9203 /* LyricStripPresentation.swift */,
 				42ADF16FA22F216F81606448 /* GlobalShortcutsController.swift */,
 				56F0245813482D244D22D3DA /* CarbonShortcutBackend.swift */,
 				09E6F91D1D497301292BAC57 /* PlaybackDiagnostics.swift */,
@@ -297,6 +304,7 @@
 		2EA68A0EBB7FAF74B71F80A7 /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				B621410D3415081225C3A122 /* LyricStripTests.swift */,
 				6AC5C8FA1F6C82277CBDAA5A /* GlobalShortcutsTests.swift */,
 				7FBC4443E790572A0383E5F4 /* PlaybackRecoveryTests.swift */,
 				F622A8FD3761374D7EB0D921 /* ArtworkImageLoaderTests.swift */,
@@ -345,6 +353,7 @@
 		4778CEE53CF1313A1D3ED7DF /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				C62E6F6EC28F7F1667D68572 /* WidgetLyricStrip.swift */,
 				25407230CC029F12BC61FDBC /* ShortcutSettingsView.swift */,
 				9428922017357641954D6EC2 /* PlaybackDiagnosticsView.swift */,
 				B19E7AA4A14569E963FAC075 /* SharedArtworkImage.swift */,
@@ -532,6 +541,7 @@
 				972BCF260E35167E2A864A65 /* AudioSpectrumTests.swift in Sources */,
 				303525109FD5E22CB1650754 /* DisplayModeTests.swift in Sources */,
 				A554E6559908AA5C6AC96C82 /* LyricsServiceTests.swift in Sources */,
+				84E602F466B26793724BF540 /* LyricStripTests.swift in Sources */,
 				8A8C351A6E10042A6FF6824A /* GlobalShortcutsTests.swift in Sources */,
 				020E6C132F01A14DDBDC9496 /* PlaybackRecoveryTests.swift in Sources */,
 				38C076D281CF66E4F80B27FD /* ArtworkImageLoaderTests.swift in Sources */,
@@ -564,6 +574,8 @@
 				5EBFE448316D9261A6F6C2CA /* DisplayMode.swift in Sources */,
 				AE82F2BA496F3C0805CA1B36 /* LaunchAtLogin.swift in Sources */,
 				BE8603AA444695880DC6AB2C /* LyricsService.swift in Sources */,
+				8B51AA350EB507B07D82BCE1 /* WidgetLyricStrip.swift in Sources */,
+				54938C533836D1007CA9E383 /* LyricStripPresentation.swift in Sources */,
 				907CF72D54D1A201B0F3186D /* ShortcutSettingsView.swift in Sources */,
 				52A8F99541BB34BA94C5800B /* GlobalShortcutsController.swift in Sources */,
 				5DED6150A8435B7B53C35774 /* CarbonShortcutBackend.swift in Sources */,

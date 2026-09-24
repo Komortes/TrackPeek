@@ -171,11 +171,11 @@ struct WidgetSettingsView: View {
                 }
             }
 
-            if selectedLayout != .edge {
+            if selectedLayout != .edge && selectedLayout.family != .lyrics {
                 SettingsGroup {
                     SettingsRow(
                         title: "Текст песни в плеере",
-                        subtitle: "Заменяет полосу прогресса синхронизированным текстом (в «Тексте песни» и «Караоке» включён всегда)."
+                        subtitle: "Заменяет полосу прогресса синхронизированным текстом."
                     ) {
                         Toggle("Текст песни", isOn: $lyricsEnabled)
                             .labelsHidden()
@@ -445,7 +445,20 @@ struct WidgetSettingsView: View {
             subtitle: "Эффекты виджета — независимо от настроек чёлки.",
             symbolName: "paintpalette"
         ) {
-            if selectedLayout == .edge {
+            if selectedLayout == .lyricStrip {
+                SettingsGroup {
+                    SettingsRow(title: "Ширина строки", subtitle: "Высота остаётся 56 pt, в том числе при наведении.") {
+                        SettingsValueSlider(
+                            value: Binding(get: { NotchPreferences.clampedWidth(width) + 80 },
+                                           set: { width = NotchPreferences.clampedWidth($0 - 80) }),
+                            range: 320...500, step: 5,
+                            text: "\(Int(NotchPreferences.clampedWidth(width) + 80)) pt"
+                        )
+                    }
+                }
+                Text("Одна строка песни на спокойном фоне. Без синхронизации — название и исполнитель. Обложка, эквалайзер и эффекты здесь отключены; настройки других раскладок сохраняются.")
+                    .font(.caption).foregroundStyle(.secondary)
+            } else if selectedLayout == .edge {
                 SettingsGroup {
                     SettingsRow(title: "Цветной прогресс", subtitle: "Небольшой акцент под кнопками.") {
                         Toggle("Цветной прогресс", isOn: $coloredProgress).labelsHidden()
@@ -677,6 +690,13 @@ struct WidgetLayoutPreview: View {
                         )
                     )
                     .frame(width: 52, height: 52)
+            }
+        case .lyricStrip:
+            card(width: 118, height: 25) {
+                HStack(spacing: 5) {
+                    Image(systemName: "quote.opening").font(.system(size: 7)).foregroundStyle(.white.opacity(0.4))
+                    Capsule().fill(.white.opacity(0.85)).frame(width: 75, height: 4)
+                }
             }
         case .lyricsCard:
             card(width: 110, height: 34) {

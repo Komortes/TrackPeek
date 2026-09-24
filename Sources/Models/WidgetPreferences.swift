@@ -108,6 +108,8 @@ enum WidgetPreferences {
                 width: max(NotchPreferences.clampedWidth(width) * 0.58, 190),
                 height: max(NotchPreferences.clampedWidth(width) * 0.58, 190)
             )
+        case .lyricStrip:
+            CGSize(width: NotchPreferences.clampedWidth(width) + 80, height: 56)
         case .lyricsCard:
             CGSize(width: max(NotchPreferences.clampedWidth(width) + 60, 380), height: 78)
         case .karaokeCard:

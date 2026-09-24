@@ -102,7 +102,7 @@ struct NotchPlayerView: View {
     }
 
     private var pulseMode: NotchPulseMode {
-        guard cardLayout != .edge else { return .off }
+        guard cardLayout != .edge, cardLayout != .lyricStrip else { return .off }
         return NotchPulseMode(
             rawValue: isPillMode ? widgetPulseModeRawValue : pulseModeRawValue
         ) ?? .fallback
@@ -111,11 +111,11 @@ struct NotchPlayerView: View {
     private var appearance: OverlayAppearance {
         OverlayAppearance(
             width: effectiveWidth,
-            coloredProgress: isPillMode ? widgetColoredProgress : coloredProgress,
-            coloredWaveform: isPillMode ? widgetColoredWaveform : coloredWaveform,
+            coloredProgress: cardLayout == .lyricStrip ? false : (isPillMode ? widgetColoredProgress : coloredProgress),
+            coloredWaveform: cardLayout == .lyricStrip ? false : (isPillMode ? widgetColoredWaveform : coloredWaveform),
             colorSource: colorSource,
             pulseMode: pulseMode,
-            outlineShimmer: cardLayout == .edge ? false : (isPillMode ? widgetOutlineShimmer : outlineShimmer),
+            outlineShimmer: (cardLayout == .edge || cardLayout == .lyricStrip) ? false : (isPillMode ? widgetOutlineShimmer : outlineShimmer),
             outlineWidth: isPillMode ? widgetOutlineWidth : outlineWidth,
             equalizerSensitivityOverride: sensitivityOverride,
             lyricsEnabled: isPillMode ? $widgetLyricsEnabled : $lyricsEnabled
@@ -137,6 +137,7 @@ struct NotchPlayerView: View {
     /// Нужна ли загрузка текста: включён тумблер или выбрана лирическая раскладка.
     private var lyricsNeeded: Bool {
         guard cardLayout != .edge else { return false }
+        if cardLayout == .lyricStrip { return panelLayoutState.isVisible }
         return appearance.lyricsEnabled.wrappedValue
             || cardLayout == .lyricsCard
             || cardLayout == .karaokeCard
@@ -153,7 +154,8 @@ struct NotchPlayerView: View {
     }
 
     private var paletteRequest: PaletteRequest {
-        PaletteRequest(url: model.track?.artworkURL, source: colorSource)
+        PaletteRequest(url: cardLayout == .lyricStrip ? nil : model.track?.artworkURL,
+                       source: cardLayout == .lyricStrip ? .systemAccent : colorSource)
     }
 
     private var audioLevel: Double {
@@ -219,6 +221,7 @@ struct NotchPlayerView: View {
                         containerSize: proxy.size,
                         songInfoVisibility: songInfoVisibility,
                         isPointerInside: pointerState.isInside,
+                        isVisible: panelLayoutState.isVisible,
                         onCollapse: { interaction.collapse() }
                     )
                 } else {
@@ -243,7 +246,7 @@ struct NotchPlayerView: View {
                 OverlayChromeConfiguration(
                     containerSize: proxy.size,
                     revealProgress: revealProgress,
-                    cornerRadius: cardLayout == .edge ? 20 : cornerRadius,
+                    cornerRadius: cardLayout == .lyricStrip ? 16 : (cardLayout == .edge ? 20 : cornerRadius),
                     isPillMode: isPillMode,
                     palette: artworkPalette,
                     pulseMode: model.isStale ? .off : pulseMode,
@@ -254,11 +257,12 @@ struct NotchPlayerView: View {
                     shimmerAngle: shimmerAngle,
                     coloredWaveform: appearance.coloredWaveform,
                     isExpanded: isExpanded,
-                    glassBackgroundURL: (isPillMode && widgetGlassBackground && cardLayout != .edge)
+                    glassBackgroundURL: (isPillMode && widgetGlassBackground && cardLayout != .edge && cardLayout != .lyricStrip)
                         ? model.track?.artworkURL
                         : nil,
                     reduceMotion: reduceMotion,
-                    reduceTransparency: reduceTransparency
+                    reduceTransparency: reduceTransparency,
+                    backgroundOpacity: cardLayout == .lyricStrip ? 0.86 : 0.985
                 )
             )
         }
@@ -315,6 +319,7 @@ struct NotchPlayerView: View {
             lyricsStore.prepare(for: track)
         }
         .task(id: paletteRequest) {
+            guard cardLayout != .lyricStrip else { artworkPalette = .fallback; return }
             switch colorSource {
             case .artwork:
                 artworkPalette = .fallback
@@ -327,6 +332,16 @@ struct NotchPlayerView: View {
                 artworkPalette = .systemAccent
             }
         }
+        .task(id: appearance.outlineShimmer && !reduceMotion && panelLayoutState.isVisible && !model.isStale) {
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) { shimmerAngle = .zero }
+            if appearance.outlineShimmer && !reduceMotion && panelLayoutState.isVisible && !model.isStale {
+                withAnimation(.linear(duration: 6).repeatForever(autoreverses: false)) {
+                    shimmerAngle = .degrees(360)
+                }
+            }
+        }
         .onAppear {
             onStateChange(panelState)
             interaction.handleHover(
@@ -336,11 +351,6 @@ struct NotchPlayerView: View {
                 delay: NotchPreferences.clampedHoverDelay(hoverDelay)
             )
 
-            if !reduceMotion {
-                withAnimation(.linear(duration: 6).repeatForever(autoreverses: false)) {
-                    shimmerAngle = .degrees(360)
-                }
-            }
         }
         .onDisappear {
             interaction.cancelPendingTasks()

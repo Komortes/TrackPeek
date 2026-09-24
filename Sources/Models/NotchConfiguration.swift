@@ -89,6 +89,7 @@ enum NotchWidgetLayout: String, CaseIterable, Identifiable, Sendable {
     case cardVertical
     case artworkSquare
     case lyricsCard
+    case lyricStrip
     case karaokeCard
     case equalizerCard
 
@@ -110,6 +111,8 @@ enum NotchWidgetLayout: String, CaseIterable, Identifiable, Sendable {
             "Обложка сверху"
         case .artworkSquare:
             "Квадрат-обложка"
+        case .lyricStrip:
+            "Строка текста"
         case .lyricsCard:
             "Текст песни"
         case .karaokeCard:
@@ -133,6 +136,8 @@ enum NotchWidgetLayout: String, CaseIterable, Identifiable, Sendable {
             "Вертикальная карточка с крупной обложкой."
         case .artworkSquare:
             "Крупная обложка с читаемой подписью и управлением."
+        case .lyricStrip:
+            "Одна строка песни. Управление при наведении."
         case .lyricsCard:
             "Компактный плеер с синхронизированным текстом."
         case .karaokeCard:
@@ -155,7 +160,7 @@ enum NotchWidgetLayout: String, CaseIterable, Identifiable, Sendable {
             .compact
         case .cardHorizontal, .cardVertical, .artworkSquare:
             .fullPlayer
-        case .lyricsCard, .karaokeCard:
+        case .lyricsCard, .lyricStrip, .karaokeCard:
             .lyrics
         case .equalizerCard:
             .visualizer

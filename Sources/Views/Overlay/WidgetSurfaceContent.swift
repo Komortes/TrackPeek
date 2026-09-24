@@ -13,6 +13,7 @@ struct WidgetSurfaceContent: View {
     let containerSize: CGSize
     let songInfoVisibility: NotchSongInfoVisibility
     let isPointerInside: Bool
+    let isVisible: Bool
     /// «Обложка сбоку» — это тот же раскрытый плеер чёлки в постоянном
     /// размере; переиспользуем NotchSurfaceContent вместо дублирования тела.
     let onCollapse: () -> Void
@@ -67,6 +68,8 @@ struct WidgetSurfaceContent: View {
                     size: containerSize,
                     isHovering: isPointerInside
                 )
+            case .lyricStrip:
+                WidgetLyricStrip(context: context, track: track, isHovering: isPointerInside, isVisible: isVisible)
             case .lyricsCard:
                 WidgetLyricsCard(context: context, track: track)
             case .karaokeCard:
@@ -74,6 +77,8 @@ struct WidgetSurfaceContent: View {
             case .equalizerCard:
                 WidgetEqualizerCard(context: context, track: track)
             }
+        } else if layout == .lyricStrip {
+            WidgetLyricStripUnavailable(model: model)
         } else if layout == .edge {
             WidgetEdgeUnavailable(model: model)
         } else {
