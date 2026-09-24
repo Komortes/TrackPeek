@@ -2,11 +2,12 @@ import AppKit
 import Observation
 
 enum AudioAnalysisStatus: Equatable, Sendable {
-    case paused, notNeeded, starting, running, sourceUnavailable, unsupported
+    case paused, notNeeded, resourceSaving, starting, running, sourceUnavailable, unsupported
     case failed(Int)
 
     var description: String {
         switch self {
+        case .resourceSaving: "Остановлен: экономия ресурсов"
         case .paused: "Остановлен: нет воспроизведения"
         case .notNeeded: "Остановлен: нет видимого потребителя"
         case .starting: "Подключение к аудиопотоку"
@@ -160,6 +161,7 @@ private final class SpotifyAudioAnalyzerEngine: @unchecked Sendable {
 @MainActor
 @Observable
 final class SpotifyAudioMonitor: NSObject {
+    private(set) var isResourceSaving = false
     private(set) var spectrum = AudioSpectrum.resting
     private(set) var analysisStatus: AudioAnalysisStatus = .paused
 
@@ -175,9 +177,15 @@ final class SpotifyAudioMonitor: NSObject {
     @ObservationIgnored private var consumers: Set<UUID> = []
     @ObservationIgnored private var generation = 0
 
-    var isAnalysisRequested: Bool { playbackRequested && !consumers.isEmpty }
+    var isAnalysisRequested: Bool { playbackRequested && !consumers.isEmpty && !isResourceSaving }
 
     deinit { engine.stop() }
+
+    func setResourceSaving(_ enabled: Bool) {
+        guard isResourceSaving != enabled else { return }
+        isResourceSaving = enabled
+        synchronizeDemand()
+    }
 
     func setConsumer(_ id: UUID, active: Bool) {
         if active { consumers.insert(id) } else { consumers.remove(id) }
@@ -199,7 +207,7 @@ final class SpotifyAudioMonitor: NSObject {
             startEngine()
         } else {
             stopEngine()
-            analysisStatus = playbackRequested ? .notNeeded : .paused
+            analysisStatus = playbackRequested ? (isResourceSaving ? .resourceSaving : .notNeeded) : .paused
         }
     }
 

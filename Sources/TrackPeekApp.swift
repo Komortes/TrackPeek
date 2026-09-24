@@ -61,6 +61,7 @@ struct TrackPeekApp: App {
     var body: some Scene {
         MenuBarExtra {
             TrackPeekPopoverView()
+                .environment(\.resourceSaving, PlaybackCoordinator.shared.isSavingResources)
         } label: {
             MenuBarLabelView(controller: appDelegate.menuBarControlsController)
         }

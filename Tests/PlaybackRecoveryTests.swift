@@ -5,6 +5,59 @@ import Testing
 @MainActor
 @Suite("Playback lifecycle recovery")
 struct PlaybackRecoveryTests {
+    @Test("saving mode reschedules polls, preserves appearance and lets manual refresh through")
+    func resourceSaving() async throws {
+        let fixture = RecoveryFixture()
+        defer { fixture.stop() }
+        fixture.defaults.set(true, forKey: WidgetPreferences.outlineShimmerKey)
+        fixture.coordinator.start()
+        try await waitUntil { await fixture.provider.hasPendingFetch(1) }
+        await fixture.provider.finishFetch(1, with: .success(recoveryTrack("Paused")))
+        try await waitUntil { fixture.coordinator.nextRefreshDate != nil }
+        fixture.defaults.set(ResourceUsageMode.economical.rawValue, forKey: ResourceUsageMode.storageKey)
+        fixture.coordinator.resourcePolicyDidChange()
+        #expect(fixture.coordinator.isSavingResources)
+        #expect(try #require(fixture.coordinator.nextRefreshDate).timeIntervalSinceNow > 7)
+        #expect(fixture.defaults.bool(forKey: WidgetPreferences.outlineShimmerKey))
+        fixture.coordinator.requestRefresh()
+        try await waitUntil { await fixture.provider.hasPendingFetch(2) }
+        fixture.defaults.set(ResourceUsageMode.normal.rawValue, forKey: ResourceUsageMode.storageKey)
+        fixture.coordinator.resourcePolicyDidChange()
+        await fixture.provider.finishFetch(2, with: .success(recoveryTrack("Fresh")))
+        try await waitUntil { fixture.model.track?.title == "Fresh" && !fixture.model.isRefreshing }
+        #expect(!fixture.coordinator.isSavingResources)
+        #expect(try #require(fixture.coordinator.nextRefreshDate).timeIntervalSinceNow < 5)
+        #expect(await fixture.provider.fetchCount == 2)
+        #expect(fixture.defaults.bool(forKey: WidgetPreferences.outlineShimmerKey))
+    }
+
+    @Test("automatic follows Low Power Mode and resamples it on wake")
+    func automaticResourcePolicy() async throws {
+        var lowPower = false
+        let fixture = RecoveryFixture(lowPowerMode: { lowPower })
+        defer { fixture.stop() }
+        fixture.coordinator.start()
+        try await waitUntil { await fixture.provider.hasPendingFetch(1) }
+        lowPower = true
+        fixture.coordinator.resourcePolicyDidChange()
+        #expect(fixture.coordinator.isSavingResources)
+        await fixture.provider.finishFetch(1, with: .failure(SpotifyPlaybackError.automationDenied))
+        try await waitUntil { fixture.model.availability == .automationDenied && !fixture.model.isRefreshing }
+        lowPower = false
+        fixture.coordinator.resourcePolicyDidChange()
+        #expect(fixture.coordinator.nextRefreshDate == nil)
+        #expect(!fixture.coordinator.isSavingResources)
+        fixture.coordinator.suspendForSleep()
+        lowPower = true
+        fixture.coordinator.resourcePolicyDidChange()
+        #expect(fixture.coordinator.nextRefreshDate == nil)
+        fixture.coordinator.resumeAfterWake()
+        try await waitUntil { await fixture.provider.hasPendingFetch(2) }
+        #expect(fixture.coordinator.isSavingResources)
+        await fixture.provider.finishFetch(2, with: .success(recoveryTrack("Awake")))
+        try await waitUntil { fixture.model.track?.title == "Awake" }
+    }
+
     @Test("denied permission leaves no schedule and manual recovery resumes polling")
     func permissionRecovery() async throws {
         let fixture = RecoveryFixture()
@@ -156,7 +209,7 @@ private struct RecoveryFixture {
     let model: SpotifySpikeModel
     let coordinator: PlaybackCoordinator
 
-    init() {
+    init(lowPowerMode: @escaping () -> Bool = { false }) {
         let suiteName = "TrackPeek.PlaybackRecoveryTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
         defaults.set(MediaSourcePreference.spotify.rawValue, forKey: MediaSourcePreference.storageKey)
@@ -166,7 +219,7 @@ private struct RecoveryFixture {
         self.defaults = defaults
         self.provider = provider
         self.model = model
-        coordinator = PlaybackCoordinator(model: model, defaults: defaults, observesSystemEvents: false)
+        coordinator = PlaybackCoordinator(model: model, defaults: defaults, observesSystemEvents: false, lowPowerMode: lowPowerMode)
     }
 
     func stop() {
@@ -265,5 +318,24 @@ struct PlaybackDiagnosticsTests {
         #expect(report.contains("показан последний трек"))
         #expect(report.contains("нет видимого потребителя"))
         #expect(!report.contains("Подключён"))
+    }
+}
+
+@Suite("Resource policy")
+struct ResourcePolicyTests {
+    @Test("explicit modes override the system and automatic follows it")
+    func modes() {
+        #expect(ResourceUsageMode.automatic.isSaving(lowPowerMode: true))
+        #expect(!ResourceUsageMode.automatic.isSaving(lowPowerMode: false))
+        #expect(!ResourceUsageMode.normal.isSaving(lowPowerMode: true))
+        #expect(ResourceUsageMode.economical.isSaving(lowPowerMode: false))
+    }
+
+    @Test("saving slows healthy polling without changing recovery or denied permission")
+    func delays() {
+        #expect(ResourceUsageMode.pollDelay(2, availability: .ready, saving: true) == 5)
+        #expect(ResourceUsageMode.pollDelay(4, availability: .ready, saving: true) == 8)
+        #expect(ResourceUsageMode.pollDelay(2, availability: .ready, saving: false) == 2)
+        #expect(ResourceUsageMode.pollDelay(nil, availability: .automationDenied, saving: true) == nil)
     }
 }

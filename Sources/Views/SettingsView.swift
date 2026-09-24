@@ -43,6 +43,8 @@ enum SettingsTab: String, CaseIterable {
 }
 
 struct SettingsView: View {
+    @AppStorage(ResourceUsageMode.storageKey)
+    private var resourceUsageModeRaw = ResourceUsageMode.fallback.rawValue
     @AppStorage(OverlayMode.storageKey)
     private var selectedModeRawValue = OverlayMode.fallback.rawValue
     @AppStorage(OverlayVisibilityPolicy.storageKey)
@@ -58,6 +60,7 @@ struct SettingsView: View {
     private let onboardingController = OnboardingWindowController()
 
     private static let resettableKeys: [String] = [
+        ResourceUsageMode.storageKey,
         GlobalShortcutsController.bindingsKey,
         GlobalShortcutsController.enabledKey,
         NotchContentLayout.storageKey,
@@ -170,6 +173,7 @@ struct SettingsView: View {
             ) {
                 displayModeSection
                 systemSection
+                resourceSection
                 PlaybackDiagnosticsView(coordinator: .shared)
                 aboutSection
             }
@@ -292,6 +296,30 @@ struct SettingsView: View {
             )
             .font(.caption)
             .foregroundStyle(.secondary)
+        }
+    }
+
+    private var resourceSection: some View {
+        SettingsSection(title: "Ресурсы", subtitle: "Оформление сохраняется и возвращается при выходе из экономного режима.") {
+            SettingsGroup {
+                SettingsRow(title: "Режим", subtitle: "Автоматический следует режиму энергосбережения macOS, а не питанию от батареи.") {
+                    Picker("Режим использования ресурсов", selection: $resourceUsageModeRaw) {
+                        ForEach(ResourceUsageMode.allCases) { mode in
+                            Text(mode.title).tag(mode.rawValue)
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(width: 170)
+                }
+                SettingsRowDivider()
+                SettingsRow(
+                    title: PlaybackCoordinator.shared.isSavingResources ? "Экономия активна" : "Обычная работа",
+                    subtitle: "В экономном режиме эквалайзер статичен, пульсация и переливы выключены. Прогресс обновляется раз в секунду, опрос плеера — реже."
+                ) {
+                    Image(systemName: PlaybackCoordinator.shared.isSavingResources ? "leaf.fill" : "leaf")
+                        .foregroundStyle(.secondary)
+                }
+            }
         }
     }
 

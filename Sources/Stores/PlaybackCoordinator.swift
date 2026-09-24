@@ -11,6 +11,10 @@ final class PlaybackCoordinator: NSObject {
     let model: SpotifySpikeModel
     let audioMonitor: SpotifyAudioMonitor
     let lyricsStore: LyricsStore
+    private(set) var resourceUsageMode = ResourceUsageMode.fallback
+    private(set) var systemLowPowerMode = false
+    var isSavingResources: Bool { resourceUsageMode.isSaving(lowPowerMode: systemLowPowerMode) }
+    @ObservationIgnored private let lowPowerMode: () -> Bool
     private(set) var isSleeping = false
     private(set) var nextRefreshDate: Date?
 
@@ -26,8 +30,10 @@ final class PlaybackCoordinator: NSObject {
         audioMonitor: SpotifyAudioMonitor = SpotifyAudioMonitor(),
         lyricsStore: LyricsStore = LyricsStore(),
         defaults: UserDefaults = .standard,
-        observesSystemEvents: Bool = true
+        observesSystemEvents: Bool = true,
+        lowPowerMode: @escaping () -> Bool = { ProcessInfo.processInfo.isLowPowerModeEnabled }
     ) {
+        self.lowPowerMode = lowPowerMode
         self.model = model
         self.audioMonitor = audioMonitor
         self.lyricsStore = lyricsStore
@@ -41,8 +47,10 @@ final class PlaybackCoordinator: NSObject {
         guard !isStarted else { return }
         isStarted = true
         isSleeping = false
+        resourcePolicyDidChange()
         sourcePreference = defaults.string(forKey: MediaSourcePreference.storageKey)
         if observesSystemEvents {
+            NotificationCenter.default.addObserver(self, selector: #selector(powerStateChanged), name: .NSProcessInfoPowerStateDidChange, object: nil)
             let workspace = NSWorkspace.shared.notificationCenter
             workspace.addObserver(self, selector: #selector(workspaceChanged), name: NSWorkspace.willSleepNotification, object: nil)
             workspace.addObserver(self, selector: #selector(workspaceChanged), name: NSWorkspace.didWakeNotification, object: nil)
@@ -78,6 +86,7 @@ final class PlaybackCoordinator: NSObject {
     func resumeAfterWake() {
         guard isStarted else { return }
         isSleeping = false
+        resourcePolicyDidChange()
         model.invalidate()
         requestRefresh()
     }
@@ -92,6 +101,21 @@ final class PlaybackCoordinator: NSObject {
         requestRefresh()
     }
 
+    func resourcePolicyDidChange() {
+        guard isStarted else { return }
+        let wasSaving = isSavingResources
+        resourceUsageMode = ResourceUsageMode(rawValue: defaults.string(forKey: ResourceUsageMode.storageKey) ?? "") ?? .fallback
+        systemLowPowerMode = lowPowerMode()
+        audioMonitor.setResourceSaving(isSavingResources)
+        guard wasSaving != isSavingResources, !isSleeping,
+              nextRefreshDate != nil, !model.isRefreshing else { return }
+        if let delay = backgroundRefreshDelay { schedule(after: delay) }
+    }
+
+    private var backgroundRefreshDelay: TimeInterval? {
+        ResourceUsageMode.pollDelay(model.nextRefreshDelay, availability: model.availability, saving: isSavingResources)
+    }
+
     private func refreshCompleted() {
         guard isStarted, !isSleeping else { return }
         if model.availability == .ready, model.track?.isPlaying == true {
@@ -101,7 +125,7 @@ final class PlaybackCoordinator: NSObject {
             audioMonitor.stop()
         }
         cancelSchedule()
-        if let delay = model.nextRefreshDelay { schedule(after: delay) }
+        if let delay = backgroundRefreshDelay { schedule(after: delay) }
     }
 
     private func cancelSchedule() {
@@ -128,7 +152,14 @@ final class PlaybackCoordinator: NSObject {
     }
 
     @objc nonisolated private func preferencesChanged(_ notification: Notification) {
-        Task { @MainActor [weak self] in self?.sourcePreferenceDidChange() }
+        Task { @MainActor [weak self] in
+            self?.sourcePreferenceDidChange()
+            self?.resourcePolicyDidChange()
+        }
+    }
+
+    @objc nonisolated private func powerStateChanged(_ notification: Notification) {
+        Task { @MainActor [weak self] in self?.resourcePolicyDidChange() }
     }
 
     @objc nonisolated private func workspaceChanged(_ notification: Notification) {

@@ -28,6 +28,7 @@ TrackPeek controls the Spotify and Apple Music desktop apps already running on y
 - **Artwork colors and live audio** — configurable accents, equalizer sensitivity, and visual effects. Audio analysis stops on pause and when no visible surface needs it; Reduce Motion is respected.
 - **Spotify and Apple Music** — automatic source selection or a preferred player in Settings.
 - **Connection recovery** — reconnects after sleep or player restarts, backs off after temporary errors, and keeps the last track visibly marked as stale with its progress stopped.
+- **Resource modes** — Automatic follows macOS Low Power Mode; Normal and Economical override it. Economical stops live audio analysis and decorative looping effects, reduces progress updates and background polling, and preserves appearance choices.
 - **Diagnostics** — Settings → General (`Основные`) shows connection, Automation, polling, and audio-analysis status, with a manual check and a copyable technical report.
 - **Launch at login** and **update checks** through [Sparkle](https://sparkle-project.org).
 
@@ -76,6 +77,14 @@ TrackPeek checks duplicates, macOS symbolic shortcuts, common app commands, and 
 Playback actions control the current ready source; they do not launch a player or queue commands during an outage. **Show/hide overlay** applies to the selected widget or notch and respects its visibility policy; it does nothing in Menu Bar-only mode.
 
 Shortcuts use system hot-key registration without polling, broad keyboard monitoring, or additional Accessibility/Input Monitoring permissions.
+
+## Resource usage
+
+Choose **Settings → General → Resources** (`Основные → Ресурсы`). **Automatic** is the default and follows macOS Low Power Mode, including changes while TrackPeek is running. Battery power alone does not activate it. On Macs where the system mode is unsupported, Automatic behaves like Normal; Economical remains available manually.
+
+**Economical** keeps the equalizer static, stops audio capture, pulse effects and shimmering borders, and updates playback progress once a second. Healthy playback polls change from 2 to 5 seconds while playing and from 4 to 8 seconds while paused. External track changes can therefore take up to five seconds to appear. Clicks, seeking, global shortcuts and manual refresh still run immediately; connection recovery retains its existing backoff.
+
+Appearance settings are preserved and restored when economy ends, subject to Reduce Motion and existing visibility rules. Synchronized lyrics retain their timing; this mode does not disable lyrics loading or change the bounded artwork/lyrics caches. The Resources section shows whether economy is currently active; Diagnostics explains when audio analysis is stopped for economy.
 
 ## Privacy and network use
 

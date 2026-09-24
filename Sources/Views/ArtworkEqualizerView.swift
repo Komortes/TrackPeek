@@ -71,7 +71,7 @@ struct ArtworkEqualizerView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var targetSpectrum: AudioSpectrum {
-        guard isPlaying, isVisible, !reduceMotion else { return .resting }
+        guard isPlaying, isVisible, !reduceMotion, !audioMonitor.isResourceSaving else { return .resting }
         let spectrum = audioMonitor.spectrum
 
         let sensitivity = NotchPreferences.clampedEqualizerSensitivity(
@@ -102,7 +102,7 @@ struct ArtworkEqualizerView: View {
         EqualizerShape(spectrum: targetSpectrum, barCount: barCount)
             .fill(fillStyle)
             .animation(
-                reduceMotion
+                reduceMotion || audioMonitor.isResourceSaving
                     ? nil
                     : (isPlaying
                         ? .linear(duration: PlayerMotion.spectrumFrameDuration)
@@ -110,7 +110,7 @@ struct ArtworkEqualizerView: View {
                 value: targetSpectrum
             )
             .animation(
-                reduceMotion
+                reduceMotion || audioMonitor.isResourceSaving
                     ? nil
                     : .smooth(duration: PlayerMotion.equalizerDuration, extraBounce: 0),
                 value: palette

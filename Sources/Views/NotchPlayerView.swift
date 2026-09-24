@@ -105,7 +105,7 @@ struct NotchPlayerView: View {
     private var isFocusLayout: Bool { !isPillMode && contentLayoutRaw == NotchContentLayout.focus.rawValue }
 
     private var pulseMode: NotchPulseMode {
-        guard !isFocusLayout, cardLayout != .edge, cardLayout != .lyricStrip else { return .off }
+        guard !audioMonitor.isResourceSaving, !isFocusLayout, cardLayout != .edge, cardLayout != .lyricStrip else { return .off }
         return NotchPulseMode(
             rawValue: isPillMode ? widgetPulseModeRawValue : pulseModeRawValue
         ) ?? .fallback
@@ -118,7 +118,7 @@ struct NotchPlayerView: View {
             coloredWaveform: isFocusLayout || cardLayout == .lyricStrip ? false : (isPillMode ? widgetColoredWaveform : coloredWaveform),
             colorSource: colorSource,
             pulseMode: pulseMode,
-            outlineShimmer: (isFocusLayout || cardLayout == .edge || cardLayout == .lyricStrip) ? false : (isPillMode ? widgetOutlineShimmer : outlineShimmer),
+            outlineShimmer: (audioMonitor.isResourceSaving || isFocusLayout || cardLayout == .edge || cardLayout == .lyricStrip) ? false : (isPillMode ? widgetOutlineShimmer : outlineShimmer),
             outlineWidth: isPillMode ? widgetOutlineWidth : outlineWidth,
             equalizerSensitivityOverride: sensitivityOverride,
             lyricsEnabled: isPillMode ? $widgetLyricsEnabled : $lyricsEnabled
@@ -163,7 +163,7 @@ struct NotchPlayerView: View {
 
     private var audioLevel: Double {
         guard
-            !reduceMotion,
+            !reduceMotion, !audioMonitor.isResourceSaving,
             let track = model.track,
             track.isPlaying,
             model.availability == .ready
@@ -290,6 +290,7 @@ struct NotchPlayerView: View {
             enabled: pulseMode != .off && !reduceMotion
                 && model.track?.isPlaying == true && model.availability == .ready
         )
+        .environment(\.resourceSaving, audioMonitor.isResourceSaving)
         .environment(\.audioSurfaceVisible, panelLayoutState.isVisible)
         .contentShape(Rectangle())
         .environment(\.colorScheme, .dark)

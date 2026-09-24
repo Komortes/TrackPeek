@@ -113,6 +113,7 @@
 		942035E7CF6D0AC476929AC5 /* NotchContentLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 336D8BEA63559A292863BA05 /* NotchContentLayout.swift */; };
 		AD812D8E20B1E60C85A5C20B /* NotchFocusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02CAEDFAFEEDCD80F51BAA35 /* NotchFocusView.swift */; };
 		BF9E625F78FBDFDE14DD33BD /* LyricsPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D49857B44115A6CA953D675 /* LyricsPlayerView.swift */; };
+		3EB46A80BD60CD9CCBC19B50 /* ResourceUsageMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12099E311C79871553951D9E /* ResourceUsageMode.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -236,6 +237,7 @@
 		336D8BEA63559A292863BA05 /* NotchContentLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchContentLayout.swift; sourceTree = "<group>"; };
 		02CAEDFAFEEDCD80F51BAA35 /* NotchFocusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchFocusView.swift; sourceTree = "<group>"; };
 		2D49857B44115A6CA953D675 /* LyricsPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LyricsPlayerView.swift; sourceTree = "<group>"; };
+		12099E311C79871553951D9E /* ResourceUsageMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResourceUsageMode.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -287,6 +289,7 @@
 		21CAC22B9C1B8EAB75544365 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				12099E311C79871553951D9E /* ResourceUsageMode.swift */,
 				336D8BEA63559A292863BA05 /* NotchContentLayout.swift */,
 				22B5C6886778B755CB67060E /* GlobalShortcut.swift */,
 				1E5A106A66139EF6481FCB4C /* AudioSpectrum.swift */,
@@ -583,6 +586,7 @@
 				5EBFE448316D9261A6F6C2CA /* DisplayMode.swift in Sources */,
 				AE82F2BA496F3C0805CA1B36 /* LaunchAtLogin.swift in Sources */,
 				BE8603AA444695880DC6AB2C /* LyricsService.swift in Sources */,
+				3EB46A80BD60CD9CCBC19B50 /* ResourceUsageMode.swift in Sources */,
 				BF9E625F78FBDFDE14DD33BD /* LyricsPlayerView.swift in Sources */,
 				AD812D8E20B1E60C85A5C20B /* NotchFocusView.swift in Sources */,
 				942035E7CF6D0AC476929AC5 /* NotchContentLayout.swift in Sources */,

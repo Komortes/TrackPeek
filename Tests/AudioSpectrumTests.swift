@@ -36,6 +36,27 @@ struct AudioSpectrumTests {
 @MainActor
 @Suite("Audio monitor demand")
 struct AudioMonitorDemandTests {
+    @Test("saving blocks analysis and retry while retaining visible demand for restoration")
+    func resourceGate() {
+        let monitor = SpotifyAudioMonitor()
+        let consumer = UUID()
+        monitor.setConsumer(consumer, active: true)
+        monitor.start()
+        #expect(monitor.isAnalysisRequested)
+        monitor.setResourceSaving(true)
+        #expect(!monitor.isAnalysisRequested)
+        #expect(monitor.analysisStatus == .resourceSaving)
+        monitor.retryIfNeeded()
+        #expect(!monitor.isAnalysisRequested)
+        monitor.setResourceSaving(false)
+        #expect(monitor.isAnalysisRequested)
+        monitor.setResourceSaving(true)
+        monitor.setConsumer(consumer, active: false)
+        monitor.setResourceSaving(false)
+        #expect(!monitor.isAnalysisRequested)
+        monitor.stop()
+    }
+
     @Test("playback alone does not request audio analysis")
     func noConsumers() {
         let monitor = SpotifyAudioMonitor()
