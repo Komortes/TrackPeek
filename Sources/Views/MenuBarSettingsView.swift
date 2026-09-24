@@ -156,7 +156,7 @@ struct PopoverSettingsSection: View {
             subtitle: "Компоновка и детали popover, открывающегося по клику.",
             symbolName: "play.square"
         ) {
-            HStack(alignment: .top, spacing: 12) {
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                 ForEach(PlayerLayout.allCases) { layout in
                     playerLayoutCard(layout)
                 }
@@ -165,7 +165,7 @@ struct PopoverSettingsSection: View {
             SettingsGroup {
                 SettingsRow(
                     title: "Фон",
-                    subtitle: "Системный материал или цвета текущей обложки."
+                    subtitle: playerLayout == .lyrics ? "В раскладке «Текст» используется спокойный системный фон." : "Системный материал или цвета текущей обложки."
                 ) {
                     Picker("Фон", selection: backgroundStyle) {
                         ForEach(PopoverBackgroundStyle.allCases) { style in
@@ -174,6 +174,7 @@ struct PopoverSettingsSection: View {
                     }
                     .labelsHidden()
                     .frame(width: 170)
+                    .disabled(playerLayout == .lyrics)
                 }
 
                 if playerLayout == .artworkVertical {
@@ -220,6 +221,7 @@ struct PopoverSettingsSection: View {
                     subtitle: "Добавляет глубину, не меняя саму обложку."
                 ) {
                     Toggle("Тень обложки", isOn: $showsArtworkShadow)
+                        .disabled(playerLayout == .lyrics)
                         .labelsHidden()
                 }
             }

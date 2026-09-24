@@ -110,6 +110,9 @@
 		54938C533836D1007CA9E383 /* LyricStripPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B42E1A7318048649FB0C9203 /* LyricStripPresentation.swift */; };
 		8B51AA350EB507B07D82BCE1 /* WidgetLyricStrip.swift in Sources */ = {isa = PBXBuildFile; fileRef = C62E6F6EC28F7F1667D68572 /* WidgetLyricStrip.swift */; };
 		84E602F466B26793724BF540 /* LyricStripTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B621410D3415081225C3A122 /* LyricStripTests.swift */; };
+		942035E7CF6D0AC476929AC5 /* NotchContentLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 336D8BEA63559A292863BA05 /* NotchContentLayout.swift */; };
+		AD812D8E20B1E60C85A5C20B /* NotchFocusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02CAEDFAFEEDCD80F51BAA35 /* NotchFocusView.swift */; };
+		BF9E625F78FBDFDE14DD33BD /* LyricsPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D49857B44115A6CA953D675 /* LyricsPlayerView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -230,6 +233,9 @@
 		B42E1A7318048649FB0C9203 /* LyricStripPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LyricStripPresentation.swift; sourceTree = "<group>"; };
 		C62E6F6EC28F7F1667D68572 /* WidgetLyricStrip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetLyricStrip.swift; sourceTree = "<group>"; };
 		B621410D3415081225C3A122 /* LyricStripTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LyricStripTests.swift; sourceTree = "<group>"; };
+		336D8BEA63559A292863BA05 /* NotchContentLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchContentLayout.swift; sourceTree = "<group>"; };
+		02CAEDFAFEEDCD80F51BAA35 /* NotchFocusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchFocusView.swift; sourceTree = "<group>"; };
+		2D49857B44115A6CA953D675 /* LyricsPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LyricsPlayerView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -281,6 +287,7 @@
 		21CAC22B9C1B8EAB75544365 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				336D8BEA63559A292863BA05 /* NotchContentLayout.swift */,
 				22B5C6886778B755CB67060E /* GlobalShortcut.swift */,
 				1E5A106A66139EF6481FCB4C /* AudioSpectrum.swift */,
 				5423E7B6B182EEF62F4B5BFB /* DisplayMode.swift */,
@@ -353,6 +360,8 @@
 		4778CEE53CF1313A1D3ED7DF /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				2D49857B44115A6CA953D675 /* LyricsPlayerView.swift */,
+				02CAEDFAFEEDCD80F51BAA35 /* NotchFocusView.swift */,
 				C62E6F6EC28F7F1667D68572 /* WidgetLyricStrip.swift */,
 				25407230CC029F12BC61FDBC /* ShortcutSettingsView.swift */,
 				9428922017357641954D6EC2 /* PlaybackDiagnosticsView.swift */,
@@ -574,6 +583,9 @@
 				5EBFE448316D9261A6F6C2CA /* DisplayMode.swift in Sources */,
 				AE82F2BA496F3C0805CA1B36 /* LaunchAtLogin.swift in Sources */,
 				BE8603AA444695880DC6AB2C /* LyricsService.swift in Sources */,
+				BF9E625F78FBDFDE14DD33BD /* LyricsPlayerView.swift in Sources */,
+				AD812D8E20B1E60C85A5C20B /* NotchFocusView.swift in Sources */,
+				942035E7CF6D0AC476929AC5 /* NotchContentLayout.swift in Sources */,
 				8B51AA350EB507B07D82BCE1 /* WidgetLyricStrip.swift in Sources */,
 				54938C533836D1007CA9E383 /* LyricStripPresentation.swift in Sources */,
 				907CF72D54D1A201B0F3186D /* ShortcutSettingsView.swift in Sources */,

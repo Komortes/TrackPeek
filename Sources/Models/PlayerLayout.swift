@@ -4,6 +4,7 @@ enum PlayerLayout: String, CaseIterable, Identifiable, Sendable {
     case compactHorizontal
     case standard
     case artworkVertical
+    case lyrics
 
     static let storageKey = "playerLayout"
     static let fallback: PlayerLayout = .standard
@@ -12,6 +13,8 @@ enum PlayerLayout: String, CaseIterable, Identifiable, Sendable {
 
     var title: String {
         switch self {
+        case .lyrics:
+            "Текст"
         case .compactHorizontal:
             "Compact"
         case .standard:
@@ -23,6 +26,8 @@ enum PlayerLayout: String, CaseIterable, Identifiable, Sendable {
 
     var summary: String {
         switch self {
+        case .lyrics:
+            "Текущая строка и соседние; обычный текст можно читать целиком."
         case .compactHorizontal:
             "Быстрый горизонтальный контроллер."
         case .standard:
@@ -38,6 +43,8 @@ enum PlayerLayout: String, CaseIterable, Identifiable, Sendable {
 
     func popoverSize(artworkSize: Double) -> CGSize {
         switch self {
+        case .lyrics:
+            CGSize(width: 380, height: 470)
         case .compactHorizontal:
             CGSize(width: 390, height: 144)
         case .standard:

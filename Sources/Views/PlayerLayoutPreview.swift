@@ -18,6 +18,13 @@ struct PlayerLayoutPreview: View {
     @ViewBuilder
     private var preview: some View {
         switch layout {
+        case .lyrics:
+            VStack(alignment: .leading, spacing: 8) {
+                textLines
+                Capsule().fill(Color.accentColor.opacity(0.8)).frame(width: 100, height: 7)
+                Capsule().fill(.secondary.opacity(0.4)).frame(width: 82, height: 4)
+                controls.frame(maxWidth: .infinity)
+            }
         case .compactHorizontal:
             HStack(spacing: 9) {
                 artwork(size: 52)

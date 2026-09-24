@@ -11,6 +11,7 @@ struct PlayerLayoutTests {
             .compactHorizontal,
             .standard,
             .artworkVertical,
+            .lyrics,
         ])
     }
 
@@ -135,5 +136,41 @@ struct PlayerLayoutTests {
         #expect(PlayerMotion.equalizerDuration == 0.28)
         #expect(PlayerMotion.controlDuration < PlayerMotion.playbackDuration)
         #expect(PlayerMotion.equalizerDuration <= 0.3)
+    }
+}
+
+
+extension PlayerLayoutTests {
+    @Test("focus has smaller bounds without changing the existing layout")
+    func focusSizing() {
+        #expect(NotchContentLayout.fallback == .standard)
+        #expect(NotchContentLayout(rawValue: "focus") == .focus)
+        for width in [240.0, 320, 420] {
+            for adjustment in [-4.0, 0, 12] {
+                let normal = NotchContentLayout.standard.size(for: .expanded, width: width, heightAdjustment: adjustment)
+                #expect(normal == NotchPreferences.expandedSize(width: width, heightAdjustment: adjustment))
+                let focus = NotchContentLayout.focus.size(for: .expanded, width: width, heightAdjustment: adjustment, topInset: 32)
+                #expect(focus.width == normal.width)
+                #expect(focus.height == normal.height - 20)
+                #expect(focus.height >= 152)
+            }
+        }
+        #expect(NotchContentLayout.focus.size(for: .notification, width: 320, heightAdjustment: -4, topInset: 40).height == 72)
+        #expect(NotchContentLayout.focus.size(for: .expanded, width: 320, heightAdjustment: 0, topInset: 40).height == 164)
+    }
+
+    @Test("reading window follows seek and stays bounded")
+    func readingWindow() {
+        let lines = (0..<10).map { LyricsLine(time: Double($0 * 10 + 5), text: "Line \($0)") }
+        let intro = LyricsReadingWindow.entries(in: lines, position: 0)
+        #expect(intro.map(\.index) == [0, 1, 2, 3])
+        #expect(!intro.contains { $0.isCurrent })
+        let middle = LyricsReadingWindow.entries(in: lines, position: 45)
+        #expect(middle.map(\.index) == [3, 4, 5, 6])
+        #expect(middle.first(where: \.isCurrent)?.index == 4)
+        #expect(LyricsReadingWindow.entries(in: lines, position: 5).first(where: \.isCurrent)?.index == 0)
+        #expect(LyricsReadingWindow.entries(in: [], position: 50).isEmpty)
+        #expect(LyricsReadingWindow.entries(in: lines, position: 120).map(\.index) == [8, 9])
+        #expect(PlayerLayout.lyrics.popoverSize(artworkSize: 274) == CGSize(width: 380, height: 470))
     }
 }

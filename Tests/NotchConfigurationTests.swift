@@ -327,3 +327,51 @@ extension NotchConfigurationTests {
             .appendingPathComponent("trackpeek-widget-layouts.png"))
     }
 }
+
+
+extension NotchConfigurationTests {
+    @Test("renders Focus below the camera and the Lyrics popover")
+    @MainActor
+    func rendersFocusAndLyrics() async throws {
+        let track = SpotifyTrack(title: "A long title for a quiet afternoon", artist: "Artist with a long name",
+                                 duration: 240, position: 45, isPlaying: false)
+        let model = SpotifySpikeModel(provider: NotchRenderingSpotifyProvider(track: track))
+        await model.refresh()
+        let store = LyricsStore(provider: LayoutPreviewLyricsProvider())
+        store.prepare(for: track)
+        for _ in 0..<100 {
+            if case .loaded = store.state(for: track) { break }
+            await Task.yield()
+        }
+        guard case .loaded = store.state(for: track) else { Issue.record("Lyrics fixture did not finish"); return }
+        let content = HStack(alignment: .top, spacing: 24) {
+            NotchFocusView(model: model, state: .expanded, size: CGSize(width: 352, height: 152),
+                topInset: 32, cameraWidth: 180, isVisible: true, clickEnabled: true, onTogglePin: {}, onCollapse: {})
+                .background(.black).clipShape(NotchSilhouetteShape(bottomCornerRadius: 14))
+            LyricsPlayerView(model: model, track: track, lyricsStore: store,
+                options: PlayerPresentationOptions(showsAlbum: true, showsPlaybackStatus: true, showsArtworkShadow: false))
+                .frame(width: 380, height: 470).background(Color(white: 0.1), in: RoundedRectangle(cornerRadius: 18))
+        }
+        .padding(24).background(Color(white: 0.18)).environment(\.colorScheme, .dark)
+        let renderer = ImageRenderer(content: content)
+        renderer.scale = 2
+        let image = try #require(renderer.cgImage)
+        #expect(image.width == 1608)
+        #expect(image.height == 1036)
+        let bitmap = NSBitmapImageRep(cgImage: image)
+        let png = try #require(bitmap.representation(using: .png, properties: [:]))
+        try png.write(to: FileManager.default.temporaryDirectory.appendingPathComponent("trackpeek-focus-lyrics.png"))
+    }
+}
+
+private struct LayoutPreviewLyricsProvider: LyricsProviding {
+    func fetchLyrics(for request: LyricsRequest) async throws -> TrackLyrics? {
+        TrackLyrics(syncedLines: [
+            .init(time: 0, text: "A quiet moment before the day"),
+            .init(time: 20, text: "The city slowly fades away"),
+            .init(time: 40, text: "Let the music stay with you"),
+            .init(time: 60, text: "And carry every word anew"),
+            .init(time: 80, text: "Until the morning comes again")
+        ], plainText: nil)
+    }
+}

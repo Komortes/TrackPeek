@@ -60,6 +60,7 @@ struct SettingsView: View {
     private static let resettableKeys: [String] = [
         GlobalShortcutsController.bindingsKey,
         GlobalShortcutsController.enabledKey,
+        NotchContentLayout.storageKey,
         OverlayMode.storageKey,
         MediaSourcePreference.storageKey,
         "showAlbumName",

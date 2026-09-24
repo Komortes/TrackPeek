@@ -2,6 +2,7 @@ import Foundation
 import SwiftUI
 
 struct NotchSettingsView: View {
+    @AppStorage(NotchContentLayout.storageKey) private var contentLayoutRaw = NotchContentLayout.fallback.rawValue
     @AppStorage(OverlayMode.storageKey)
     private var selectedModeRawValue = OverlayMode.fallback.rawValue
     @AppStorage(NotchPreferences.displayTargetKey)
@@ -128,15 +129,40 @@ struct NotchSettingsView: View {
             subtitle: "Компактный плеер у верхнего края экрана, который раскрывается по вашему сценарию."
         ) {
             activationCard
+            SettingsSection(title: "Раскладка чёлки", subtitle: "Влияет только на чёлку; виджет сохраняет свой шаблон.") {
+                SettingsGroup {
+                    SettingsRow(title: "Содержимое", subtitle: (NotchContentLayout(rawValue: contentLayoutRaw) ?? .fallback).summary) {
+                        Picker("Раскладка чёлки", selection: $contentLayoutRaw) {
+                            ForEach(NotchContentLayout.allCases) { Text($0.title).tag($0.rawValue) }
+                        }.labelsHidden().frame(width: 190)
+                    }
+                }
+            }
             generalSection
             interactionSection
             notificationSection
-            appearanceSection
+            if contentLayoutRaw == NotchContentLayout.focus.rawValue {
+                SettingsGroup {
+                    SettingsRow(title: "Ширина", subtitle: "Ширина закрытой панели; раскрытая оставляет место для управления.") {
+                        SettingsValueSlider(value: notchWidth, range: NotchPreferences.widthRange,
+                            step: NotchPreferences.widthStep, text: "\(Int(NotchPreferences.clampedWidth(width))) pt")
+                    }
+                    SettingsRowDivider()
+                    SettingsRow(title: "Коррекция высоты", subtitle: "Подстройка под верхний край экрана.") {
+                        SettingsValueSlider(value: notchHeightAdjustment, range: NotchPreferences.heightAdjustmentRange,
+                            step: NotchPreferences.heightAdjustmentStep, text: "\(Int(NotchPreferences.clampedHeightAdjustment(heightAdjustment))) pt")
+                    }
+                }
+                Text("«Фокус» использует спокойный фон без обложки, эквалайзера, текстов и эффектов. Настройки полного плеера сохранены.")
+                    .font(.caption).foregroundStyle(.secondary)
+            } else {
+                appearanceSection
+            }
         }
     }
 
     private var isPanelModeActive: Bool {
-        selectedMode == .notch || selectedMode == .floatingWidget
+        selectedMode == .notch
     }
 
     private var activationTitle: String {

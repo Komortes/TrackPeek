@@ -14,6 +14,8 @@ final class NotchPointerState {
 final class NotchPanelLayoutState {
     private(set) var size: CGSize
     var isVisible = false
+    var topInset: CGFloat = 0
+    var cameraWidth: CGFloat = 0
 
     init(size: CGSize) {
         self.size = size
@@ -343,14 +345,15 @@ private final class NotchPanelHost: NSObject {
         let heightAdjustment = mode == .floatingWidget
             ? 0
             : defaults.double(forKey: NotchPreferences.heightAdjustmentKey)
-        let size: CGSize = switch panelState {
-        case .expanded:
-            NotchPreferences.expandedSize(width: width, heightAdjustment: heightAdjustment)
-        case .notification:
-            NotchPreferences.notificationSize(width: width, heightAdjustment: heightAdjustment)
-        case .collapsed:
-            NotchPreferences.compactSize(width: width, heightAdjustment: heightAdjustment)
-        }
+        layoutState.topInset = mode == .notch ? screen.safeAreaInsets.top : 0
+        if mode == .notch, let left = screen.auxiliaryTopLeftArea, let right = screen.auxiliaryTopRightArea {
+            layoutState.cameraWidth = max(0, right.minX - left.maxX)
+        } else { layoutState.cameraWidth = 0 }
+        let contentLayout = mode == .notch
+            ? NotchContentLayout(rawValue: defaults.string(forKey: NotchContentLayout.storageKey) ?? "") ?? .fallback
+            : .standard
+        let size = contentLayout.size(for: panelState, width: width,
+                                      heightAdjustment: heightAdjustment, topInset: layoutState.topInset)
         let frame: NSRect
 
         if mode == .floatingWidget {

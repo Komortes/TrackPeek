@@ -9,6 +9,7 @@ struct PlaybackProgressView: View {
     let onSeek: (TimeInterval) -> Void
     var usesCompactTime = false
     var tint: Color = .accentColor
+    var minimumUpdateInterval: TimeInterval = 1 / 30
 
     @State private var dragPosition: TimeInterval?
     @State private var isDragging = false
@@ -18,7 +19,7 @@ struct PlaybackProgressView: View {
     var body: some View {
         TimelineView(
             .animation(
-                minimumInterval: 1 / 30,
+                minimumInterval: minimumUpdateInterval,
                 paused: !isPlaying || isDragging
             )
         ) { context in

@@ -58,7 +58,7 @@ struct TrackPeekPopoverView: View {
         )
         .background {
             PopoverBackground(
-                style: reduceTransparency ? .systemMaterial : backgroundStyle,
+                style: reduceTransparency || playerLayout == .lyrics ? .systemMaterial : backgroundStyle,
                 artworkURL: model.track?.artworkURL
             )
         }
@@ -93,6 +93,8 @@ struct TrackPeekPopoverView: View {
     @ViewBuilder
     private func player(_ track: SpotifyTrack) -> some View {
         switch playerLayout {
+        case .lyrics:
+            LyricsPlayerView(model: model, track: track, lyricsStore: PlaybackCoordinator.shared.lyricsStore, options: options)
         case .compactHorizontal:
             CompactHorizontalPlayerView(model: model, track: track, options: options)
         case .standard:

@@ -8,6 +8,7 @@ import SwiftUI
 /// компактная полоска или карточка виджета; это разделение — то, что
 /// раньше было одним 960-строчным файлом.
 struct NotchPlayerView: View {
+    @AppStorage(NotchContentLayout.storageKey) private var contentLayoutRaw = NotchContentLayout.fallback.rawValue
     let model: SpotifySpikeModel
     let audioMonitor: SpotifyAudioMonitor
     let lyricsStore: LyricsStore
@@ -101,8 +102,10 @@ struct NotchPlayerView: View {
         isPillMode ? widgetEqualizerSensitivity : nil
     }
 
+    private var isFocusLayout: Bool { !isPillMode && contentLayoutRaw == NotchContentLayout.focus.rawValue }
+
     private var pulseMode: NotchPulseMode {
-        guard cardLayout != .edge, cardLayout != .lyricStrip else { return .off }
+        guard !isFocusLayout, cardLayout != .edge, cardLayout != .lyricStrip else { return .off }
         return NotchPulseMode(
             rawValue: isPillMode ? widgetPulseModeRawValue : pulseModeRawValue
         ) ?? .fallback
@@ -112,10 +115,10 @@ struct NotchPlayerView: View {
         OverlayAppearance(
             width: effectiveWidth,
             coloredProgress: cardLayout == .lyricStrip ? false : (isPillMode ? widgetColoredProgress : coloredProgress),
-            coloredWaveform: cardLayout == .lyricStrip ? false : (isPillMode ? widgetColoredWaveform : coloredWaveform),
+            coloredWaveform: isFocusLayout || cardLayout == .lyricStrip ? false : (isPillMode ? widgetColoredWaveform : coloredWaveform),
             colorSource: colorSource,
             pulseMode: pulseMode,
-            outlineShimmer: (cardLayout == .edge || cardLayout == .lyricStrip) ? false : (isPillMode ? widgetOutlineShimmer : outlineShimmer),
+            outlineShimmer: (isFocusLayout || cardLayout == .edge || cardLayout == .lyricStrip) ? false : (isPillMode ? widgetOutlineShimmer : outlineShimmer),
             outlineWidth: isPillMode ? widgetOutlineWidth : outlineWidth,
             equalizerSensitivityOverride: sensitivityOverride,
             lyricsEnabled: isPillMode ? $widgetLyricsEnabled : $lyricsEnabled
@@ -136,7 +139,7 @@ struct NotchPlayerView: View {
 
     /// Нужна ли загрузка текста: включён тумблер или выбрана лирическая раскладка.
     private var lyricsNeeded: Bool {
-        guard cardLayout != .edge else { return false }
+        guard !isFocusLayout, cardLayout != .edge else { return false }
         if cardLayout == .lyricStrip { return panelLayoutState.isVisible }
         return appearance.lyricsEnabled.wrappedValue
             || cardLayout == .lyricsCard
@@ -154,8 +157,8 @@ struct NotchPlayerView: View {
     }
 
     private var paletteRequest: PaletteRequest {
-        PaletteRequest(url: cardLayout == .lyricStrip ? nil : model.track?.artworkURL,
-                       source: cardLayout == .lyricStrip ? .systemAccent : colorSource)
+        PaletteRequest(url: isFocusLayout || cardLayout == .lyricStrip ? nil : model.track?.artworkURL,
+                       source: isFocusLayout || cardLayout == .lyricStrip ? .systemAccent : colorSource)
     }
 
     private var audioLevel: Double {
@@ -200,9 +203,9 @@ struct NotchPlayerView: View {
 
     var body: some View {
         GeometryReader { proxy in
-            let expandedHeight = NotchPreferences.expandedSize(
-                width: effectiveWidth,
-                heightAdjustment: isPillMode ? 0 : heightAdjustment
+            let expandedHeight = (isFocusLayout ? NotchContentLayout.focus : .standard).size(
+                for: .expanded, width: effectiveWidth,
+                heightAdjustment: isPillMode ? 0 : heightAdjustment, topInset: panelLayoutState.topInset
             ).height
             let revealProgress = NotchResponsiveLayout.revealProgress(
                 forHeight: proxy.size.height,
@@ -210,7 +213,12 @@ struct NotchPlayerView: View {
             )
 
             Group {
-                if let layout = cardLayout {
+                if isFocusLayout {
+                    NotchFocusView(model: model, state: panelState, size: proxy.size,
+                        topInset: panelLayoutState.topInset, cameraWidth: panelLayoutState.cameraWidth,
+                        isVisible: panelLayoutState.isVisible, clickEnabled: clickEnabled,
+                        onTogglePin: { interaction.togglePin() }, onCollapse: { interaction.collapse() })
+                } else if let layout = cardLayout {
                     WidgetSurfaceContent(
                         model: model,
                         audioMonitor: audioMonitor,
@@ -319,7 +327,7 @@ struct NotchPlayerView: View {
             lyricsStore.prepare(for: track)
         }
         .task(id: paletteRequest) {
-            guard cardLayout != .lyricStrip else { artworkPalette = .fallback; return }
+            guard !isFocusLayout, cardLayout != .lyricStrip else { artworkPalette = .fallback; return }
             switch colorSource {
             case .artwork:
                 artworkPalette = .fallback
