@@ -68,6 +68,16 @@ The current lyric stays visible on pause. Before the first line, without synchro
 
 The strip shares the lyrics cache with the other surfaces and schedules updates at lyric timestamps only while visible and playing. It does not request artwork palettes, audio analysis, pulse effects, or a shimmering outline. Other layouts retain their appearance settings.
 
+## Finding lyrics and adjusting timing
+
+TrackPeek first requests the exact lyrics record. If it is missing, one fallback search checks the title, artist and duration (within two seconds), allowing album differences and remaster suffixes. Live, Acoustic and Remix titles remain distinct. A matching album takes priority; competing lyric variants are rejected rather than selected by result order. Network failures stay retryable errors.
+
+After **“Lyrics not found”** or a download error, use the retry button or **right-click / … → Lyrics → Search again** (`Текст песни → Повторить поиск`). Surfaces without lyrics can start a lookup with **Find lyrics** (`Найти текст`) in that menu. Repeated clicks share the active lookup.
+
+For synchronized lyrics, the same menu offers **Earlier / Later by 0.5 s** and **Reset**. The adjustment applies to all lyrics surfaces, up to ten seconds in either direction. It stays in memory for the current recording only: changing the song or source clears it; seeking or repeating the same recording keeps it. Playback itself is not shifted and no adjustment history is saved.
+
+Timed empty LRC lines now clear the previous lyric during instrumental gaps. The strip shows track information, the compact players show a music note, and the reading panel shows a subdued instrumental-gap label.
+
 ## Keyboard shortcuts
 
 Open **Settings → Shortcuts (`Клавиши`)**, click an action's field, and press a combination containing **Command or Control**. Escape cancels recording; Delete clears the binding. The global switch releases the shortcuts while keeping your choices. Assignments survive relaunch and use physical key positions; labels follow the current keyboard layout.

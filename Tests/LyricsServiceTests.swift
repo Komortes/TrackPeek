@@ -29,7 +29,7 @@ struct LRCParserTests {
         #expect(lines.map(\.time) == [10, 40])
     }
 
-    @Test("skips metadata and empty lines")
+    @Test("keeps timed empty lines as instrumental gaps while skipping metadata")
     func skipsMetadata() {
         let lines = LRCParser.parse(
             """
@@ -40,7 +40,7 @@ struct LRCParserTests {
             """
         )
 
-        #expect(lines.map(\.text) == ["Текст"])
+        #expect(lines.map(\.text) == ["", "Текст"])
     }
 }
 
@@ -319,5 +319,106 @@ func invalidLyricsDuration() async {
         } catch {
             Issue.record("Unexpected error: \(error)")
         }
+    }
+}
+
+extension LyricsStoreLifecycleTests {
+    @Test("explicit retry refreshes a cached miss, coalesces clicks and preserves loaded lyrics")
+    func retriesMissingLyrics() async {
+        let provider = ControlledLyricsProvider()
+        let store = LyricsStore(provider: provider)
+        let track = SpotifyTrack(title: "Song", artist: "Artist", duration: 180, isPlaying: true)
+        store.prepare(for: track)
+        guard await provider.waitUntilRequested(count: 1) else { return }
+        await provider.complete(id: 0, lyrics: nil)
+        for _ in 0..<1000 { if store.state(for: track) == .unavailable { break }; await Task.yield() }
+        #expect(store.state(for: track) == .unavailable)
+        store.prepare(for: track)
+        #expect(await provider.requestCount == 1)
+        store.retry(for: track)
+        store.retry(for: track)
+        #expect(store.state(for: track) == .loading)
+        guard await provider.waitUntilRequested(count: 2) else { return }
+        #expect(store.isLoading(for: track))
+        let lyrics = TrackLyrics(syncedLines: [LyricsLine(time: 5, text: "Recovered")], plainText: nil)
+        await provider.complete(id: 1, lyrics: lyrics)
+        for _ in 0..<1000 { if store.state(for: track) == .loaded(lyrics) { break }; await Task.yield() }
+        store.retry(for: track)
+        #expect(store.state(for: track) == .loaded(lyrics))
+        #expect(!store.isLoading(for: track))
+        #expect(await provider.requestCount == 2)
+    }
+
+    @Test("timing is shared only for the current recording, resets on source or song change, and stays bounded")
+    func timingOffset() {
+        let store = LyricsStore()
+        let a = SpotifyTrack(title: "A", artist: "Artist", duration: 180.1, isPlaying: true, source: .spotify)
+        let b = SpotifyTrack(title: "B", artist: "Artist", duration: 200, isPlaying: true, source: .spotify)
+        store.currentTrackDidChange(a)
+        store.setOffset(1.5, for: a)
+        store.currentTrackDidChange(a.withPosition(10))
+        #expect(store.offset(for: a) == 1.5)
+        store.currentTrackDidChange(a.withPosition(0)) // Seek/repeat of the same recording.
+        #expect(store.offset(for: a) == 1.5)
+        #expect(store.offset(for: b) == 0)
+        store.currentTrackDidChange(b)
+        store.currentTrackDidChange(a)
+        #expect(store.offset(for: a) == 0)
+        store.setOffset(-1.5, for: a)
+        store.currentTrackDidChange(a.tagged(with: .appleMusic))
+        #expect(store.offset(for: a.tagged(with: .appleMusic)) == 0)
+        store.setOffset(100, for: a)
+        #expect(store.offset(for: a) == 10)
+        store.setOffset(-100, for: a)
+        #expect(store.offset(for: a) == -10)
+        store.setOffset(.nan, for: a)
+        #expect(store.offset(for: a) == -10)
+        store.currentTrackDidChange(nil)
+        #expect(store.offset(for: a) == 0)
+    }
+}
+
+extension LRCParserTests {
+    @Test("timed gaps end the previous line and blank-only files are not lyrics")
+    func instrumentalGaps() {
+        let lines = LRCParser.parse("[00:02]First\n[00:05]\n[00:12]Second\n[00:20]")
+        let lyrics = TrackLyrics(syncedLines: lines, plainText: nil)
+        #expect(lines.map(\.time) == [2, 5, 12, 20])
+        #expect(TrackLyrics.currentIndex(in: lines, position: 7).map { lines[$0].text } == "")
+        let gap = LyricStripPresentation.resolve(state: .loaded(lyrics), position: 7, title: "Song", artist: "Artist")
+        #expect(gap.status == "Проигрыш")
+        #expect(gap.text == "Song — Artist")
+        #expect(!TrackLyrics(syncedLines: LRCParser.parse("[00:00]\n[01:00]"), plainText: nil).hasContent)
+        let before = LyricStripPresentation.resolve(state: .loaded(lyrics), position: 1, title: "Song", artist: "Artist")
+        #expect(before.status == "Ждём первую строку")
+        let plainWithEmptyTiming = TrackLyrics(syncedLines: LRCParser.parse("[00:00]"), plainText: "Words")
+        #expect(!plainWithEmptyTiming.isSynced)
+        #expect(LyricStripPresentation.resolve(state: .loaded(plainWithEmptyTiming), position: 7,
+            title: "Song", artist: "Artist").status == "Нет синхронизированного текста")
+    }
+
+    @Test("equal timestamps preserve source order for clearing a line")
+    func sameTimeOrder() {
+        let lines = LRCParser.parse("[00:02]First\n[00:02]\n[00:03]Next")
+        #expect(TrackLyrics.currentIndex(in: lines, position: 2).map { lines[$0].text } == "")
+    }
+
+    @Test("explicit lyric schedule applies both earlier and later offsets and includes gaps")
+    func adjustedTimeline() {
+        let now = Date(timeIntervalSince1970: 1000)
+        let lines = LRCParser.parse("[00:02]First\n[00:05]\n[00:12]Second")
+        for offset in [-2.0, 0, 2] {
+            let dates = LyricStripTimeline.dates(lines: lines, position: 0, snapshotDate: now,
+                duration: 30, isPlaying: true, isVisible: true, isStale: false, now: now, offset: offset)
+            let expected = lines.map { $0.time - offset }.filter { $0 > 0 }
+            #expect(dates.count == expected.count + 1)
+            for (date, boundary) in zip(dates.dropFirst(), expected) {
+                #expect(abs(date.timeIntervalSince(now) - boundary - 0.001) < 0.00001)
+                let index = TrackLyrics.currentIndex(in: lines, position: date.timeIntervalSince(now) + offset)
+                #expect(index != nil)
+            }
+        }
+        #expect(LyricStripTimeline.dates(lines: lines, position: 0, snapshotDate: now,
+            duration: 30, isPlaying: false, isVisible: true, isStale: false, now: now, offset: 1).isEmpty)
     }
 }

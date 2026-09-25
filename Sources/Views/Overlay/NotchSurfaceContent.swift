@@ -293,7 +293,8 @@ struct NotchSurfaceContent: View {
                             tint: appearance.coloredProgress
                                 ? palette.primary.onDarkSurface.swiftUIColor
                                 : .white,
-                            onRetry: { lyricsStore.prepare(for: track) }
+                            lyricOffset: lyricsStore.offset(for: track),
+                            onRetry: { lyricsStore.retry(for: track) }
                         )
                     } else {
                         PlaybackProgressView(

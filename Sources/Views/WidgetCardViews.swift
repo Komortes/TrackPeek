@@ -57,7 +57,8 @@ struct WidgetVerticalCard: View {
                     isPlaying: track.isPlaying,
                     snapshotDate: context.model.snapshotDate,
                     tint: context.progressTint,
-                    onRetry: { context.lyricsStore.prepare(for: track) }
+                    lyricOffset: context.lyricsStore.offset(for: track),
+                    onRetry: { context.lyricsStore.retry(for: track) }
                 )
             } else {
                 WidgetProgressView(context: context, track: track)
@@ -107,7 +108,8 @@ struct WidgetLyricsCard: View {
                     isPlaying: track.isPlaying,
                     snapshotDate: context.model.snapshotDate,
                     tint: context.progressTint,
-                    onRetry: { context.lyricsStore.prepare(for: track) }
+                    lyricOffset: context.lyricsStore.offset(for: track),
+                    onRetry: { context.lyricsStore.retry(for: track) }
                 )
             }
 
@@ -263,12 +265,10 @@ struct WidgetKaraokeCard: View {
         switch context.lyricsStore.state(for: track) {
         case .loading:
             karaokePlaceholder("Ищем текст…")
-        case .unavailable:
-            karaokePlaceholder("Текст не найден")
-        case .failed:
+        case .unavailable, .failed:
             VStack(spacing: 6) {
-                karaokePlaceholder("Не удалось загрузить текст")
-                Button("Повторить") { context.lyricsStore.prepare(for: track) }
+                karaokePlaceholder(context.lyricsStore.state(for: track) == .unavailable ? "Текст не найден" : "Не удалось загрузить текст")
+                Button("Повторить поиск") { context.lyricsStore.retry(for: track) }
                     .buttonStyle(.plain)
                     .font(.system(size: 11, weight: .medium))
             }
@@ -304,7 +304,7 @@ struct WidgetKaraokeCard: View {
                 duration: track.duration,
                 isPlaying: track.isPlaying
             )
-            let index = TrackLyrics.currentIndex(in: lines, position: livePosition) ?? -1
+            let index = TrackLyrics.currentIndex(in: lines, position: livePosition + context.lyricsStore.offset(for: track)) ?? -1
 
             VStack(alignment: .leading, spacing: 5) {
                 karaokeLine(lines, at: index - 1, style: .past)
@@ -339,7 +339,7 @@ struct WidgetKaraokeCard: View {
                 .foregroundStyle(.tertiary)
                 .lineLimit(1)
         case .current:
-            Text(text == " " && index < 0 ? "…" : text)
+            Text(text.isEmpty ? "♪" : (text == " " && index < 0 ? "…" : text))
                 .font(.system(size: 15, weight: .bold, design: .rounded))
                 .foregroundStyle(context.progressTint)
                 .lineLimit(2)

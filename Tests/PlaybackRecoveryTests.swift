@@ -5,6 +5,23 @@ import Testing
 @MainActor
 @Suite("Playback lifecycle recovery")
 struct PlaybackRecoveryTests {
+    @Test("coordinator clears timing adjustments on track changes even without visible lyrics")
+    func lyricsTimingLifecycle() async throws {
+        let fixture = RecoveryFixture()
+        defer { fixture.stop() }
+        fixture.coordinator.start()
+        try await waitUntil { await fixture.provider.hasPendingFetch(1) }
+        let a = recoveryTrack("A")
+        await fixture.provider.finishFetch(1, with: .success(a))
+        try await waitUntil { fixture.coordinator.nextRefreshDate != nil }
+        fixture.coordinator.lyricsStore.setOffset(2, for: a)
+        fixture.coordinator.requestRefresh()
+        try await waitUntil { await fixture.provider.hasPendingFetch(2) }
+        await fixture.provider.finishFetch(2, with: .success(recoveryTrack("B")))
+        try await waitUntil { fixture.model.track?.title == "B" && !fixture.model.isRefreshing }
+        #expect(fixture.coordinator.lyricsStore.offset(for: a) == 0)
+    }
+
     @Test("saving mode reschedules polls, preserves appearance and lets manual refresh through")
     func resourceSaving() async throws {
         let fixture = RecoveryFixture()

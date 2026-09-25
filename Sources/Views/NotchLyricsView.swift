@@ -9,6 +9,7 @@ struct NotchLyricsView: View {
     let isPlaying: Bool
     let snapshotDate: Date
     var tint: Color = .white
+    var lyricOffset: TimeInterval = 0
     var onRetry: (() -> Void)? = nil
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -18,16 +19,14 @@ struct NotchLyricsView: View {
             switch state {
             case .loading:
                 placeholder("Ищем текст…", systemImage: "ellipsis")
-            case .unavailable:
-                placeholder("Текст не найден", systemImage: "quote.bubble")
-            case .failed:
+            case .unavailable, .failed:
                 HStack(spacing: 8) {
-                    placeholder("Не удалось загрузить текст", systemImage: "wifi.exclamationmark")
+                    placeholder(state == .unavailable ? "Текст не найден" : "Не удалось загрузить текст", systemImage: "quote.bubble")
                     if let onRetry {
                         Button(action: onRetry) { Image(systemName: "arrow.clockwise") }
                             .buttonStyle(.plain)
-                            .help("Повторить загрузку текста")
-                            .accessibilityLabel("Повторить загрузку текста")
+                            .help("Повторить поиск текста")
+                            .accessibilityLabel("Повторить поиск текста")
                     }
                 }
             case .loaded(let lyrics):
@@ -64,13 +63,13 @@ struct NotchLyricsView: View {
                 duration: duration,
                 isPlaying: isPlaying
             )
-            let index = TrackLyrics.currentIndex(in: lines, position: livePosition)
+            let index = TrackLyrics.currentIndex(in: lines, position: livePosition + lyricOffset)
             let current = index.map { lines[$0].text }
             let next = index.flatMap { $0 + 1 < lines.count ? lines[$0 + 1].text : nil }
                 ?? (index == nil ? lines.first?.text : nil)
 
             VStack(alignment: .leading, spacing: 3) {
-                Text(current ?? "…")
+                Text(current?.isEmpty == true ? "♪" : (current ?? "…"))
                     .font(.system(size: 11.5, weight: .semibold, design: .rounded))
                     .foregroundStyle(current == nil ? AnyShapeStyle(.secondary) : AnyShapeStyle(tint))
                     .lineLimit(1)

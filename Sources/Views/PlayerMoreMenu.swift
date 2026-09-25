@@ -68,6 +68,11 @@ struct PlayerActionsMenuItems: View {
             }
             .disabled(track == nil)
 
+            if let track {
+                LyricsActionsMenu(track: track, store: PlaybackCoordinator.shared.lyricsStore)
+                    .disabled(PlaybackCoordinator.shared.model.isStale)
+            }
+
             Button("Обновить", systemImage: "arrow.clockwise", action: onRefresh)
 
             Divider()

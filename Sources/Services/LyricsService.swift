@@ -9,7 +9,7 @@ struct TrackLyrics: Equatable, Sendable {
     let syncedLines: [LyricsLine]
     let plainText: String?
 
-    var isSynced: Bool { !syncedLines.isEmpty }
+    var isSynced: Bool { syncedLines.contains { !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty } }
 
     var hasContent: Bool {
         isSynced || !(plainText?.isEmpty ?? true)
@@ -38,7 +38,6 @@ enum LRCParser {
 
             let text = String(rawLine[last.range.upperBound...])
                 .trimmingCharacters(in: .whitespaces)
-            guard !text.isEmpty else { continue }
 
             for match in matches {
                 guard
@@ -57,7 +56,11 @@ enum LRCParser {
             }
         }
 
-        return lines.sorted { $0.time < $1.time }
+        // Keep source order for equal timestamps; currentIndex then resolves the
+        // last event at that boundary consistently.
+        return lines.enumerated().sorted {
+            $0.element.time == $1.element.time ? $0.offset < $1.offset : $0.element.time < $1.element.time
+        }.map(\.element)
     }
 }
 
@@ -89,11 +92,14 @@ protocol LyricsProviding: Sendable {
 /// Клиент LRCLIB (lrclib.net) — открытый каталог синхронизированных текстов,
 /// без ключей и авторизации.
 struct LRCLibLyricsClient: LyricsProviding {
-    var session: URLSession = .shared
+    private let load: @Sendable (URLRequest) async throws -> (Data, URLResponse)
 
-    private struct Response: Decodable {
-        let syncedLyrics: String?
-        let plainLyrics: String?
+    init(session: URLSession = .shared) {
+        load = { try await session.data(for: $0) }
+    }
+
+    init(load: @escaping @Sendable (URLRequest) async throws -> (Data, URLResponse)) {
+        self.load = load
     }
 
     func fetchLyrics(for request: LyricsRequest) async throws -> TrackLyrics? {
@@ -101,7 +107,6 @@ struct LRCLibLyricsClient: LyricsProviding {
               let duration = Int(exactly: request.duration.rounded()) else {
             throw URLError(.badURL)
         }
-        var components = URLComponents(string: "https://lrclib.net/api/get")!
         var query = [
             URLQueryItem(name: "track_name", value: request.title),
             URLQueryItem(name: "artist_name", value: request.artist),
@@ -110,35 +115,38 @@ struct LRCLibLyricsClient: LyricsProviding {
         if let album = request.album, !album.isEmpty {
             query.append(URLQueryItem(name: "album_name", value: album))
         }
+        if let data = try await response(path: "get", query: query, allowsNotFound: true) {
+            let record = try JSONDecoder().decode(LRCLibRecord.self, from: data)
+            if let lyrics = record.lyrics { return lyrics }
+            if record.instrumental == true { return nil }
+        }
+        // One conservative fallback, without the album restriction. Network,
+        // server and decoding failures never turn into a cached "not found".
+        guard duration > 0 else { return nil }
+        let title = LyricsMatch.searchTitle(request.title)
+        guard !title.isEmpty, !request.artist.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+        let data = try await response(path: "search", query: [
+            URLQueryItem(name: "track_name", value: title),
+            URLQueryItem(name: "artist_name", value: request.artist),
+        ], allowsNotFound: false)
+        let records = try JSONDecoder().decode([LRCLibRecord].self, from: data ?? Data())
+        return LyricsMatch.select(from: records, for: request)
+    }
+
+    private func response(path: String, query: [URLQueryItem], allowsNotFound: Bool) async throws -> Data? {
+        try Task.checkCancellation()
+        var components = URLComponents(string: "https://lrclib.net/api/\(path)")!
         components.queryItems = query
-
-        var urlRequest = URLRequest(url: components.url!)
-        urlRequest.timeoutInterval = 12
-        urlRequest.setValue(
-            "TrackPeek (https://github.com/Komortes/TrackPeek)",
-            forHTTPHeaderField: "User-Agent"
-        )
-
-        let (data, response) = try await session.data(for: urlRequest)
-        guard let http = response as? HTTPURLResponse else {
+        var request = URLRequest(url: components.url!, cachePolicy: .reloadIgnoringLocalCacheData)
+        request.timeoutInterval = 12
+        request.setValue("TrackPeek (https://github.com/Komortes/TrackPeek)", forHTTPHeaderField: "User-Agent")
+        let (data, response) = try await load(request)
+        try Task.checkCancellation()
+        guard let http = response as? HTTPURLResponse else { throw URLError(.badServerResponse) }
+        if allowsNotFound, http.statusCode == 404 { return nil }
+        guard (200..<300).contains(http.statusCode), data.count <= 4_000_000 else {
             throw URLError(.badServerResponse)
         }
-
-        if http.statusCode == 404 {
-            return nil
-        }
-        guard (200..<300).contains(http.statusCode) else {
-            throw URLError(.badServerResponse)
-        }
-
-        let payload = try JSONDecoder().decode(Response.self, from: data)
-        let lines = payload.syncedLyrics.map(LRCParser.parse) ?? []
-        let plain = payload.plainLyrics?.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        let lyrics = TrackLyrics(
-            syncedLines: lines,
-            plainText: (plain?.isEmpty ?? true) ? nil : plain
-        )
-        return lyrics.hasContent ? lyrics : nil
+        return data
     }
 }

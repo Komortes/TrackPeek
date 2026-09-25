@@ -12,10 +12,10 @@ struct WidgetLyricStrip: View {
     var body: some View {
         let state = context.lyricsStore.state(for: track)
         let now = Date()
-        let lines: [LyricsLine] = if case .loaded(let lyrics) = state { lyrics.syncedLines } else { [] }
+        let lines: [LyricsLine] = if case .loaded(let lyrics) = state, lyrics.isSynced { lyrics.syncedLines } else { [] }
         let dates = LyricStripTimeline.dates(lines: lines, position: track.position,
             snapshotDate: context.model.snapshotDate, duration: track.duration,
-            isPlaying: track.isPlaying, isVisible: isVisible, isStale: context.model.isStale, now: now)
+            isPlaying: track.isPlaying, isVisible: isVisible, isStale: context.model.isStale, now: now, offset: context.lyricsStore.offset(for: track))
         Group {
             if dates.isEmpty {
                 content(state: state, at: now)
@@ -44,12 +44,12 @@ struct WidgetLyricStrip: View {
             snapshotDate: context.model.snapshotDate, now: date, duration: track.duration,
             isPlaying: track.isPlaying && !context.model.isStale)
         return LyricStripContent(
-            presentation: LyricStripPresentation.resolve(state: state, position: position, title: track.title, artist: track.artist),
+            presentation: LyricStripPresentation.resolve(state: state, position: position + context.lyricsStore.offset(for: track), title: track.title, artist: track.artist),
             isPlaying: track.isPlaying, showsControls: isHovering || isFocused || controlActiveState == .key || voiceOverEnabled,
             onPrevious: { Task { await context.model.previousTrack() } },
             onPlayPause: { Task { await context.model.togglePlayback() } },
             onNext: { Task { await context.model.nextTrack() } },
-            onRetry: { context.lyricsStore.prepare(for: track) }
+            onRetry: { context.lyricsStore.retry(for: track) }
         )
     }
 }
@@ -115,7 +115,7 @@ struct LyricStripContent: View {
     private var retryButton: some View {
         Button(action: onRetry) { Image(systemName: "arrow.clockwise").frame(width: 24, height: 28) }
             .buttonStyle(.plain).foregroundStyle(.white.opacity(0.8))
-            .help("Повторить загрузку текста").accessibilityLabel("Повторить загрузку текста")
+            .help("Повторить поиск текста").accessibilityLabel("Повторить поиск текста")
     }
 }
 

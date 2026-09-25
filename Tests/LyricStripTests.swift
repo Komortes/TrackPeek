@@ -51,7 +51,7 @@ struct LyricStripTests {
         for state: LyricsStore.State in [.loading, .unavailable, .failed, .loaded(.init(syncedLines: [], plainText: "A full unsynced text"))] {
             let content = LyricStripPresentation.resolve(state: state, position: 10, title: "New track", artist: "New artist")
             #expect(content.text == "New track — New artist")
-            #expect(content.canRetry == (state == .failed))
+            #expect(content.canRetry == (state == .failed || state == .unavailable))
         }
         let synced = LyricsStore.State.loaded(.init(syncedLines: lines, plainText: nil))
         #expect(LyricStripPresentation.resolve(state: synced, position: 1, title: "Intro", artist: "Artist").text == "Intro — Artist")

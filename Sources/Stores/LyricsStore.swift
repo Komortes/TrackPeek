@@ -17,6 +17,45 @@ final class LyricsStore {
     @ObservationIgnored private var task: Task<Void, Never>?
     private var activeRequest: LyricsRequest?
     private let maximumCacheEntries = 48
+    private var timingRequest: LyricsRequest?
+    private var timingSource: PlaybackSource?
+    private var timingOffset: TimeInterval = 0
+
+    func currentTrackDidChange(_ track: SpotifyTrack?) {
+        let request = track.map(LyricsRequest.init(track:))
+        guard request != timingRequest || track?.source != timingSource else { return }
+        timingRequest = request
+        timingSource = track?.source
+        timingOffset = 0
+    }
+
+    func offset(for track: SpotifyTrack) -> TimeInterval {
+        timingRequest == LyricsRequest(track: track) && timingSource == track.source ? timingOffset : 0
+    }
+
+    /// Positive means show words earlier. One current-track value in memory;
+    /// never a per-song history or a persisted preference.
+    func setOffset(_ value: TimeInterval, for track: SpotifyTrack) {
+        guard value.isFinite else { return }
+        currentTrackDidChange(track)
+        timingOffset = min(max(value, -10), 10)
+    }
+
+    func isLoading(for track: SpotifyTrack) -> Bool {
+        activeRequest == LyricsRequest(track: track)
+    }
+
+    func retry(for track: SpotifyTrack) {
+        let request = LyricsRequest(track: track)
+        guard activeRequest != request else { return }
+        switch cache[request] {
+        case .unavailable, .failed, nil:
+            cache.removeValue(forKey: request)
+            cacheOrder.removeAll { $0 == request }
+            prepare(for: track)
+        default: break
+        }
+    }
 
     deinit { task?.cancel() }
 

@@ -63,6 +63,7 @@ final class PlaybackCoordinator: NSObject {
 
     func stop() {
         isStarted = false
+        lyricsStore.currentTrackDidChange(nil)
         cancelSchedule()
         model.invalidate()
         audioMonitor.stop()
@@ -97,6 +98,7 @@ final class PlaybackCoordinator: NSObject {
         sourcePreference = preference
         cancelSchedule()
         model.invalidate(clearTrack: true)
+        lyricsStore.currentTrackDidChange(nil)
         audioMonitor.stop()
         requestRefresh()
     }
@@ -118,6 +120,7 @@ final class PlaybackCoordinator: NSObject {
 
     private func refreshCompleted() {
         guard isStarted, !isSleeping else { return }
+        lyricsStore.currentTrackDidChange(model.track)
         if model.availability == .ready, model.track?.isPlaying == true {
             audioMonitor.setActiveSource(model.activeSource)
             audioMonitor.start()
@@ -178,6 +181,7 @@ final class PlaybackCoordinator: NSObject {
                 self.cancelSchedule()
                 self.model.invalidate(clearTrack: name == NSWorkspace.didTerminateApplicationNotification
                     && bundle == self.model.activeSource?.bundleIdentifier)
+                self.lyricsStore.currentTrackDidChange(self.model.track)
                 self.audioMonitor.stop()
                 self.requestRefresh()
             }

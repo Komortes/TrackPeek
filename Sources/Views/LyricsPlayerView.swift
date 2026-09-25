@@ -57,19 +57,17 @@ struct LyricsPlayerView: View {
         switch lyricsStore.state(for: track) {
         case .loading:
             placeholder("Ищем текст…", symbol: "text.quote")
-        case .unavailable:
-            placeholder("Текст не найден", symbol: "quote.bubble")
-        case .failed:
+        case .unavailable, .failed:
             VStack(spacing: 12) {
-                placeholder("Не удалось загрузить текст", symbol: "wifi.exclamationmark")
-                Button("Повторить") { lyricsStore.prepare(for: track) }.buttonStyle(.bordered)
+                placeholder(lyricsStore.state(for: track) == .unavailable ? "Текст не найден" : "Не удалось загрузить текст", symbol: "quote.bubble")
+                Button("Повторить поиск") { lyricsStore.retry(for: track) }.buttonStyle(.bordered)
             }
         case .loaded(let lyrics):
             if lyrics.isSynced {
                 let now = Date()
                 let dates = LyricStripTimeline.dates(lines: lyrics.syncedLines, position: track.position,
                     snapshotDate: model.snapshotDate, duration: track.duration, isPlaying: track.isPlaying,
-                    isVisible: isVisible, isStale: model.isStale, now: now)
+                    isVisible: isVisible, isStale: model.isStale, now: now, offset: lyricsStore.offset(for: track))
                 if dates.isEmpty {
                     synced(lyrics.syncedLines, at: now)
                 } else {
@@ -91,7 +89,7 @@ struct LyricsPlayerView: View {
         let position = PlaybackPositionResolver.livePosition(snapshotPosition: track.position,
             snapshotDate: model.snapshotDate, now: date, duration: track.duration,
             isPlaying: track.isPlaying && !model.isStale)
-        return LyricsReadingLines(entries: LyricsReadingWindow.entries(in: lines, position: position))
+        return LyricsReadingLines(entries: LyricsReadingWindow.entries(in: lines, position: position + lyricsStore.offset(for: track)))
     }
 
     private func placeholder(_ title: String, symbol: String) -> some View {
@@ -107,13 +105,13 @@ struct LyricsReadingLines: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             ForEach(entries) { entry in
-                Text(entry.text)
-                    .font(.system(size: entry.isCurrent ? 20 : 14, weight: entry.isCurrent ? .semibold : .regular))
-                    .foregroundStyle(entry.isCurrent ? Color.primary : Color.secondary)
+                Text(entry.text.isEmpty ? "Проигрыш" : entry.text)
+                    .font(.system(size: entry.isCurrent && !entry.text.isEmpty ? 20 : 14, weight: entry.isCurrent && !entry.text.isEmpty ? .semibold : .regular))
+                    .foregroundStyle(entry.isCurrent && !entry.text.isEmpty ? Color.primary : Color.secondary)
                     .lineLimit(2)
                     .frame(maxWidth: .infinity, minHeight: 46, maxHeight: 46, alignment: .leading)
-                    .help(entry.text)
-                    .accessibilityLabel(entry.isCurrent ? "Сейчас: \(entry.text)" : entry.text)
+                    .help(entry.text.isEmpty ? "Проигрыш" : entry.text)
+                    .accessibilityLabel(entry.text.isEmpty ? "Проигрыш" : (entry.isCurrent ? "Сейчас: \(entry.text)" : entry.text))
                     .transition(.opacity)
             }
         }
