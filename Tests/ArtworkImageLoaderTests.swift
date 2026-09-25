@@ -1,4 +1,5 @@
 import AppKit
+import SwiftUI
 import Testing
 @testable import TrackPeek
 
@@ -231,5 +232,111 @@ private actor RecoveringImageBytes {
     func load() -> Data {
         calls += 1
         return calls == 1 ? Data("invalid image".utf8) : data
+    }
+}
+
+@MainActor
+@Suite("Artwork presentation")
+struct ArtworkPresentationTests {
+    private let small = ArtworkImageLoader.Key(url: URL(string: "https://example.com/a")!, pixelSize: 64)
+    private let large = ArtworkImageLoader.Key(url: URL(string: "https://example.com/a")!, pixelSize: 512)
+    private let other = ArtworkImageLoader.Key(url: URL(string: "https://example.com/b")!, pixelSize: 64)
+
+    private func image() throws -> CGImage {
+        try #require(ArtworkImageLoader.thumbnail(from: ArtworkLoadingTests.imageData(), pixels: 64))
+    }
+
+    @Test("resizing keeps the same cover before and during the new request")
+    func resizing() throws {
+        var state = ArtworkImagePresentation()
+        let original = try image()
+        let first = state.begin(small)
+        state.complete(first, image: original)
+        #expect(state.image(for: large) === original)
+        let resized = state.begin(large)
+        #expect(state.image(for: large) === original)
+        let replacement = try image()
+        state.complete(resized, image: replacement)
+        #expect(state.image(for: large) === replacement)
+    }
+
+    @Test("new track cannot display the previous cover even before its task begins")
+    func changedTrack() throws {
+        var state = ArtworkImagePresentation()
+        let first = state.begin(small)
+        state.complete(first, image: try image())
+        #expect(state.image(for: other) == nil)
+        _ = state.begin(other)
+        #expect(state.image(for: other) == nil)
+        #expect(state.image(for: small) == nil)
+    }
+
+    @Test("late success and failure cannot replace newer requests including A B A")
+    func lateResults() throws {
+        var state = ArtworkImagePresentation()
+        let oldA = state.begin(small)
+        let oldB = state.begin(other)
+        let newA = state.begin(small)
+        let current = try image()
+        state.complete(newA, image: current)
+        state.complete(oldB, image: try image())
+        state.complete(oldA, image: nil)
+        #expect(state.image(for: small) === current)
+        #expect(!state.failed(for: small))
+    }
+
+    @Test("failed resize keeps usable pixels and failed new artwork reaches a terminal state")
+    func failedLoad() throws {
+        var state = ArtworkImagePresentation()
+        let first = state.begin(small)
+        state.complete(first, image: try image())
+        let resized = state.begin(large)
+        state.complete(resized, image: nil)
+        #expect(state.image(for: large) != nil)
+        let changed = state.begin(other)
+        state.complete(changed, image: nil)
+        #expect(state.image(for: other) == nil)
+        #expect(state.failed(for: other))
+        #expect(!state.failed(for: small))
+    }
+
+    @Test("missing artwork releases the previous image and rejects a late reply")
+    func missingArtwork() throws {
+        var state = ArtworkImagePresentation()
+        let first = state.begin(small)
+        state.complete(first, image: try image())
+        let pending = state.begin(large)
+        _ = state.begin(nil)
+        state.complete(pending, image: try image())
+        #expect(state.image(for: nil) == nil)
+        #expect(state.image(for: small) == nil)
+        #expect(!state.failed(for: nil))
+    }
+}
+
+@MainActor
+@Suite("Artwork placeholder layout")
+struct ArtworkPlaceholderLayoutTests {
+    @Test("renders quiet missing artwork at small and large sizes without changing geometry")
+    func placeholderSizes() throws {
+        let content = HStack(alignment: .center, spacing: 20) {
+            ForEach([16, 24, 32, 64, 100], id: \.self) { size in
+                VStack(spacing: 10) {
+                    TrackArtworkView(url: nil, size: CGFloat(size), cornerRadius: 4, showsShadow: false)
+                    Text("\(size) pt").font(.system(size: 10))
+                }
+            }
+        }
+        .padding(20)
+        .environment(\.colorScheme, .dark)
+        .environment(\.resourceSaving, true)
+        .background(Color.black)
+        let renderer = ImageRenderer(content: content)
+        renderer.scale = 2
+        let image = try #require(renderer.cgImage)
+        #expect(image.width > 600)
+        let bitmap = NSBitmapImageRep(cgImage: image)
+        let png = try #require(bitmap.representation(using: .png, properties: [:]))
+        try png.write(to: FileManager.default.temporaryDirectory.appendingPathComponent("trackpeek-artwork-placeholders.png"))
     }
 }

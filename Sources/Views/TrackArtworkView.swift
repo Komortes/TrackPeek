@@ -28,11 +28,12 @@ struct TrackArtworkView: View {
                     .scaledToFill()
                     .transition(.opacity)
             case .empty:
-                placeholder(showsProgress: url != nil)
+                ArtworkPlaceholderView(size: size, isLoading: url != nil)
+                    .id(url)
             case .failure:
-                placeholder(showsProgress: false)
+                ArtworkPlaceholderView(size: size, isLoading: false)
             @unknown default:
-                placeholder(showsProgress: false)
+                ArtworkPlaceholderView(size: size, isLoading: false)
             }
         }
         .frame(width: size, height: size)
@@ -49,19 +50,39 @@ struct TrackArtworkView: View {
         .accessibilityHidden(true)
     }
 
-    private func placeholder(showsProgress: Bool) -> some View {
+}
+
+/// A brief cache hit should not flash a spinner. Small and quiet surfaces use
+/// a static symbol; the single delay task is cancelled when loading ends.
+private struct ArtworkPlaceholderView: View {
+    let size: CGFloat
+    let isLoading: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.resourceSaving) private var resourceSaving
+    @State private var showsProgress = false
+
+    private var canAnimate: Bool { isLoading && size >= 32 && !reduceMotion && !resourceSaving }
+
+    var body: some View {
         ZStack {
             Color(nsColor: .controlBackgroundColor)
-
-            if showsProgress {
+            Image(systemName: "music.note")
+                .font(.system(size: min(max(size * 0.28, 8), 30), weight: .semibold))
+                .foregroundStyle(.secondary)
+                .opacity(showsProgress && canAnimate ? 0 : 1)
+            if showsProgress && canAnimate {
                 ProgressView()
                     .controlSize(.small)
                     .tint(.secondary)
-            } else {
-                Image(systemName: "music.note")
-                    .font(.system(size: 30, weight: .semibold))
-                    .foregroundStyle(.secondary)
             }
+        }
+        .task(id: canAnimate) {
+            showsProgress = false
+            guard canAnimate else { return }
+            do { try await Task.sleep(for: .milliseconds(200)) }
+            catch { return }
+            guard !Task.isCancelled else { return }
+            showsProgress = true
         }
     }
 }

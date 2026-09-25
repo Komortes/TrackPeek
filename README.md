@@ -86,6 +86,8 @@ Choose **Settings → General → Resources** (`Основные → Ресур�
 
 Appearance settings are preserved and restored when economy ends, subject to Reduce Motion and existing visibility rules. Synchronized lyrics retain their timing; this mode does not disable lyrics loading or change the bounded artwork/lyrics caches. The Resources section shows whether economy is currently active; Diagnostics explains when audio analysis is stopped for economy.
 
+Artwork keeps its current image while a different resolution of the same cover loads. A new track clears the previous cover immediately. Loading indicators appear only after a short delay and stay static in small artwork slots, Reduce Motion, and Economical mode; missing or failed artwork uses a sized music-note placeholder.
+
 ## Privacy and network use
 
 Playback state and commands use local **AppleScript / Apple Events**. TrackPeek does not require a separate Spotify or Apple Music web login.
