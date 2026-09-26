@@ -70,5 +70,6 @@ struct TrackPeekApp: App {
         Settings {
             SettingsView()
         }
+        .windowToolbarStyle(.unifiedCompact)
     }
 }

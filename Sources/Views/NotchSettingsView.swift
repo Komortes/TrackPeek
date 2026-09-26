@@ -2,6 +2,13 @@ import Foundation
 import SwiftUI
 
 struct NotchSettingsView: View {
+    private enum Page: String, CaseIterable {
+        case appearance = "Вид"
+        case behavior = "Поведение"
+    }
+
+    @State private var selectedPage = Page.appearance
+
     @AppStorage(NotchContentLayout.storageKey) private var contentLayoutRaw = NotchContentLayout.fallback.rawValue
     @AppStorage(OverlayMode.storageKey)
     private var selectedModeRawValue = OverlayMode.fallback.rawValue
@@ -124,39 +131,57 @@ struct NotchSettingsView: View {
     }
 
     var body: some View {
-        SettingsPage(
-            title: "Чёлка",
-            subtitle: "Компактный плеер у верхнего края экрана, который раскрывается по вашему сценарию."
-        ) {
-            activationCard
-            SettingsSection(title: "Раскладка чёлки", subtitle: "Влияет только на чёлку; виджет сохраняет свой шаблон.") {
-                SettingsGroup {
-                    SettingsRow(title: "Содержимое", subtitle: (NotchContentLayout(rawValue: contentLayoutRaw) ?? .fallback).summary) {
-                        Picker("Раскладка чёлки", selection: $contentLayoutRaw) {
-                            ForEach(NotchContentLayout.allCases) { Text($0.title).tag($0.rawValue) }
-                        }.labelsHidden().frame(width: 190)
-                    }
+        SettingsPage(title: "Чёлка") {
+            activationStatus
+
+            Picker("Настройки чёлки", selection: $selectedPage) {
+                ForEach(Page.allCases, id: \.self) { page in
+                    Text(page.rawValue).tag(page)
                 }
             }
-            generalSection
-            interactionSection
-            notificationSection
-            if contentLayoutRaw == NotchContentLayout.focus.rawValue {
-                SettingsGroup {
-                    SettingsRow(title: "Ширина", subtitle: "Ширина закрытой панели; раскрытая оставляет место для управления.") {
-                        SettingsValueSlider(value: notchWidth, range: NotchPreferences.widthRange,
-                            step: NotchPreferences.widthStep, text: "\(Int(NotchPreferences.clampedWidth(width))) pt")
-                    }
-                    SettingsRowDivider()
-                    SettingsRow(title: "Коррекция высоты", subtitle: "Подстройка под верхний край экрана.") {
-                        SettingsValueSlider(value: notchHeightAdjustment, range: NotchPreferences.heightAdjustmentRange,
-                            step: NotchPreferences.heightAdjustmentStep, text: "\(Int(NotchPreferences.clampedHeightAdjustment(heightAdjustment))) pt")
-                    }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .frame(width: 320)
+
+            switch selectedPage {
+            case .appearance:
+                layoutSection
+                sizeSection
+                if !isFocusLayout {
+                    contentSection
+                    equalizerSection
+                    effectsSection
                 }
-                Text("«Фокус» использует спокойный фон без обложки, эквалайзера, текстов и эффектов. Настройки полного плеера сохранены.")
-                    .font(.caption).foregroundStyle(.secondary)
-            } else {
-                appearanceSection
+            case .behavior:
+                displaySection
+                interactionSection
+                notificationSection
+            }
+        }
+    }
+
+    private var isFocusLayout: Bool {
+        contentLayoutRaw == NotchContentLayout.focus.rawValue
+    }
+
+    private var layoutSection: some View {
+        SettingsSection(title: "Содержимое") {
+            SettingsGroup {
+                SettingsRow(title: "Раскладка", subtitle: (NotchContentLayout(rawValue: contentLayoutRaw) ?? .fallback).summary) {
+                    Picker("Раскладка чёлки", selection: $contentLayoutRaw) {
+                        ForEach(NotchContentLayout.allCases) { layout in
+                            Text(layout.title).tag(layout.rawValue)
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(width: 190)
+                }
+            }
+
+            if isFocusLayout {
+                Text("«Фокус» скрывает обложку, эквалайзер, тексты и эффекты. Настройки полного плеера сохранены.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
     }
@@ -167,85 +192,50 @@ struct NotchSettingsView: View {
 
     private var activationTitle: String {
         switch selectedMode {
-        case .notch: "Режим чёлки активен"
-        case .floatingWidget: "Режим виджета активен"
+        case .notch: "Чёлка включена"
+        case .floatingWidget: "Сейчас включён виджет"
         case .off: "Экранный плеер выключен"
         }
     }
 
-    private var activationCard: some View {
-        HStack(spacing: 12) {
-            Image(systemName: isPanelModeActive ? "checkmark.circle.fill" : "macbook")
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(isPanelModeActive ? Color.green : Color.accentColor)
-
-            VStack(alignment: .leading, spacing: 2) {
+    private var activationStatus: some View {
+        HStack(spacing: 8) {
+            Label {
                 Text(activationTitle)
-                    .font(.headline)
-
-                Text(
-                    isPanelModeActive
-                        ? "Панель уже использует настройки ниже."
-                        : "Настройки сохранятся; включить панель можно одной кнопкой."
-                )
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                    .foregroundStyle(.secondary)
+            } icon: {
+                Image(systemName: isPanelModeActive ? "checkmark.circle.fill" : "macbook")
+                    .foregroundStyle(isPanelModeActive ? Color.green : Color.secondary)
             }
+            .font(.callout)
 
             Spacer()
 
             if !isPanelModeActive {
-                Button("Использовать чёлку") {
+                Button("Включить чёлку") {
                     selectedModeRawValue = OverlayMode.notch.rawValue
                 }
-                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
             }
-        }
-        .padding(14)
-        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 13, style: .continuous)
-                .stroke(.primary.opacity(0.08), lineWidth: 1)
         }
     }
 
-    private var generalSection: some View {
-        SettingsSection(
-            title: "Основные",
-            subtitle: "Включение, экран и системная обратная связь.",
-            symbolName: "gearshape"
-        ) {
+    private var displaySection: some View {
+        SettingsSection(title: "Размещение") {
             SettingsGroup {
-                SettingsRow(
-                    title: "Показывать на",
-                    subtitle: "Можно выбрать основной, встроенный или все экраны."
-                ) {
+                SettingsRow(title: "Экран") {
                     DisplayTargetPicker(selection: $displayTargetRawValue)
-                }
-
-                SettingsRowDivider()
-
-                SettingsRow(
-                    title: "Тактильный отклик",
-                    subtitle: "Лёгкий системный отклик при раскрытии панели."
-                ) {
-                    Toggle("Тактильный отклик", isOn: $hapticFeedback)
-                        .labelsHidden()
                 }
             }
         }
     }
 
     private var interactionSection: some View {
-        SettingsSection(
-            title: "Раскрытие",
-            subtitle: "Настройте, как компактная панель превращается в плеер.",
-            symbolName: "hand.tap"
-        ) {
+        SettingsSection(title: "Раскрытие") {
             SettingsGroup {
                 SettingsRow(
                     title: "По наведению",
-                    subtitle: "Раскрывать плеер, когда указатель задержался на панели."
+                    subtitle: "Открывать плеер под указателем."
                 ) {
                     Toggle("По наведению", isOn: $hoverEnabled)
                         .labelsHidden()
@@ -256,7 +246,7 @@ struct NotchSettingsView: View {
 
                     SettingsRow(
                         title: "Задержка наведения",
-                        subtitle: "Небольшая пауза защищает от случайных раскрытий."
+                        subtitle: "Пауза перед раскрытием."
                     ) {
                         SettingsValueSlider(
                             value: notchHoverDelay,
@@ -271,9 +261,16 @@ struct NotchSettingsView: View {
 
                 SettingsRow(
                     title: "По нажатию",
-                    subtitle: "Нажатие фиксирует раскрытый плеер до сворачивания."
+                    subtitle: "Оставлять плеер открытым после нажатия."
                 ) {
                     Toggle("По нажатию", isOn: $clickEnabled)
+                        .labelsHidden()
+                }
+
+                SettingsRowDivider()
+
+                SettingsRow(title: "Тактильный отклик", subtitle: "При раскрытии панели.") {
+                    Toggle("Тактильный отклик", isOn: $hapticFeedback)
                         .labelsHidden()
                 }
             }
@@ -281,15 +278,11 @@ struct NotchSettingsView: View {
     }
 
     private var notificationSection: some View {
-        SettingsSection(
-            title: "Смена трека",
-            subtitle: "Панель может ненадолго раскрыться при начале новой песни.",
-            symbolName: "bell.badge"
-        ) {
+        SettingsSection(title: "Смена трека") {
             SettingsGroup {
                 SettingsRow(
                     title: "Показывать новый трек",
-                    subtitle: "Автоматически раскрывать чёлку при смене композиции."
+                    subtitle: "Ненадолго раскрывать чёлку."
                 ) {
                     Toggle("Показывать новый трек", isOn: $notificationsEnabled)
                         .labelsHidden()
@@ -299,8 +292,7 @@ struct NotchSettingsView: View {
                     SettingsRowDivider()
 
                     SettingsRow(
-                        title: "Длительность",
-                        subtitle: "Сколько времени держать уведомление раскрытым."
+                        title: "Длительность"
                     ) {
                         SettingsValueSlider(
                             value: notchNotificationDuration,
@@ -317,18 +309,16 @@ struct NotchSettingsView: View {
         }
     }
 
-    private var appearanceSection: some View {
-        SettingsSection(
-            title: "Внешний вид",
-            subtitle: "Размеры компактного состояния и акценты плеера.",
-            symbolName: "paintpalette"
-        ) {
-            notchSizePreview
+    private var sizeSection: some View {
+        SettingsSection(title: "Размер и форма") {
+            if !isFocusLayout {
+                notchSizePreview
+            }
 
             SettingsGroup {
                 SettingsRow(
                     title: "Ширина",
-                    subtitle: "Ширина закрытой панели; раскрытая сохраняет пропорции."
+                    subtitle: "В закрытом состоянии."
                 ) {
                     SettingsValueSlider(
                         value: notchWidth,
@@ -342,7 +332,7 @@ struct NotchSettingsView: View {
 
                 SettingsRow(
                     title: "Коррекция высоты",
-                    subtitle: "Подстройка под геометрию верхней части экрана."
+                    subtitle: "Подстройка под верхний край экрана."
                 ) {
                     SettingsValueSlider(
                         value: notchHeightAdjustment,
@@ -355,26 +345,26 @@ struct NotchSettingsView: View {
                     )
                 }
 
-                SettingsRowDivider()
+                if !isFocusLayout {
+                    SettingsRowDivider()
 
-                SettingsRow(
-                    title: "Скругление",
-                    subtitle: "Радиус углов панели в закрытом состоянии."
-                ) {
-                    SettingsValueSlider(
-                        value: notchCornerRadius,
-                        range: NotchPreferences.cornerRadiusRange,
-                        step: NotchPreferences.cornerRadiusStep,
-                        text: "\(Int(NotchPreferences.clampedCornerRadius(cornerRadius))) px"
-                    )
+                    SettingsRow(title: "Скругление") {
+                        SettingsValueSlider(
+                            value: notchCornerRadius,
+                            range: NotchPreferences.cornerRadiusRange,
+                            step: NotchPreferences.cornerRadiusStep,
+                            text: "\(Int(NotchPreferences.clampedCornerRadius(cornerRadius))) px"
+                        )
+                    }
                 }
+            }
+        }
+    }
 
-                SettingsRowDivider()
-
-                SettingsRow(
-                    title: "Название в закрытом виде",
-                    subtitle: "Определяет, когда показывать текущую композицию."
-                ) {
+    private var contentSection: some View {
+        SettingsSection(title: "Название и цвет") {
+            SettingsGroup {
+                SettingsRow(title: "Название в закрытом виде") {
                     Picker("Название", selection: songInfoVisibility) {
                         ForEach(NotchSongInfoVisibility.allCases) { visibility in
                             Text(visibility.title).tag(visibility)
@@ -387,8 +377,7 @@ struct NotchSettingsView: View {
                 SettingsRowDivider()
 
                 SettingsRow(
-                    title: "Цветной прогресс",
-                    subtitle: "Голубой акцент на полосе воспроизведения."
+                    title: "Цветной прогресс"
                 ) {
                     Toggle("Цветной прогресс", isOn: $coloredProgress)
                         .labelsHidden()
@@ -397,18 +386,7 @@ struct NotchSettingsView: View {
                 SettingsRowDivider()
 
                 SettingsRow(
-                    title: "Цветная волна",
-                    subtitle: "Подсвечивать живой индикатор воспроизведения."
-                ) {
-                    Toggle("Цветная волна", isOn: $coloredWaveform)
-                        .labelsHidden()
-                }
-
-                SettingsRowDivider()
-
-                SettingsRow(
-                    title: "Источник цвета",
-                    subtitle: "Откуда берутся акцентные цвета панели."
+                    title: "Источник цвета"
                 ) {
                     Picker("Источник цвета", selection: colorSource) {
                         ForEach(NotchColorSource.allCases) { source in
@@ -418,12 +396,42 @@ struct NotchSettingsView: View {
                     .labelsHidden()
                     .frame(width: 190)
                 }
+            }
+        }
+    }
+
+    private var equalizerSection: some View {
+        SettingsSection(title: "Эквалайзер") {
+            SettingsGroup {
+                SettingsRow(title: "Цветная волна", subtitle: "Использовать выбранную палитру.") {
+                    Toggle("Цветная волна", isOn: $coloredWaveform)
+                        .labelsHidden()
+                }
 
                 SettingsRowDivider()
 
+                SettingsRow(title: "Чувствительность", subtitle: "Насколько активно волна реагирует на звук.") {
+                    SettingsValueSlider(
+                        value: notchEqualizerSensitivity,
+                        range: NotchPreferences.equalizerSensitivityRange,
+                        step: NotchPreferences.equalizerSensitivityStep,
+                        text: String(
+                            format: "%.1f×",
+                            NotchPreferences.clampedEqualizerSensitivity(equalizerSensitivity)
+                        )
+                    )
+                    .accessibilityLabel("Чувствительность эквалайзера")
+                }
+            }
+        }
+    }
+
+    private var effectsSection: some View {
+        SettingsDisclosure(title: "Визуальные эффекты", subtitle: "Контур и пульсация") {
+            SettingsGroup {
                 SettingsRow(
                     title: "Переливающийся контур",
-                    subtitle: "Боковая и нижняя грань панели плавно меняют цвет по палитре."
+                    subtitle: "Плавная смена цветов по краям панели."
                 ) {
                     Toggle("Переливающийся контур", isOn: $outlineShimmer)
                         .labelsHidden()
@@ -433,8 +441,7 @@ struct NotchSettingsView: View {
                     SettingsRowDivider()
 
                     SettingsRow(
-                        title: "Толщина контура",
-                        subtitle: "Размер переливающейся обводки."
+                        title: "Толщина контура"
                     ) {
                         SettingsValueSlider(
                             value: notchOutlineWidth,
@@ -452,7 +459,7 @@ struct NotchSettingsView: View {
 
                 SettingsRow(
                     title: "Пульсация",
-                    subtitle: "Реакция панели на громкость: масштаб или свечение контура."
+                    subtitle: "Реакция на громкость звука."
                 ) {
                     Picker("Пульсация", selection: pulseMode) {
                         ForEach(NotchPulseMode.allCases) { mode in
@@ -461,23 +468,6 @@ struct NotchSettingsView: View {
                     }
                     .labelsHidden()
                     .frame(width: 150)
-                }
-
-                SettingsRowDivider()
-
-                SettingsRow(
-                    title: "Чувствительность эквалайзера",
-                    subtitle: "Насколько активно бары реагируют на звук."
-                ) {
-                    SettingsValueSlider(
-                        value: notchEqualizerSensitivity,
-                        range: NotchPreferences.equalizerSensitivityRange,
-                        step: NotchPreferences.equalizerSensitivityStep,
-                        text: String(
-                            format: "%.1f×",
-                            NotchPreferences.clampedEqualizerSensitivity(equalizerSensitivity)
-                        )
-                    )
                 }
             }
         }
@@ -490,14 +480,14 @@ struct NotchSettingsView: View {
         )
         let scale = 0.6
         let previewWidth = compact.width * scale
-        let previewHeight = max(16, compact.height * scale + 14)
+        let previewHeight = max(16, compact.height * scale + 6)
         let previewRadius = NotchPreferences.clampedCornerRadius(cornerRadius) * scale
 
-        return VStack(spacing: 8) {
+        return VStack(spacing: 4) {
             ZStack(alignment: .top) {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .fill(Color.primary.opacity(0.05))
-                    .frame(height: 60)
+                    .frame(height: 40)
 
                 UnevenRoundedRectangle(
                     topLeadingRadius: 0,
@@ -515,15 +505,9 @@ struct NotchSettingsView: View {
             .frame(maxWidth: .infinity)
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
 
-            Text("Живой предпросмотр компактного состояния")
+            Text("Закрытая панель")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
-        }
-        .padding(12)
-        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 13, style: .continuous)
-                .stroke(.primary.opacity(0.08), lineWidth: 1)
         }
         .accessibilityHidden(true)
     }

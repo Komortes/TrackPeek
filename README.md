@@ -29,7 +29,7 @@ TrackPeek controls the Spotify and Apple Music desktop apps already running on y
 - **Spotify and Apple Music** — automatic source selection or a preferred player in Settings.
 - **Connection recovery** — reconnects after sleep or player restarts, backs off after temporary errors, and keeps the last track visibly marked as stale with its progress stopped.
 - **Resource modes** — Automatic follows macOS Low Power Mode; Normal and Economical override it. Economical stops live audio analysis and decorative looping effects, reduces progress updates and background polling, and preserves appearance choices.
-- **Diagnostics** — Settings → General (`Основные`) shows connection, Automation, polling, and audio-analysis status, with a manual check and a copyable technical report.
+- **Diagnostics** — Settings → Resources (`Ресурсы`) shows connection, Automation, polling, and audio-analysis status, with a manual check and a copyable technical report.
 - **Launch at login** and **update checks** through [Sparkle](https://sparkle-project.org).
 
 ## Install and get started
@@ -38,7 +38,7 @@ TrackPeek controls the Spotify and Apple Music desktop apps already running on y
 2. Unzip it, move `TrackPeek.app` to `/Applications`, and open it.
 3. Start Spotify or Apple Music. Allow **Automation** access when macOS asks so TrackPeek can read playback state and send controls.
 4. Use onboarding or Settings to choose the player and surface. The menu bar remains available when the desktop overlay is off.
-5. For a particular monitor, open **Settings → Widget → Show on** (`Настройки → Виджет → Показывать на`) and select its name. The notch settings have the same selector.
+5. For a particular monitor, open **Settings → Widget → Placement → Show on** (`Настройки → Виджет → Размещение → Показывать на`) and select its name. For the notch, the same selector is under **Notch → Behavior** (`Чёлка → Поведение`).
 
 The app requires **macOS 14 or later**. The live equalizer requires **macOS 14.2 or later** and audio-capture permission when requested.
 
@@ -53,16 +53,20 @@ If macOS blocks a downloaded build because its developer cannot be verified, fol
 
 See [display selection details](docs/product/display-selection.md) for behavior and verification notes.
 
+## Settings organization
+
+The settings sidebar separates General, Notch, Widget, Menu Bar, Shortcuts, Resources, and About. Widget settings group **Template / Placement / Appearance**; choosing a template category only browses its previews. Notch settings separate **Appearance / Behavior**, while Menu Bar separates the menu indicators from the popover. Optional visual effects and general presets expand on demand. Existing preferences and direct links from player menus are preserved.
+
 ## Focus notch and Lyrics popover
 
-- **Settings → Notch → Layout → Focus** (`Чёлка → Раскладка чёлки → Фокус`) selects the restrained notch layout. Its collapsed title avoids the camera gap on notched displays, and expanded controls sit below the safe top area. Width and height correction remain adjustable; the full player's effect settings are preserved.
-- **Settings → Menu Bar → Player window → Lyrics** (`Menu Bar → Окно плеера → Текст`) opens a fixed-size reading panel. Synchronized lyrics show the whole song with the current line highlighted. Click a lyric to seek to it, including the current timing adjustment; a paused track stays paused. Scroll to read another verse: automatic following pauses until you select **Back to current line** (`К текущей строке`). Changing the song/source or reopening the panel restores following. Plain text remains manually scrollable and selectable, without line seeking. Missing lyrics and network failures have separate states and a retry action. Playback and seeking remain at the bottom.
+- **Settings → Notch → Appearance → Layout → Focus** (`Чёлка → Вид → Раскладка → Фокус`) selects the restrained notch layout. Its collapsed title avoids the camera gap on notched displays, and expanded controls sit below the safe top area. Width and height correction remain adjustable; the full player's effect settings are preserved.
+- **Settings → Menu Bar → Player window → Lyrics** (`Строка меню → Окно плеера → Текст`) opens a fixed-size reading panel. Synchronized lyrics show the whole song with the current line highlighted. Click a lyric to seek to it, including the current timing adjustment; a paused track stays paused. Scroll to read another verse: automatic following pauses until you select **Back to current line** (`К текущей строке`). Changing the song/source or reopening the panel restores following. Plain text remains manually scrollable and selectable, without line seeking. Missing lyrics and network failures have separate states and a retry action. Playback and seeking remain at the bottom.
 
 Both layouts retain the existing menus and playback source. Lyrics uses the shared store, a neutral system background, and no artwork. Its lyric schedule and progress updates stop when the view closes; Focus creates its progress view only while expanded. Neither layout changes widget selection or overwrites other layouts' appearance choices.
 
 ## Lyric Strip widget
 
-Choose **Settings → Widget → Lyrics → Lyric Strip** (`Виджет → Текст песни → Строка текста`). Its width is adjustable from 320 to 500 pt; its height stays at 56 pt. Use the existing placement controls to put it near the bottom of your chosen monitor or enable free movement.
+Choose **Settings → Widget → Template → Lyrics → Lyric Strip** (`Виджет → Шаблон → Текст песни → Строка текста`). Its width is adjustable from 320 to 500 pt; its height stays at 56 pt. Use the existing placement controls to put it near the bottom of your chosen monitor or enable free movement.
 
 The current lyric stays visible on pause. Before the first line, without synchronized lyrics, or during loading, the strip shows the current title and artist. Hover over the text to read its full version and status. A failed lyrics request exposes a retry button. Playback controls appear on hover, when the panel has keyboard focus, or with VoiceOver. With the strip focused, Space toggles playback and Left/Right changes tracks; configured global shortcuts also remain available.
 
@@ -90,13 +94,15 @@ Shortcuts use system hot-key registration without polling, broad keyboard monito
 
 ## Resource usage
 
-Choose **Settings → General → Resources** (`Основные → Ресурсы`). **Automatic** is the default and follows macOS Low Power Mode, including changes while TrackPeek is running. Battery power alone does not activate it. On Macs where the system mode is unsupported, Automatic behaves like Normal; Economical remains available manually.
+Choose **Settings → Resources** (`Ресурсы`). **Automatic** is the default and follows macOS Low Power Mode, including changes while TrackPeek is running. Battery power alone does not activate it. On Macs where the system mode is unsupported, Automatic behaves like Normal; Economical remains available manually.
 
 **Economical** keeps the equalizer static, stops audio capture, pulse effects and shimmering borders, and updates playback progress once a second. Healthy playback polls change from 2 to 5 seconds while playing and from 4 to 8 seconds while paused. External track changes can therefore take up to five seconds to appear. Clicks, seeking, global shortcuts and manual refresh still run immediately; connection recovery retains its existing backoff.
 
 Appearance settings are preserved and restored when economy ends, subject to Reduce Motion and existing visibility rules. Synchronized lyrics retain their timing; this mode does not disable lyrics loading or change the bounded artwork/lyrics caches. The Resources section shows whether economy is currently active; Diagnostics explains when audio analysis is stopped for economy.
 
 Artwork keeps its current image while a different resolution of the same cover loads. A new track clears the previous cover immediately. Loading indicators appear only after a short delay and stay static in small artwork slots, Reduce Motion, and Economical mode; missing or failed artwork uses a sized music-note placeholder.
+
+The audio-analysis status reports **Running** only after a valid audio buffer has arrived. If valid buffers stop for three seconds, TrackPeek recreates the capture with delays of 2, 4, 8, 16, then at most 30 seconds. Silent buffers are healthy; silence alone does not trigger reconnects. **Resources → Diagnostics** shows waiting/stalled states and offers a manual retry after a capture failure.
 
 ## Privacy and network use
 
@@ -110,7 +116,7 @@ Some features use the network:
 
 TrackPeek does not keep a listening-history database. Artwork data, decoded images, palettes, and lyrics use bounded in-memory caches. Artwork downloads share an ephemeral session without an additional HTTP cache. Diagnostic reports are copied only on request and exclude song metadata, user paths, and raw error messages.
 
-If Automation access is denied, automatic polling stops until you retry or a relevant lifecycle event occurs. Open **Settings → General → Diagnostics** to reach macOS permissions and check again. Recovery does not automatically replay playback commands. A permanently blocked native AppleScript engine still requires a TrackPeek restart; isolating that engine in a helper process is planned.
+If Automation access is denied, automatic polling stops until you retry or a relevant lifecycle event occurs. Open **Settings → Resources → Diagnostics** to reach macOS permissions and check again. Recovery does not automatically replay playback commands. A permanently blocked native AppleScript engine still requires a TrackPeek restart; isolating that engine in a helper process is planned.
 
 ## Build from source
 

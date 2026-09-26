@@ -2,7 +2,7 @@ import AppKit
 import Observation
 
 enum AudioAnalysisStatus: Equatable, Sendable {
-    case paused, notNeeded, resourceSaving, starting, running, sourceUnavailable, unsupported
+    case paused, notNeeded, resourceSaving, starting, waitingForAudio, running, stalled, sourceUnavailable, unsupported
     case failed(Int)
 
     var description: String {
@@ -11,7 +11,9 @@ enum AudioAnalysisStatus: Equatable, Sendable {
         case .paused: "Остановлен: нет воспроизведения"
         case .notNeeded: "Остановлен: нет видимого потребителя"
         case .starting: "Подключение к аудиопотоку"
+        case .waitingForAudio: "Ожидание данных аудио"
         case .running: "Работает"
+        case .stalled: "Нет данных аудио: повторное подключение"
         case .sourceUnavailable: "Нет процесса плеера"
         case .unsupported: "Требуется macOS 14.2 или новее"
         case .failed(let code): "Ошибка захвата аудио (\(code))"
@@ -29,10 +31,9 @@ private final class SpotifyAudioAnalyzerEngine: @unchecked Sendable {
     private var source: DispatchSourceTimer?
     private var requestedProcessIdentifier: pid_t?
     private var connectedProcessIdentifier: pid_t?
-    private var retryAfter = 0.0
+    private var health = AudioCaptureHealth()
     private var lastPublishedSpectrum: AudioSpectrum?
     private var lastPublishedStatus: AudioAnalysisStatus?
-    private var failureCount = 0
     private var lastErrorCode: Int?
     /// Сглаженный уровень на каждую полосу — раздельные коэффициенты для
     /// атаки/спада не дают волне дёргаться, когда очередная сырая выборка
@@ -75,8 +76,7 @@ private final class SpotifyAudioAnalyzerEngine: @unchecked Sendable {
             connectedProcessIdentifier = nil
             lastPublishedSpectrum = nil
             lastPublishedStatus = nil
-            retryAfter = 0
-            failureCount = 0
+            health.reset()
             lastErrorCode = nil
             smoothedLevels = nil
         }
@@ -85,33 +85,37 @@ private final class SpotifyAudioAnalyzerEngine: @unchecked Sendable {
     private func sample(
         onSpectrum: @escaping @Sendable (AudioSpectrum, AudioAnalysisStatus) -> Void
     ) {
-        let now = CFAbsoluteTimeGetCurrent()
+        let now = ProcessInfo.processInfo.systemUptime
         let processChanged = requestedProcessIdentifier != connectedProcessIdentifier
 
         if processChanged {
             analyzer.stop()
             connectedProcessIdentifier = requestedProcessIdentifier
-            retryAfter = 0
-            failureCount = 0
+            health.reset()
             lastErrorCode = nil
             smoothedLevels = nil
         }
 
-        if !analyzer.isRunning, now >= retryAfter,
-           let processIdentifier = requestedProcessIdentifier {
+        if !analyzer.isRunning, let processIdentifier = requestedProcessIdentifier,
+           health.beginAttempt(at: now) {
+            lastErrorCode = nil
             do {
                 try analyzer.start(forProcessIdentifier: processIdentifier)
-                failureCount = 0
-                lastErrorCode = nil
             } catch {
                 lastErrorCode = (error as NSError).code
-                failureCount = min(failureCount + 1, 5)
-                retryAfter = now + min(pow(2, Double(failureCount)), 30)
+                health.failAttempt(at: ProcessInfo.processInfo.systemUptime)
+            }
+        }
+
+        if analyzer.isRunning {
+            health.observe(sequence: analyzer.analyzedBufferCount, at: ProcessInfo.processInfo.systemUptime)
+            if health.phase == .stalled {
+                analyzer.stop()
             }
         }
 
         let spectrum: AudioSpectrum
-        if analyzer.isRunning {
+        if health.phase == .running, analyzer.isRunning {
             let rawLevels = analyzer.currentLevels().map(\.doubleValue)
             spectrum = AudioSpectrum(values: smoothed(rawLevels))
         } else {
@@ -119,9 +123,16 @@ private final class SpotifyAudioAnalyzerEngine: @unchecked Sendable {
             spectrum = .resting
         }
         let status: AudioAnalysisStatus
-        if analyzer.isRunning { status = .running }
+        if requestedProcessIdentifier == nil { status = .sourceUnavailable }
         else if let lastErrorCode { status = .failed(lastErrorCode) }
-        else { status = requestedProcessIdentifier == nil ? .sourceUnavailable : .starting }
+        else {
+            switch health.phase {
+            case .idle: status = .starting
+            case .waitingForAudio: status = .waitingForAudio
+            case .running: status = .running
+            case .stalled: status = .stalled
+            }
+        }
         guard spectrum != lastPublishedSpectrum || status != lastPublishedStatus else { return }
 
         if status != lastPublishedStatus {

@@ -17,6 +17,13 @@ struct PlaybackDiagnosticsView: View {
         )
     }
 
+    private var canRetryAudio: Bool {
+        switch diagnostics.audioStatus {
+        case .failed, .stalled: true
+        default: false
+        }
+    }
+
     var body: some View {
         SettingsSection(title: "Диагностика", subtitle: "Текущее подключение и работа аудиоанализа.") {
             SettingsGroup {
@@ -54,7 +61,7 @@ struct PlaybackDiagnosticsView: View {
                 }
                 SettingsRowDivider()
                 SettingsRow(title: "Аудиоанализ", subtitle: diagnostics.audioStatus.description) {
-                    if case .failed = diagnostics.audioStatus {
+                    if canRetryAudio {
                         Button("Повторить захват") { coordinator.audioMonitor.retryIfNeeded() }
                     }
                 }

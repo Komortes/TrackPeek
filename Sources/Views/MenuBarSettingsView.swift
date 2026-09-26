@@ -1,6 +1,13 @@
 import SwiftUI
 
 struct MenuBarSettingsView: View {
+    private enum Page: String, CaseIterable {
+        case menuBar = "Строка меню"
+        case player = "Окно плеера"
+    }
+
+    @State private var selectedPage = Page.menuBar
+
     @AppStorage(MenuBarPreferences.controlsEnabledKey)
     private var controlsEnabled = MenuBarPreferences.controlsEnabledFallback
     @AppStorage(MenuBarPreferences.showsTitleKey)
@@ -27,46 +34,51 @@ struct MenuBarSettingsView: View {
     }
 
     var body: some View {
-        SettingsPage(
-            title: "Menu Bar",
-            subtitle: "Строка меню и окно плеера, которое открывается из неё."
-        ) {
-            activationSection
-            appearanceSection
-            PopoverSettingsSection()
-        }
-    }
-
-    private var activationSection: some View {
-        SettingsSection(
-            title: "Основные",
-            subtitle: "Popover по-прежнему открывается по клику на лого или название.",
-            symbolName: "power"
-        ) {
-            SettingsGroup {
-                SettingsRow(
-                    title: "Показывать управление в menu bar",
-                    subtitle: "Название трека, анимация звука и кнопки prev/play/next рядом с иконкой."
-                ) {
-                    Toggle("Показывать управление в menu bar", isOn: $controlsEnabled)
-                        .labelsHidden()
+        SettingsPage(title: "Строка меню") {
+            Picker("Настройки строки меню", selection: $selectedPage) {
+                ForEach(Page.allCases, id: \.self) { page in
+                    Text(page.rawValue).tag(page)
                 }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .frame(width: 320)
+
+            switch selectedPage {
+            case .menuBar:
+                activationSection
+                appearanceSection
+            case .player:
+                PopoverSettingsSection()
             }
         }
     }
 
-    private var appearanceSection: some View {
-        SettingsSection(
-            title: "Внешний вид",
-            subtitle: "Как выглядит блок с названием трека в строке меню.",
-            symbolName: "textformat"
-        ) {
+    private var activationSection: some View {
+        SettingsSection(title: "Управление") {
             SettingsGroup {
                 SettingsRow(
-                    title: "Показывать название",
-                    subtitle: "Если выключено, в строке меню остаётся только иконка."
+                    title: "Показывать управление",
+                    subtitle: "Название трека и кнопки рядом с иконкой."
                 ) {
-                    Toggle("Показывать название", isOn: $showsTitle)
+                    Toggle("Показывать управление", isOn: $controlsEnabled)
+                        .labelsHidden()
+                }
+            }
+
+            Text("Нажмите на иконку или название трека, чтобы открыть плеер.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var appearanceSection: some View {
+        SettingsSection(title: "Индикаторы и интервалы") {
+            SettingsGroup {
+                SettingsRow(
+                    title: "Название трека"
+                ) {
+                    Toggle("Название трека", isOn: $showsTitle)
                         .labelsHidden()
                 }
                 .disabled(!controlsEnabled)
@@ -75,8 +87,8 @@ struct MenuBarSettingsView: View {
                     SettingsRowDivider()
 
                     SettingsRow(
-                        title: "Ширина блока названия",
-                        subtitle: "Длинные названия обрезаются, чтобы не занимать половину строки меню."
+                        title: "Ширина названия",
+                        subtitle: "Длинные названия обрезаются."
                     ) {
                         SettingsValueSlider(
                             value: menuBarTitleWidth,
@@ -90,10 +102,10 @@ struct MenuBarSettingsView: View {
                 SettingsRowDivider()
 
                 SettingsRow(
-                    title: "Показывать анимацию звука",
-                    subtitle: "Мини-эквалайзер рядом с названием."
+                    title: "Анимация звука",
+                    subtitle: "Эквалайзер рядом с названием."
                 ) {
-                    Toggle("Показывать анимацию звука", isOn: $showsEqualizer)
+                    Toggle("Анимация звука", isOn: $showsEqualizer)
                         .labelsHidden()
                 }
                 .disabled(!controlsEnabled)
@@ -103,7 +115,7 @@ struct MenuBarSettingsView: View {
 
                     SettingsRow(
                         title: "Отступы",
-                        subtitle: "Расстояние между анимацией и названием трека."
+                        subtitle: "Между анимацией и названием."
                     ) {
                         SettingsValueSlider(
                             value: menuBarSpacing,
@@ -119,8 +131,7 @@ struct MenuBarSettingsView: View {
 }
 
 
-/// Настройки окна плеера (popover). Живут на вкладке Menu Bar, потому что
-/// popover открывается именно из строки меню.
+/// Settings for the player opened from the menu bar.
 struct PopoverSettingsSection: View {
     @AppStorage(PlayerLayout.storageKey)
     private var playerLayoutRawValue = PlayerLayout.fallback.rawValue
@@ -151,21 +162,28 @@ struct PopoverSettingsSection: View {
     }
 
     var body: some View {
-        SettingsSection(
-            title: "Окно плеера",
-            subtitle: "Компоновка и детали popover, открывающегося по клику.",
-            symbolName: "play.square"
-        ) {
+        VStack(alignment: .leading, spacing: 24) {
+            layoutSection
+            appearanceSection
+        }
+    }
+
+    private var layoutSection: some View {
+        SettingsSection(title: "Раскладка") {
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                 ForEach(PlayerLayout.allCases) { layout in
                     playerLayoutCard(layout)
                 }
             }
+        }
+    }
 
+    private var appearanceSection: some View {
+        SettingsSection(title: "Внешний вид") {
             SettingsGroup {
                 SettingsRow(
                     title: "Фон",
-                    subtitle: playerLayout == .lyrics ? "В раскладке «Текст» используется спокойный системный фон." : "Системный материал или цвета текущей обложки."
+                    subtitle: playerLayout == .lyrics ? "Для текста песни используется системный фон." : ""
                 ) {
                     Picker("Фон", selection: backgroundStyle) {
                         ForEach(PopoverBackgroundStyle.allCases) { style in
@@ -180,10 +198,7 @@ struct PopoverSettingsSection: View {
                 if playerLayout == .artworkVertical {
                     SettingsRowDivider()
 
-                    SettingsRow(
-                        title: "Размер обложки",
-                        subtitle: "Масштаб фотографии в режиме Artwork."
-                    ) {
+                    SettingsRow(title: "Размер обложки") {
                         SettingsValueSlider(
                             value: artworkSize,
                             range: ArtworkSizePreference.range,
@@ -196,30 +211,21 @@ struct PopoverSettingsSection: View {
 
                 SettingsRowDivider()
 
-                SettingsRow(
-                    title: "Название альбома",
-                    subtitle: "Показывать дополнительную строку под исполнителем."
-                ) {
+                SettingsRow(title: "Название альбома") {
                     Toggle("Название альбома", isOn: $showsAlbum)
                         .labelsHidden()
                 }
 
                 SettingsRowDivider()
 
-                SettingsRow(
-                    title: "Статус воспроизведения",
-                    subtitle: "Небольшой индикатор воспроизведения или паузы."
-                ) {
+                SettingsRow(title: "Статус воспроизведения") {
                     Toggle("Статус воспроизведения", isOn: $showsPlaybackStatus)
                         .labelsHidden()
                 }
 
                 SettingsRowDivider()
 
-                SettingsRow(
-                    title: "Тень обложки",
-                    subtitle: "Добавляет глубину, не меняя саму обложку."
-                ) {
+                SettingsRow(title: "Тень обложки") {
                     Toggle("Тень обложки", isOn: $showsArtworkShadow)
                         .disabled(playerLayout == .lyrics)
                         .labelsHidden()

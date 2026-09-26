@@ -32,6 +32,7 @@ struct AnalyzerState {
     AudioStreamBasicDescription format = {};
     std::array<double, kBandCount> coefficients = {};
     std::array<std::atomic<float>, kBandCount> levels;
+    std::atomic<uint64_t> analyzedBufferCount {0};
 
     AnalyzerState() {
         for (auto& level : levels) {
@@ -116,7 +117,7 @@ UInt32 AvailableFrames(const AudioBufferList *bufferList) noexcept {
     UInt32 frameCount = std::numeric_limits<UInt32>::max();
     for (UInt32 index = 0; index < bufferList->mNumberBuffers; ++index) {
         const auto& buffer = bufferList->mBuffers[index];
-        if (buffer.mNumberChannels == 0) {
+        if (buffer.mData == nullptr || buffer.mNumberChannels == 0) {
             continue;
         }
         const UInt32 frames = buffer.mDataByteSize
@@ -182,6 +183,8 @@ void Analyze(const AudioBufferList *bufferList, AnalyzerState& state) noexcept {
             std::memory_order_relaxed
         );
     }
+    // Advance even for silence. Missing/invalid buffers never masquerade as data.
+    state.analyzedBufferCount.fetch_add(1, std::memory_order_release);
 }
 
 OSStatus AnalyzerIOProc(
@@ -224,6 +227,10 @@ OSStatus AnalyzerIOProc(
 
 - (BOOL)isRunning {
     return _state->ioProcID != nullptr;
+}
+
+- (uint64_t)analyzedBufferCount {
+    return _state->analyzedBufferCount.load(std::memory_order_acquire);
 }
 
 - (BOOL)startForProcessIdentifier:(pid_t)processIdentifier
@@ -354,6 +361,7 @@ OSStatus AnalyzerIOProc(
     for (auto& level : _state->levels) {
         level.store(0.0f, std::memory_order_relaxed);
     }
+    _state->analyzedBufferCount.store(0, std::memory_order_relaxed);
 }
 
 - (NSArray<NSNumber *> *)currentLevels {
@@ -363,5 +371,6 @@ OSStatus AnalyzerIOProc(
     }
     return levels;
 }
+
 
 @end

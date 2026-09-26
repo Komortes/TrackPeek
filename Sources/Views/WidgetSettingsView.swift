@@ -1,6 +1,17 @@
 import SwiftUI
 
 struct WidgetSettingsView: View {
+    private enum Page: String, CaseIterable, Identifiable {
+        case template = "Шаблон"
+        case placement = "Размещение"
+        case appearance = "Оформление"
+
+        var id: Self { self }
+    }
+
+    @State private var selectedPage = Page.template
+    @State private var browsedFamily: NotchWidgetLayoutFamily?
+
     @AppStorage(OverlayMode.storageKey)
     private var selectedModeRawValue = OverlayMode.fallback.rawValue
     @AppStorage(WidgetPreferences.edgeOnRightKey)
@@ -91,83 +102,86 @@ struct WidgetSettingsView: View {
         )
     }
 
+    private var layoutFamily: Binding<NotchWidgetLayoutFamily> {
+        Binding(
+            get: { browsedFamily ?? selectedLayout.family },
+            set: { browsedFamily = $0 }
+        )
+    }
+
     var body: some View {
-        SettingsPage(
-            title: "Виджет",
-            subtitle: "Плавающая панель для экранов без чёлки: пилюля или карточки постоянного размера."
-        ) {
+        SettingsPage(title: "Виджет", subtitle: "Плавающий плеер на рабочем столе.") {
+            Picker("Настройки виджета", selection: $selectedPage) {
+                ForEach(Page.allCases) { page in
+                    Text(page.rawValue).tag(page)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .frame(width: 380, alignment: .leading)
+
             activationCard
-            layoutSection
-            placementSection
-            windowBehaviorSection
-            appearanceSection
+
+            switch selectedPage {
+            case .template:
+                layoutSection
+            case .placement:
+                placementSection
+                windowBehaviorSection
+            case .appearance:
+                appearanceSection
+            }
+        }
+        .onChange(of: widgetLayoutRawValue) { _, _ in
+            browsedFamily = selectedLayout.family
         }
     }
 
     // MARK: Активация
 
     private var activationCard: some View {
-        HStack(spacing: 12) {
-            Image(
-                systemName: selectedMode == .floatingWidget
-                    ? "checkmark.circle.fill"
-                    : "rectangle.on.rectangle"
-            )
-            .font(.system(size: 20, weight: .semibold))
-            .foregroundStyle(selectedMode == .floatingWidget ? Color.green : Color.accentColor)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(selectedMode == .floatingWidget ? "Режим виджета активен" : "Виджет выключен")
-                    .font(.headline)
-
-                Text(
-                    selectedMode == .floatingWidget
-                        ? "Все настройки виджета собраны на этой вкладке."
-                        : "Настройки сохранятся; включить виджет можно одной кнопкой."
-                )
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            }
-
-            Spacer()
-
-            if selectedMode != .floatingWidget {
-                Button("Использовать виджет") {
-                    selectedModeRawValue = OverlayMode.floatingWidget.rawValue
+        SettingsGroup {
+            SettingsRow(
+                title: selectedMode == .floatingWidget ? "Виджет включён" : "Виджет выключен",
+                subtitle: "Текущий шаблон: \(selectedLayout.title)"
+            ) {
+                if selectedMode != .floatingWidget {
+                    Button("Включить виджет") {
+                        selectedModeRawValue = OverlayMode.floatingWidget.rawValue
+                    }
+                } else {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                        .accessibilityHidden(true)
                 }
-                .buttonStyle(.borderedProminent)
             }
-        }
-        .padding(14)
-        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 13, style: .continuous)
-                .stroke(.primary.opacity(0.08), lineWidth: 1)
         }
     }
 
-    // MARK: Раскладка
+    // MARK: Шаблон
 
     private var layoutSection: some View {
-        SettingsSection(
-            title: "Раскладка",
-            subtitle: "Форма и размер плавающей панели.",
-            symbolName: "square.grid.2x2"
-        ) {
-            ForEach(NotchWidgetLayoutFamily.allCases) { family in
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(family.title)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-
-                    LazyVGrid(
-                        columns: [GridItem(.adaptive(minimum: 148), spacing: 10)],
-                        spacing: 10
-                    ) {
-                        ForEach(family.layouts) { layout in
-                            layoutCard(layout)
-                        }
+        SettingsSection(title: "Форма плеера") {
+            HStack {
+                Text("Категория")
+                    .font(.system(size: 13, weight: .medium))
+                Spacer()
+                Picker("Категория шаблонов", selection: layoutFamily) {
+                    ForEach(NotchWidgetLayoutFamily.allCases) { family in
+                        Text(family.title).tag(family)
                     }
+                }
+                .labelsHidden()
+                .frame(width: 220)
+            }
+
+            LazyVGrid(
+                columns: [GridItem(.adaptive(minimum: 170, maximum: 220), spacing: 12)],
+                alignment: .leading,
+                spacing: 12
+            ) {
+                ForEach((browsedFamily ?? selectedLayout.family).layouts) { layout in
+                    layoutCard(layout)
                 }
             }
 
@@ -197,11 +211,18 @@ struct WidgetSettingsView: View {
                     .frame(maxWidth: .infinity)
 
                 VStack(spacing: 1) {
-                    Text(layout.title)
-                        .font(.system(size: 11, weight: .semibold))
+                    HStack(spacing: 5) {
+                        Text(layout.title)
+                            .font(.system(size: 12, weight: .semibold))
+                        if isSelected {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 11))
+                                .foregroundStyle(.tint)
+                        }
+                    }
 
                     Text(layout.summary)
-                        .font(.system(size: 9))
+                        .font(.caption)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                         .lineLimit(2, reservesSpace: true)
@@ -224,6 +245,8 @@ struct WidgetSettingsView: View {
         }
         .buttonStyle(.plain)
         .help(layout.summary)
+        .accessibilityLabel(layout.title)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     // MARK: Расположение
@@ -264,6 +287,16 @@ struct WidgetSettingsView: View {
                         subtitle: "Перетаскивайте виджет за фон в любое место; позиция запоминается."
                     ) {
                         Toggle("Свободное перемещение", isOn: $freeMoveEnabled)
+                            .labelsHidden()
+                    }
+
+                    SettingsRowDivider()
+
+                    SettingsRow(
+                        title: "Зафиксировать позицию",
+                        subtitle: "Защита от случайного перетаскивания."
+                    ) {
+                        Toggle("Зафиксировать позицию", isOn: $positionLocked)
                             .labelsHidden()
                     }
 
@@ -422,17 +455,6 @@ struct WidgetSettingsView: View {
                         .labelsHidden()
                 }
 
-                if selectedLayout != .edge {
-                    SettingsRowDivider()
-
-                    SettingsRow(
-                        title: "Зафиксировать позицию",
-                        subtitle: "Запрещает случайное перетаскивание виджета."
-                    ) {
-                        Toggle("Зафиксировать позицию", isOn: $positionLocked)
-                            .labelsHidden()
-                    }
-                }
             }
         }
     }
@@ -440,163 +462,123 @@ struct WidgetSettingsView: View {
     // MARK: Оформление
 
     private var appearanceSection: some View {
-        SettingsSection(
-            title: "Оформление",
-            subtitle: "Эффекты виджета — независимо от настроек чёлки.",
-            symbolName: "paintpalette"
-        ) {
+        VStack(alignment: .leading, spacing: 20) {
             if selectedLayout == .lyricStrip {
-                SettingsGroup {
-                    SettingsRow(title: "Ширина строки", subtitle: "Высота остаётся 56 pt, в том числе при наведении.") {
-                        SettingsValueSlider(
-                            value: Binding(get: { NotchPreferences.clampedWidth(width) + 80 },
-                                           set: { width = NotchPreferences.clampedWidth($0 - 80) }),
-                            range: 320...500, step: 5,
-                            text: "\(Int(NotchPreferences.clampedWidth(width) + 80)) pt"
-                        )
-                    }
-                }
-                Text("Одна строка песни на спокойном фоне. Без синхронизации — название и исполнитель. Обложка, эквалайзер и эффекты здесь отключены; настройки других раскладок сохраняются.")
-                    .font(.caption).foregroundStyle(.secondary)
-            } else if selectedLayout == .edge {
-                SettingsGroup {
-                    SettingsRow(title: "Цветной прогресс", subtitle: "Небольшой акцент под кнопками.") {
-                        Toggle("Цветной прогресс", isOn: $coloredProgress).labelsHidden()
-                    }
-                    SettingsRowDivider()
-                    SettingsRow(title: "Источник цвета", subtitle: "Палитра обложки или системный акцент.") {
-                        Picker("Источник цвета", selection: colorSource) {
-                            ForEach(NotchColorSource.allCases) { source in
-                                Text(source.title).tag(source)
-                            }
-                        }.labelsHidden().frame(width: 190)
-                    }
-                }
-                Text("Edge сохраняет постоянный размер и спокойное оформление без эквалайзера и пульсации.")
-                    .font(.caption).foregroundStyle(.secondary)
-            } else {
-                SettingsGroup {
-                    SettingsRow(
-                        title: "Ширина",
-                        subtitle: "Базовая ширина пилюли; размеры карточек следуют за ней."
-                    ) {
-                        SettingsValueSlider(
-                            value: widgetWidth,
-                            range: NotchPreferences.widthRange,
-                            step: NotchPreferences.widthStep,
-                            text: "\(Int(NotchPreferences.clampedWidth(width))) px"
-                        )
-                    }
-
-                    SettingsRowDivider()
-
-                    SettingsRow(
-                        title: "Цветной прогресс",
-                        subtitle: "Акцент палитры на полосе воспроизведения и тексте."
-                    ) {
-                        Toggle("Цветной прогресс", isOn: $coloredProgress)
-                            .labelsHidden()
-                    }
-
-                    SettingsRowDivider()
-
-                    SettingsRow(
-                        title: "Цветная волна",
-                        subtitle: "Подсвечивать эквалайзер палитрой обложки."
-                    ) {
-                        Toggle("Цветная волна", isOn: $coloredWaveform)
-                            .labelsHidden()
-                    }
-
-                    SettingsRowDivider()
-
-                    SettingsRow(
-                        title: "Источник цвета",
-                        subtitle: "Откуда берутся акцентные цвета виджета."
-                    ) {
-                        Picker("Источник цвета", selection: colorSource) {
-                            ForEach(NotchColorSource.allCases) { source in
-                                Text(source.title).tag(source)
-                            }
-                        }
-                        .labelsHidden()
-                        .frame(width: 190)
-                    }
-
-                    SettingsRowDivider()
-
-                    SettingsRow(
-                        title: "Чувствительность эквалайзера",
-                        subtitle: "Насколько активно волна реагирует на звук."
-                    ) {
-                        SettingsValueSlider(
-                            value: widgetSensitivity,
-                            range: NotchPreferences.equalizerSensitivityRange,
-                            step: NotchPreferences.equalizerSensitivityStep,
-                            text: String(
-                                format: "%.1f×",
-                                NotchPreferences.clampedEqualizerSensitivity(equalizerSensitivity)
+                SettingsSection(title: "Размер") {
+                    SettingsGroup {
+                        SettingsRow(title: "Ширина строки", subtitle: "Высота остаётся 56 pt, в том числе при наведении.") {
+                            SettingsValueSlider(
+                                value: Binding(get: { NotchPreferences.clampedWidth(width) + 80 },
+                                               set: { width = NotchPreferences.clampedWidth($0 - 80) }),
+                                range: 320...500, step: 5,
+                                text: "\(Int(NotchPreferences.clampedWidth(width) + 80)) pt"
                             )
-                        )
+                        }
                     }
-
-                    SettingsRowDivider()
-
-                    SettingsRow(
-                        title: "Стекло из обложки",
-                        subtitle: "Размытая обложка вместо чёрного фона карточек."
-                    ) {
-                        Toggle("Стекло из обложки", isOn: $glassBackground)
-                            .labelsHidden()
-                    }
-
-                    SettingsRowDivider()
-
-                    SettingsRow(
-                        title: "Переливающийся контур",
-                        subtitle: "Обводка виджета плавно меняет цвет по палитре обложки."
-                    ) {
-                        Toggle("Переливающийся контур", isOn: $outlineShimmer)
-                            .labelsHidden()
-                    }
-
-                    if outlineShimmer {
+                    Text("Одна строка песни на спокойном фоне. Без синхронизации — название и исполнитель. Обложка, эквалайзер и эффекты здесь отключены; настройки других шаблонов сохранены.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            } else if selectedLayout == .edge {
+                SettingsSection(title: "Цвета") {
+                    SettingsGroup {
+                        SettingsRow(title: "Цветной прогресс", subtitle: "Небольшой акцент под кнопками.") {
+                            Toggle("Цветной прогресс", isOn: $coloredProgress).labelsHidden()
+                        }
                         SettingsRowDivider()
-
+                        colorSourceRow
+                    }
+                    Text("Edge сохраняет постоянный размер и спокойное оформление без эквалайзера и пульсации.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            } else {
+                SettingsSection(title: "Размер и цвета") {
+                    SettingsGroup {
                         SettingsRow(
-                            title: "Толщина контура",
-                            subtitle: "Размер переливающейся обводки."
+                            title: "Ширина",
+                            subtitle: "Базовая ширина пилюли; размеры карточек следуют за ней."
                         ) {
                             SettingsValueSlider(
-                                value: widgetOutlineWidth,
-                                range: NotchPreferences.outlineWidthRange,
-                                step: NotchPreferences.outlineWidthStep,
-                                text: String(
-                                    format: "%.1f px",
-                                    NotchPreferences.clampedOutlineWidth(outlineWidth)
-                                )
+                                value: widgetWidth,
+                                range: NotchPreferences.widthRange,
+                                step: NotchPreferences.widthStep,
+                                text: "\(Int(NotchPreferences.clampedWidth(width))) px"
                             )
                         }
+                        SettingsRowDivider()
+                        colorSourceRow
+                        SettingsRowDivider()
+                        SettingsRow(title: "Цветной прогресс", subtitle: "Акцент на полосе воспроизведения и тексте.") {
+                            Toggle("Цветной прогресс", isOn: $coloredProgress).labelsHidden()
+                        }
+                        SettingsRowDivider()
+                        SettingsRow(title: "Стекло из обложки", subtitle: "Размытая обложка вместо чёрного фона карточек.") {
+                            Toggle("Стекло из обложки", isOn: $glassBackground).labelsHidden()
+                        }
                     }
+                }
 
-                    SettingsRowDivider()
+                SettingsSection(title: "Эквалайзер") {
+                    SettingsGroup {
+                        SettingsRow(title: "Цветная волна", subtitle: "Использовать выбранную палитру.") {
+                            Toggle("Цветная волна", isOn: $coloredWaveform).labelsHidden()
+                        }
+                        SettingsRowDivider()
+                        SettingsRow(title: "Чувствительность", subtitle: "Насколько активно волна реагирует на звук.") {
+                            SettingsValueSlider(
+                                value: widgetSensitivity,
+                                range: NotchPreferences.equalizerSensitivityRange,
+                                step: NotchPreferences.equalizerSensitivityStep,
+                                text: String(format: "%.1f×", NotchPreferences.clampedEqualizerSensitivity(equalizerSensitivity))
+                            )
+                            .accessibilityLabel("Чувствительность эквалайзера")
+                        }
+                    }
+                }
 
-                    SettingsRow(
-                        title: "Пульсация",
-                        subtitle: "Реакция виджета на громкость: масштаб или свечение."
-                    ) {
-                        Picker("Пульсация", selection: pulseMode) {
-                            ForEach(NotchPulseMode.allCases) { mode in
-                                Text(mode.title).tag(mode)
+                SettingsDisclosure(title: "Дополнительные эффекты", subtitle: "Переливающийся контур и пульсация.") {
+                    SettingsGroup {
+                        SettingsRow(title: "Переливающийся контур", subtitle: "Обводка плавно меняет цвет по палитре обложки.") {
+                            Toggle("Переливающийся контур", isOn: $outlineShimmer).labelsHidden()
+                        }
+                        if outlineShimmer {
+                            SettingsRowDivider()
+                            SettingsRow(title: "Толщина контура") {
+                                SettingsValueSlider(
+                                    value: widgetOutlineWidth,
+                                    range: NotchPreferences.outlineWidthRange,
+                                    step: NotchPreferences.outlineWidthStep,
+                                    text: String(format: "%.1f px", NotchPreferences.clampedOutlineWidth(outlineWidth))
+                                )
                             }
                         }
-                        .labelsHidden()
-                        .frame(width: 150)
+                        SettingsRowDivider()
+                        SettingsRow(title: "Пульсация", subtitle: "Реакция на громкость: масштаб или свечение.") {
+                            Picker("Пульсация", selection: pulseMode) {
+                                ForEach(NotchPulseMode.allCases) { mode in
+                                    Text(mode.title).tag(mode)
+                                }
+                            }
+                            .labelsHidden()
+                            .frame(width: 150)
+                        }
                     }
                 }
             }
         }
     }
+
+    private var colorSourceRow: some View {
+        SettingsRow(title: "Источник цвета", subtitle: "Палитра обложки или системный акцент.") {
+            Picker("Источник цвета", selection: colorSource) {
+                ForEach(NotchColorSource.allCases) { source in
+                    Text(source.title).tag(source)
+                }
+            }
+            .labelsHidden()
+            .frame(width: 190)
+        }
+    }
+
 }
 
 /// Схематичное мини-превью раскладки для карточек выбора.

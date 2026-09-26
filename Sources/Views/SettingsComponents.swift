@@ -5,12 +5,12 @@ import SwiftUI
 
 struct SettingsPage<Content: View>: View {
     let title: String
-    let subtitle: String
+    var subtitle: String = ""
     @ViewBuilder var content: () -> Content
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: 22) {
                 SettingsSectionHeader(title: title, subtitle: subtitle, titleFont: .title2.weight(.semibold))
                 content()
             }
@@ -21,7 +21,7 @@ struct SettingsPage<Content: View>: View {
 
 struct SettingsSectionHeader: View {
     let title: String
-    let subtitle: String
+    var subtitle: String = ""
     var titleFont: Font = .headline
     var symbolName: String?
 
@@ -39,16 +39,19 @@ struct SettingsSectionHeader: View {
                     .font(titleFont)
             }
 
-            Text(subtitle)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            if !subtitle.isEmpty {
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
     }
 }
 
 struct SettingsSection<Content: View>: View {
     let title: String
-    let subtitle: String
+    var subtitle: String = ""
     var symbolName: String?
     @ViewBuilder var content: () -> Content
 
@@ -56,6 +59,24 @@ struct SettingsSection<Content: View>: View {
         VStack(alignment: .leading, spacing: 12) {
             SettingsSectionHeader(title: title, subtitle: subtitle, symbolName: symbolName)
             content()
+        }
+    }
+}
+
+/// Secondary options stay available without taking over the main settings page.
+struct SettingsDisclosure<Content: View>: View {
+    let title: String
+    var subtitle: String = ""
+    @ViewBuilder var content: () -> Content
+    @State private var isExpanded = false
+
+    var body: some View {
+        DisclosureGroup(isExpanded: $isExpanded) {
+            content().padding(.top, 10)
+        } label: {
+            SettingsSectionHeader(title: title, subtitle: subtitle)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
         }
     }
 }
@@ -68,17 +89,17 @@ struct SettingsGroup<Content: View>: View {
             content()
         }
         .toggleStyle(.switch)
-        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+        .background(.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 13, style: .continuous)
-                .stroke(.primary.opacity(0.08), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(.primary.opacity(0.06), lineWidth: 1)
         }
     }
 }
 
 struct SettingsRow<Control: View>: View {
     let title: String
-    let subtitle: String
+    var subtitle: String = ""
     @ViewBuilder var control: () -> Control
 
     var body: some View {
@@ -87,9 +108,12 @@ struct SettingsRow<Control: View>: View {
                 Text(title)
                     .font(.system(size: 13, weight: .medium))
 
-                Text(subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                if !subtitle.isEmpty {
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
 
             Spacer(minLength: 16)

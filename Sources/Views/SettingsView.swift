@@ -6,6 +6,8 @@ enum SettingsTab: String, CaseIterable {
     case widget
     case menuBar
     case shortcuts
+    case resources
+    case about
 
     /// Выбранная вкладка хранится в defaults, чтобы контекстное меню могло
     /// открыть настройки сразу на релевантной странице (§20.5).
@@ -13,6 +15,8 @@ enum SettingsTab: String, CaseIterable {
 
     var title: String {
         switch self {
+        case .resources: "Ресурсы"
+        case .about: "О приложении"
         case .shortcuts:
             "Клавиши"
         case .general:
@@ -22,12 +26,14 @@ enum SettingsTab: String, CaseIterable {
         case .widget:
             "Виджет"
         case .menuBar:
-            "Menu Bar"
+            "Строка меню"
         }
     }
 
     var symbolName: String {
         switch self {
+        case .resources: "leaf"
+        case .about: "info.circle"
         case .shortcuts:
             "keyboard"
         case .general:
@@ -162,69 +168,79 @@ struct SettingsView: View {
         )
     }
 
+    private var selectedTab: SettingsTab {
+        SettingsTab(rawValue: selectedTabRawValue) ?? .general
+    }
+
     var body: some View {
-        TabView(selection: Binding(
-            get: { SettingsTab(rawValue: selectedTabRawValue) ?? .general },
-            set: { selectedTabRawValue = $0.rawValue }
-        )) {
-            SettingsPage(
-                title: "Основные",
-                subtitle: "Выберите поверхность TrackPeek и доступный режим отображения."
-            ) {
+        NavigationSplitView {
+            List(selection: Binding<SettingsTab?>(
+                get: { selectedTab },
+                set: { if let tab = $0 { selectedTabRawValue = tab.rawValue } }
+            )) {
+                navigationRow(.general)
+                Section("Плеер") {
+                    navigationRow(.notch)
+                    navigationRow(.widget)
+                    navigationRow(.menuBar)
+                }
+                Section("Приложение") {
+                    navigationRow(.shortcuts)
+                    navigationRow(.resources)
+                    navigationRow(.about)
+                }
+            }
+            .listStyle(.sidebar)
+            .navigationSplitViewColumnWidth(min: 185, ideal: 200, max: 215)
+        } detail: {
+            selectedPage
+                .id(selectedTab)
+        }
+        .navigationSplitViewStyle(.balanced)
+        .toolbar(removing: .sidebarToggle)
+        .navigationTitle("Настройки TrackPeek")
+        .frame(width: 940, height: 680)
+    }
+
+    private func navigationRow(_ tab: SettingsTab) -> some View {
+        Label(tab.title, systemImage: tab.symbolName)
+            .tag(tab)
+            .padding(.vertical, 3)
+    }
+
+    @ViewBuilder private var selectedPage: some View {
+        switch selectedTab {
+        case .general:
+            SettingsPage(title: "Основные", subtitle: "Где показывать плеер и откуда брать музыку.") {
                 displayModeSection
                 systemSection
+                presetsSection
+            }
+        case .notch:
+            NotchSettingsView()
+        case .widget:
+            WidgetSettingsView()
+        case .menuBar:
+            MenuBarSettingsView()
+        case .shortcuts:
+            ShortcutSettingsView()
+        case .resources:
+            SettingsPage(title: "Ресурсы и диагностика", subtitle: "Энергопотребление, подключение и аудиозахват.") {
                 resourceSection
                 PlaybackDiagnosticsView(coordinator: .shared)
+            }
+        case .about:
+            SettingsPage(title: "О приложении") {
                 aboutSection
             }
-            .tabItem {
-                Label(
-                    SettingsTab.general.title,
-                    systemImage: SettingsTab.general.symbolName
-                )
-            }
-            .tag(SettingsTab.general)
-
-            NotchSettingsView()
-                .tabItem {
-                    Label(
-                        SettingsTab.notch.title,
-                        systemImage: SettingsTab.notch.symbolName
-                    )
-                }
-                .tag(SettingsTab.notch)
-
-            WidgetSettingsView()
-                .tabItem {
-                    Label(
-                        SettingsTab.widget.title,
-                        systemImage: SettingsTab.widget.symbolName
-                    )
-                }
-                .tag(SettingsTab.widget)
-
-            MenuBarSettingsView()
-                .tabItem {
-                    Label(
-                        SettingsTab.menuBar.title,
-                        systemImage: SettingsTab.menuBar.symbolName
-                    )
-                }
-                .tag(SettingsTab.menuBar)
-
-            ShortcutSettingsView()
-                .tabItem { Label(SettingsTab.shortcuts.title, systemImage: SettingsTab.shortcuts.symbolName) }
-                .tag(SettingsTab.shortcuts)
-
         }
-        .frame(width: 720, height: 640)
     }
 
     private var displayModeSection: some View {
         VStack(alignment: .leading, spacing: 14) {
             SettingsSectionHeader(
                 title: "Экранный плеер",
-                subtitle: "Menu Bar доступен всегда; здесь выбирается панель поверх рабочего стола."
+                subtitle: "Строка меню доступна в любом режиме."
             )
 
             HStack(alignment: .top, spacing: 12) {
@@ -253,11 +269,11 @@ struct SettingsView: View {
                 }
             }
 
-            SettingsSectionHeader(
-                title: "Пресеты",
-                subtitle: "Быстрая настройка характера и стиля обеих поверхностей."
-            )
+        }
+    }
 
+    private var presetsSection: some View {
+        SettingsDisclosure(title: "Быстрая настройка", subtitle: "Готовые сочетания поведения и оформления чёлки и виджета.") {
             SettingsGroup {
                 SettingsRow(
                     title: "Поведение",
@@ -289,13 +305,6 @@ struct SettingsView: View {
                     .frame(width: 190)
                 }
             }
-
-            Label(
-                "Иконка и управление в строке меню работают в любом режиме.",
-                systemImage: "info.circle"
-            )
-            .font(.caption)
-            .foregroundStyle(.secondary)
         }
     }
 
@@ -326,14 +335,12 @@ struct SettingsView: View {
     private var systemSection: some View {
         VStack(alignment: .leading, spacing: 14) {
             SettingsSectionHeader(
-                title: "Система",
-                subtitle: "Поведение TrackPeek относительно macOS и источник трека."
+                title: "Воспроизведение и запуск"
             )
 
             SettingsGroup {
                 SettingsRow(
-                    title: "Запускать при входе в систему",
-                    subtitle: "TrackPeek стартует автоматически после входа в macOS."
+                    title: "Запускать при входе в систему"
                 ) {
                     Toggle("Запускать при входе в систему", isOn: $launchAtLoginEnabled)
                         .labelsHidden()
@@ -358,65 +365,37 @@ struct SettingsView: View {
                     .frame(width: 170)
                 }
 
-                SettingsRowDivider()
-
-                SettingsRow(
-                    title: "Приветственный экран",
-                    subtitle: "Пройти онбординг заново: источник, разрешение, автозапуск."
-                ) {
-                    Button("Показать") {
-                        onboardingController.show()
-                    }
-                }
             }
         }
     }
 
     private var aboutSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            SettingsSectionHeader(
-                title: "О приложении",
-                subtitle: "Версия и сброс настроек до значений по умолчанию."
-            )
-
+        VStack(alignment: .leading, spacing: 22) {
             HStack(spacing: 14) {
-                Image(systemName: "music.note")
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .frame(width: 44, height: 44)
-                    .background(
-                        LinearGradient(
-                            colors: [Color.green, Color.green.opacity(0.7)],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        ),
-                        in: RoundedRectangle(cornerRadius: 11, style: .continuous)
-                    )
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("TrackPeek")
-                        .font(.headline)
-
-                    Text("Версия \(appVersion)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                Image(nsImage: NSApp.applicationIconImage)
+                    .resizable().frame(width: 52, height: 52)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("TrackPeek").font(.title3.weight(.semibold))
+                    Text("Версия \(appVersion)").font(.caption).foregroundStyle(.secondary)
                 }
-
                 Spacer()
-
                 Button("Проверить обновления") {
                     SparkleUpdaterController.shared.checkForUpdates()
                 }
-
-                Button("Сбросить настройки") {
-                    showsResetConfirmation = true
+            }
+            SettingsGroup {
+                SettingsRow(title: "Первоначальная настройка", subtitle: "Источник музыки, разрешения и автозапуск.") {
+                    Button("Открыть") { onboardingController.show() }
                 }
             }
-            .padding(14)
-            .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 13, style: .continuous)
-                    .stroke(.primary.opacity(0.08), lineWidth: 1)
+            SettingsSection(title: "Сброс") {
+                SettingsGroup {
+                    SettingsRow(title: "Вернуть настройки по умолчанию", subtitle: "Оформление, расположение и горячие клавиши.") {
+                        Button("Сбросить настройки", role: .destructive) {
+                            showsResetConfirmation = true
+                        }
+                    }
+                }
             }
         }
         .confirmationDialog(
