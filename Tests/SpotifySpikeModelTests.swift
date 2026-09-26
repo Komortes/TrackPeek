@@ -276,16 +276,18 @@ extension SpotifySpikeModelTests {
 
     @Test("AppleScript timeout returns before a blocking native script finishes")
     func scriptTimeout() async {
+        let executor = AppleScriptExecutor()
         let clock = ContinuousClock()
         let start = clock.now
         do {
-            _ = try await AppleScriptExecutor.execute("delay 1\nreturn 1", timeout: .milliseconds(50))
+            _ = try await executor.run("delay 1\nreturn 1", timeout: .milliseconds(50))
             Issue.record("Expected a timeout")
         } catch AppleScriptExecutionError.timedOut {
             #expect(start.duration(to: clock.now) < .milliseconds(700))
         } catch {
             Issue.record("Unexpected error: \(error)")
         }
+        await executor.shutdown()
     }
 }
 
@@ -518,12 +520,14 @@ private func waitForFirstFetch(_ provider: DelayedSpotifyProvider) async throws 
 
 @Test("Automation denial is classified by error number independently of message language")
 func classifiesAutomationDeniedNumber() async {
+    let executor = AppleScriptExecutor()
     do {
-        _ = try await AppleScriptExecutor.execute("error \"arbitrary localized message\" number -1743")
+        _ = try await executor.run("error \"arbitrary localized message\" number -1743")
         Issue.record("Expected denied permission")
     } catch AppleScriptExecutionError.automationDenied {
         // No TCC request is made: the script only returns a synthetic error.
     } catch {
         Issue.record("Unexpected classification: \(error)")
     }
+    await executor.shutdown()
 }

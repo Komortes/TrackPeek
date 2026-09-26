@@ -116,7 +116,9 @@ Some features use the network:
 
 TrackPeek does not keep a listening-history database. Artwork data, decoded images, palettes, and lyrics use bounded in-memory caches. Artwork downloads share an ephemeral session without an additional HTTP cache. Diagnostic reports are copied only on request and exclude song metadata, user paths, and raw error messages.
 
-If Automation access is denied, automatic polling stops until you retry or a relevant lifecycle event occurs. Open **Settings → Resources → Diagnostics** to reach macOS permissions and check again. Recovery does not automatically replay playback commands. A permanently blocked native AppleScript engine still requires a TrackPeek restart; isolating that engine in a helper process is planned.
+If Automation access is denied, automatic polling stops until you retry or a relevant lifecycle event occurs. Open **Settings → Resources → Diagnostics** to reach macOS permissions and check again.
+
+Playback scripts run in a bundled, signed helper process. A timeout or cancellation of an active request terminates the helper and discards its pending commands; a new request can start a fresh process. Playback commands are never automatically replayed, because a player may already have performed them before the timeout. The helper is reused between requests, waits without a polling timer, and exits with TrackPeek. The initial macOS Automation consent prompt has a separate, longer deadline.
 
 ## Build from source
 
@@ -172,6 +174,9 @@ Sources/
   Stores/     — shared playback state and bounded lyrics cache
   Support/    — windows, display identity, updates, palette extraction
   Views/      — notch, widgets, menu bar, popover layouts, settings
+Helpers/      — isolated, signed AppleScript process
+Shared/       — bounded app/helper message protocol
+Config/       — signing entitlements
 Tests/        — app-hosted tests run with xcodebuild
 script/       — build/run and release helpers
 project.yml   — XcodeGen project definition

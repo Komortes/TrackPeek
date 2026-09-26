@@ -73,6 +73,7 @@ actor PlaybackSourceRouter: SpotifyPlaybackProviding {
         } catch {
             primaryResult = .failure(error)
         }
+        try Task.checkCancellation()
 
         if case let .success(track) = primaryResult, track.isPlaying {
             lastActiveSource = primary
@@ -93,6 +94,7 @@ actor PlaybackSourceRouter: SpotifyPlaybackProviding {
             lastActiveSource = primary
             return track.tagged(with: primary)
         case let .failure(error):
+            try Task.checkCancellation()
             // Второй источник может быть на паузе, но живым.
             if isRunning(secondary.bundleIdentifier),
                let track = try? await provider(for: secondary).fetchCurrentTrack() {

@@ -21,9 +21,17 @@ targets:
     platform: macOS
     sources:
       - path: Sources
+      - path: Shared
     dependencies:
       - sdk: CoreAudio.framework
       - package: Sparkle
+      - target: TrackPeekScriptHelper
+        link: false
+        embed: true
+        codeSign: true
+        copy:
+          destination: wrapper
+          subpath: Contents/Helpers
     info:
       path: Sources/Info.plist
       properties:
@@ -42,8 +50,29 @@ targets:
         SWIFT_OBJC_BRIDGING_HEADER: Sources/Support/TrackPeek-Bridging-Header.h
         CODE_SIGN_STYLE: Manual
         CODE_SIGN_IDENTITY: Apple Development
+        CODE_SIGN_ENTITLEMENTS: Config/TrackPeek.entitlements
         DEVELOPMENT_TEAM: 97JZ23LR73
         ENABLE_HARDENED_RUNTIME: YES
+
+  TrackPeekScriptHelper:
+    type: tool
+    platform: macOS
+    sources:
+      - path: Helpers/TrackPeekScriptHelper
+      - path: Shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.trackpeek.TrackPeek.ScriptHelper
+        GENERATE_INFOPLIST_FILE: YES
+        CREATE_INFOPLIST_SECTION_IN_BINARY: YES
+        INFOPLIST_KEY_NSAppleEventsUsageDescription: "TrackPeek использует Automation для чтения текущего трека и управления Spotify или Music."
+        INFOPLIST_KEY_LSUIElement: YES
+        CODE_SIGN_STYLE: Manual
+        CODE_SIGN_IDENTITY: Apple Development
+        CODE_SIGN_ENTITLEMENTS: Config/TrackPeek.entitlements
+        DEVELOPMENT_TEAM: 97JZ23LR73
+        ENABLE_HARDENED_RUNTIME: YES
+        SKIP_INSTALL: YES
 
   TrackPeekTests:
     type: bundle.unit-test

@@ -142,7 +142,7 @@ actor SpotifyAppleScriptClient: SpotifyPlaybackProviding {
 
     private func execute(_ source: String) async throws -> NSAppleEventDescriptor {
         do {
-            return try await AppleScriptExecutor.execute(source)
+            return try await AppleScriptExecutor.execute(source, targetBundleIdentifier: "com.spotify.client")
         } catch AppleScriptExecutionError.automationDenied {
             throw SpotifyPlaybackError.automationDenied
         } catch AppleScriptExecutionError.timedOut {

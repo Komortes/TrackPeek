@@ -216,6 +216,104 @@ struct PlaybackRecoveryTests {
         #expect(fixture.coordinator.nextRefreshDate == nil)
         #expect(!fixture.model.isRefreshing)
     }
+
+    @Test("a successful command drains an overlapping poll without canceling or publishing it", arguments: [false, true])
+    func commandDrainsOlderPoll(oldReadFails: Bool) async throws {
+        try await withCommandRecoveryModel { model, provider in
+            var publishedStates: [(String?, PlaybackAvailability)] = []
+            model.onRefreshCompleted = {
+                publishedStates.append((model.track?.title, model.availability))
+            }
+            let oldPoll = Task { await model.refresh() }
+            try await waitUntil { await provider.hasPendingFetch(2) }
+            let command = Task { await model.togglePlayback() }
+            try await waitUntil { await provider.hasPendingCommand }
+            await provider.finishCommand()
+            try await waitUntil { await provider.commandExecuted }
+            // Let the command continuation run while the old read remains
+            // explicitly held by the fake; no wall-clock delay is needed.
+            for _ in 0 ..< 20 { await Task.yield() }
+
+            if oldReadFails {
+                await provider.finishFetch(2, with: .failure(SpotifyPlaybackError.automationDenied))
+            } else {
+                await provider.finishFetch(2, with: .success(recoveryTrack("Obsolete pre-command snapshot")))
+            }
+            await oldPoll.value
+            #expect(!(await provider.cancelledFetches.contains(2)))
+            try await waitUntil { await provider.hasPendingFetch(3) }
+            #expect(model.track?.title == "Before command")
+            #expect(model.availability == .ready)
+            #expect(model.consecutiveFailures == 0)
+            #expect(publishedStates.allSatisfy { $0.0 == "Before command" && $0.1 == .ready })
+
+            await provider.finishFetch(3, with: .success(recoveryTrack("Fresh post-command snapshot")))
+            await command.value
+            #expect(model.track?.title == "Fresh post-command snapshot")
+            #expect(model.availability == .ready)
+            #expect(!model.isRefreshing)
+            #expect(!model.isPerformingCommand)
+            #expect(await provider.fetchCount == 3)
+            #expect(publishedStates.last?.0 == "Fresh post-command snapshot")
+        }
+    }
+
+    @Test("lifecycle invalidation while a command drains a poll prevents its follow-up refresh")
+    func invalidationWhileCommandDrainsPollWins() async throws {
+        try await withCommandRecoveryModel { model, provider in
+            let oldPoll = Task { await model.refresh() }
+            try await waitUntil { await provider.hasPendingFetch(2) }
+            var commandFinished = false
+            let command = Task {
+                await model.togglePlayback()
+                commandFinished = true
+            }
+            try await waitUntil { await provider.hasPendingCommand }
+            await provider.finishCommand()
+            try await waitUntil { await provider.commandExecuted }
+            for _ in 0 ..< 20 { await Task.yield() }
+
+            model.invalidate(clearTrack: true)
+            await provider.finishFetch(2, with: .success(recoveryTrack("Obsolete before invalidation")))
+            await oldPoll.value
+            try await waitUntil {
+                if commandFinished { return true }
+                return await provider.hasPendingFetch(3)
+            }
+            // Release an incorrectly started read too, so a regression fails
+            // by assertion instead of leaving a checked continuation suspended.
+            await provider.finishFetch(3, with: .success(recoveryTrack("Obsolete follow-up")))
+            await command.value
+            #expect(await provider.fetchCount == 2)
+            #expect(model.track == nil)
+            #expect(model.activeSource == nil)
+            #expect(model.availability == .loading)
+            #expect(!model.isRefreshing)
+            #expect(!model.isPerformingCommand)
+        }
+    }
+
+    private func withCommandRecoveryModel(
+        _ body: (SpotifySpikeModel, RecoveryProvider) async throws -> Void
+    ) async throws {
+        let provider = RecoveryProvider()
+        let model = SpotifySpikeModel(provider: provider)
+        do {
+            let initial = Task { await model.refresh() }
+            try await waitUntil { await provider.hasPendingFetch(1) }
+            await provider.finishFetch(1, with: .success(recoveryTrack("Before command")))
+            await initial.value
+            try await body(model, provider)
+        } catch {
+            model.onRefreshCompleted = nil
+            model.invalidate(clearTrack: true)
+            await provider.finishAllPending()
+            throw error
+        }
+        model.onRefreshCompleted = nil
+        model.invalidate(clearTrack: true)
+        await provider.finishAllPending()
+    }
 }
 
 @MainActor
@@ -268,6 +366,7 @@ private actor RecoveryProvider: SpotifyPlaybackProviding {
     private(set) var completedFetches = 0
     private(set) var commandWasCancelled = false
     private(set) var commandExecuted = false
+    private(set) var cancelledFetches: Set<Int> = []
     var hasPendingCommand: Bool { pendingCommand != nil }
 
     func hasPendingFetch(_ number: Int) -> Bool { pendingFetches[number] != nil }
@@ -275,7 +374,10 @@ private actor RecoveryProvider: SpotifyPlaybackProviding {
     func fetchCurrentTrack() async throws -> SpotifyTrack {
         fetchCount += 1
         let number = fetchCount
-        defer { completedFetches += 1 }
+        defer {
+            completedFetches += 1
+            if Task.isCancelled { cancelledFetches.insert(number) }
+        }
         return try await withCheckedThrowingContinuation { pendingFetches[number] = $0 }
     }
 
@@ -298,6 +400,13 @@ private actor RecoveryProvider: SpotifyPlaybackProviding {
     func finishCommand() {
         pendingCommand?.resume()
         pendingCommand = nil
+    }
+
+    func finishAllPending() {
+        let fetches = pendingFetches.values
+        pendingFetches.removeAll()
+        for fetch in fetches { fetch.resume(throwing: CancellationError()) }
+        finishCommand()
     }
 
     func nextTrack() throws { }

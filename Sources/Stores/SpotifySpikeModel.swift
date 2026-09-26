@@ -224,6 +224,26 @@ final class SpotifySpikeModel {
         isPerformingCommand = false
     }
 
+    private func refreshAfterCommand(id: UUID) async {
+        if let pendingRefresh = refreshTask {
+            // Discard a pre-command snapshot without canceling healthy native
+            // I/O: canceling an active script would terminate its helper.
+            // Keep the task available so other refresh callers still join it.
+            refreshGeneration &+= 1
+            let generation = refreshGeneration
+            await pendingRefresh.value
+            guard commandID == id, !Task.isCancelled else { return }
+            if generation == refreshGeneration {
+                refreshTask = nil
+                isRefreshing = false
+            }
+        }
+        guard commandID == id, !Task.isCancelled else { return }
+        // Read after the command; joining only the old poll could display its
+        // earlier state. A newer lifecycle refresh, if present, can be joined.
+        await refresh()
+    }
+
     private func performCommand(
         seekPosition: TimeInterval? = nil,
         operation: @escaping @Sendable () async throws -> Void
@@ -245,7 +265,7 @@ final class SpotifySpikeModel {
                     self.snapshotDate = Date()
                     self.seekSettlingDeadline = Date().addingTimeInterval(2)
                 } else {
-                    await self.refresh(replacingCurrent: true)
+                    await self.refreshAfterCommand(id: id)
                 }
             } catch {
                 guard let self, self.commandID == id, !Task.isCancelled else { return }
