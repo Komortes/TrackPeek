@@ -159,18 +159,8 @@ extension PlayerLayoutTests {
         #expect(NotchContentLayout.focus.size(for: .expanded, width: 320, heightAdjustment: 0, topInset: 40).height == 164)
     }
 
-    @Test("reading window follows seek and stays bounded")
-    func readingWindow() {
-        let lines = (0..<10).map { LyricsLine(time: Double($0 * 10 + 5), text: "Line \($0)") }
-        let intro = LyricsReadingWindow.entries(in: lines, position: 0)
-        #expect(intro.map(\.index) == [0, 1, 2, 3])
-        #expect(!intro.contains { $0.isCurrent })
-        let middle = LyricsReadingWindow.entries(in: lines, position: 45)
-        #expect(middle.map(\.index) == [3, 4, 5, 6])
-        #expect(middle.first(where: \.isCurrent)?.index == 4)
-        #expect(LyricsReadingWindow.entries(in: lines, position: 5).first(where: \.isCurrent)?.index == 0)
-        #expect(LyricsReadingWindow.entries(in: [], position: 50).isEmpty)
-        #expect(LyricsReadingWindow.entries(in: lines, position: 120).map(\.index) == [8, 9])
+    @Test("full lyrics retain compact popover bounds")
+    func lyricsPopoverSizing() {
         #expect(PlayerLayout.lyrics.popoverSize(artworkSize: 274) == CGSize(width: 380, height: 470))
     }
 }

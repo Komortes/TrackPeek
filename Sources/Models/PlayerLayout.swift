@@ -27,7 +27,7 @@ enum PlayerLayout: String, CaseIterable, Identifiable, Sendable {
     var summary: String {
         switch self {
         case .lyrics:
-            "Текущая строка и соседние; обычный текст можно читать целиком."
+            "Полный текст песни; нажатие на строку перематывает воспроизведение."
         case .compactHorizontal:
             "Быстрый горизонтальный контроллер."
         case .standard:
