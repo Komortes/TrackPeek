@@ -118,7 +118,8 @@ struct WidgetSettingsView: View {
             }
             .pickerStyle(.segmented)
             .labelsHidden()
-            .frame(width: 380, alignment: .leading)
+            .fixedSize()
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             activationCard
 
@@ -171,8 +172,7 @@ struct WidgetSettingsView: View {
                         Text(family.title).tag(family)
                     }
                 }
-                .labelsHidden()
-                .frame(width: 220)
+                .settingsMenuControl()
             }
 
             LazyVGrid(
@@ -558,8 +558,7 @@ struct WidgetSettingsView: View {
                                     Text(mode.title).tag(mode)
                                 }
                             }
-                            .labelsHidden()
-                            .frame(width: 150)
+                            .settingsMenuControl()
                         }
                     }
                 }
@@ -574,8 +573,7 @@ struct WidgetSettingsView: View {
                     Text(source.title).tag(source)
                 }
             }
-            .labelsHidden()
-            .frame(width: 190)
+            .settingsMenuControl()
         }
     }
 

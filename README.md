@@ -57,6 +57,8 @@ See [display selection details](docs/product/display-selection.md) for behavior 
 
 The settings sidebar separates General, Notch, Widget, Menu Bar, Shortcuts, Resources, and About. Widget settings group **Template / Placement / Appearance**; choosing a template category only browses its previews. Notch settings separate **Appearance / Behavior**, while Menu Bar separates the menu indicators from the popover. Optional visual effects and general presets expand on demand. Existing preferences and direct links from player menus are preserved.
 
+Right-click the player or use its **…** menu for quick actions. **Copy** (`Копировать`) groups the title and artist/title options; **Player appearance** (`Вид плеера`) groups overlay modes and, when a widget is active, its templates. Lyrics, temporary hiding, refresh, and settings remain directly accessible.
+
 ## Focus notch and Lyrics popover
 
 - **Settings → Notch → Appearance → Layout → Focus** (`Чёлка → Вид → Раскладка → Фокус`) selects the restrained notch layout. Its collapsed title avoids the camera gap on notched displays, and expanded controls sit below the safe top area. Width and height correction remain adjustable; the full player's effect settings are preserved.

@@ -264,8 +264,7 @@ struct SettingsView: View {
                             Text(policy.title).tag(policy)
                         }
                     }
-                    .labelsHidden()
-                    .frame(width: 230)
+                    .settingsMenuControl()
                 }
             }
 
@@ -285,8 +284,7 @@ struct SettingsView: View {
                             Text(preset.title).tag(preset.rawValue)
                         }
                     }
-                    .labelsHidden()
-                    .frame(width: 190)
+                    .settingsMenuControl()
                 }
 
                 SettingsRowDivider()
@@ -301,8 +299,7 @@ struct SettingsView: View {
                             Text(preset.title).tag(preset.rawValue)
                         }
                     }
-                    .labelsHidden()
-                    .frame(width: 190)
+                    .settingsMenuControl()
                 }
             }
         }
@@ -317,8 +314,7 @@ struct SettingsView: View {
                             Text(mode.title).tag(mode.rawValue)
                         }
                     }
-                    .labelsHidden()
-                    .frame(width: 170)
+                    .settingsMenuControl()
                 }
                 SettingsRowDivider()
                 SettingsRow(
@@ -361,8 +357,7 @@ struct SettingsView: View {
                             Text(source.title).tag(source)
                         }
                     }
-                    .labelsHidden()
-                    .frame(width: 170)
+                    .settingsMenuControl()
                 }
 
             }
@@ -442,7 +437,7 @@ struct SettingsView: View {
                 Text(mode.summary)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .lineLimit(3)
+                    .lineLimit(3, reservesSpace: true)
 
                 Text(selectedMode == mode ? "Активен" : "Доступен")
                     .font(.caption2.weight(.semibold))

@@ -34,7 +34,7 @@ struct MenuBarSettingsView: View {
     }
 
     var body: some View {
-        SettingsPage(title: "Строка меню") {
+        SettingsPage(title: "Строка меню", subtitle: "Индикаторы и окно плеера в строке меню.") {
             Picker("Настройки строки меню", selection: $selectedPage) {
                 ForEach(Page.allCases, id: \.self) { page in
                     Text(page.rawValue).tag(page)
@@ -42,7 +42,8 @@ struct MenuBarSettingsView: View {
             }
             .pickerStyle(.segmented)
             .labelsHidden()
-            .frame(width: 320)
+            .fixedSize()
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             switch selectedPage {
             case .menuBar:
@@ -190,8 +191,7 @@ struct PopoverSettingsSection: View {
                             Text(style.title).tag(style)
                         }
                     }
-                    .labelsHidden()
-                    .frame(width: 170)
+                    .settingsMenuControl()
                     .disabled(playerLayout == .lyrics)
                 }
 
@@ -256,7 +256,7 @@ struct PopoverSettingsSection: View {
                 Text(layout.summary)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .lineLimit(3)
+                    .lineLimit(3, reservesSpace: true)
             }
             .frame(maxWidth: .infinity, alignment: .topLeading)
             .padding(12)

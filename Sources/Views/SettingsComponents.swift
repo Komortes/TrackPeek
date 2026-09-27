@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Shared building blocks for the Settings window, kept in one place so every
-/// tab (General/Notch/Player) renders with the same spacing and materials.
+/// page renders with the same spacing and materials.
 
 struct SettingsPage<Content: View>: View {
     let title: String
@@ -14,7 +14,11 @@ struct SettingsPage<Content: View>: View {
                 SettingsSectionHeader(title: title, subtitle: subtitle, titleFont: .title2.weight(.semibold))
                 content()
             }
+            // Leave room for the native scrollbar so sections keep the same
+            // width when switching between short and scrollable pages.
+            .frame(maxWidth: 640, alignment: .leading)
             .padding(24)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 }
@@ -115,18 +119,30 @@ struct SettingsRow<Control: View>: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
-
-            Spacer(minLength: 16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .fixedSize(horizontal: false, vertical: true)
             control()
+                .fixedSize(horizontal: true, vertical: false)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
+        .frame(minHeight: 44)
     }
 }
 
 struct SettingsRowDivider: View {
     var body: some View {
-        Divider().padding(.leading, 14)
+        Divider().padding(.horizontal, 14)
+    }
+}
+
+extension View {
+    /// Native pop-up buttons use their intrinsic width inside a SwiftUI frame.
+    /// Anchor that button to the row edge instead of centering it in the column.
+    func settingsMenuControl(width: CGFloat = 220) -> some View {
+        pickerStyle(.menu)
+            .labelsHidden()
+            .frame(width: width, alignment: .trailing)
     }
 }
 
@@ -174,8 +190,7 @@ struct DisplayTargetPicker: View {
                     Label(target.title, systemImage: target.symbolName).tag(target.rawValue)
                 }
             }
-            .pickerStyle(.menu)
-            .labelsHidden()
+            .settingsMenuControl(width: 300)
             .accessibilityLabel("Монитор для плеера")
             if selectedDisplayIsMissing {
                 Text("Пока используется основной. Выбор сохранён до подключения.")
@@ -183,7 +198,7 @@ struct DisplayTargetPicker: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .frame(width: 300)
+        .frame(width: 300, alignment: .trailing)
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didChangeScreenParametersNotification)) { _ in
             displays = ConnectedDisplayChoice.current()
         }

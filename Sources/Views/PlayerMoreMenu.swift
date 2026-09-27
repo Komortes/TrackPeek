@@ -55,43 +55,44 @@ struct PlayerActionsMenuItems: View {
                 PlayerAppLauncher.openActiveSource()
             }
 
-            Divider()
-
-            Button("Копировать название", systemImage: "doc.on.doc") {
-                copy(track?.title ?? "")
-            }
-            .disabled(track == nil)
-
-            Button("Копировать исполнителя и трек", systemImage: "text.quote") {
-                guard let track else { return }
-                copy("\(track.artist) — \(track.title)")
-            }
-            .disabled(track == nil)
-
             if let track {
                 LyricsActionsMenu(track: track, store: PlaybackCoordinator.shared.lyricsStore)
                     .disabled(PlaybackCoordinator.shared.model.isStale)
             }
 
-            Button("Обновить", systemImage: "arrow.clockwise", action: onRefresh)
+            Menu("Копировать", systemImage: "doc.on.doc") {
+                Button("Название") {
+                    copy(track?.title ?? "")
+                }
+
+                Button("Исполнителя и трек") {
+                    guard let track else { return }
+                    copy("\(track.artist) — \(track.title)")
+                }
+            }
+            .disabled(track == nil)
 
             Divider()
 
-            Picker("Экранный плеер", selection: $overlayModeRawValue) {
-                ForEach(OverlayMode.allCases) { mode in
-                    Text(mode.title).tag(mode.rawValue)
-                }
-            }
-            .pickerStyle(.inline)
-
-            if OverlayMode(rawValue: overlayModeRawValue) == .floatingWidget {
-                Menu("Раскладка виджета") {
-                    Picker("Раскладка виджета", selection: $widgetLayoutRawValue) {
-                        ForEach(NotchWidgetLayout.allCases) { layout in
-                            Text(layout.title).tag(layout.rawValue)
-                        }
+            Menu("Вид плеера", systemImage: "rectangle.on.rectangle") {
+                Picker("Экранный плеер", selection: $overlayModeRawValue) {
+                    ForEach(OverlayMode.allCases) { mode in
+                        Text(mode.title).tag(mode.rawValue)
                     }
-                    .pickerStyle(.inline)
+                }
+                .pickerStyle(.inline)
+
+                if OverlayMode(rawValue: overlayModeRawValue) == .floatingWidget {
+                    Divider()
+
+                    Menu("Шаблон виджета") {
+                        Picker("Шаблон виджета", selection: $widgetLayoutRawValue) {
+                            ForEach(NotchWidgetLayout.allCases) { layout in
+                                Text(layout.title).tag(layout.rawValue)
+                            }
+                        }
+                        .pickerStyle(.inline)
+                    }
                 }
             }
 
@@ -105,6 +106,8 @@ struct PlayerActionsMenuItems: View {
             }
 
             Divider()
+
+            Button("Обновить", systemImage: "arrow.clockwise", action: onRefresh)
 
             Button("Настройки…", systemImage: "gearshape") {
                 selectedSettingsTab = switch OverlayMode(rawValue: overlayModeRawValue) {

@@ -131,9 +131,7 @@ struct NotchSettingsView: View {
     }
 
     var body: some View {
-        SettingsPage(title: "Чёлка") {
-            activationStatus
-
+        SettingsPage(title: "Чёлка", subtitle: "Плеер у верхнего края экрана.") {
             Picker("Настройки чёлки", selection: $selectedPage) {
                 ForEach(Page.allCases, id: \.self) { page in
                     Text(page.rawValue).tag(page)
@@ -141,7 +139,10 @@ struct NotchSettingsView: View {
             }
             .pickerStyle(.segmented)
             .labelsHidden()
-            .frame(width: 320)
+            .fixedSize()
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            activationStatus
 
             switch selectedPage {
             case .appearance:
@@ -173,8 +174,7 @@ struct NotchSettingsView: View {
                             Text(layout.title).tag(layout.rawValue)
                         }
                     }
-                    .labelsHidden()
-                    .frame(width: 190)
+                    .settingsMenuControl()
                 }
             }
 
@@ -370,8 +370,7 @@ struct NotchSettingsView: View {
                             Text(visibility.title).tag(visibility)
                         }
                     }
-                    .labelsHidden()
-                    .frame(width: 210)
+                    .settingsMenuControl()
                 }
 
                 SettingsRowDivider()
@@ -393,8 +392,7 @@ struct NotchSettingsView: View {
                             Text(source.title).tag(source)
                         }
                     }
-                    .labelsHidden()
-                    .frame(width: 190)
+                    .settingsMenuControl()
                 }
             }
         }
@@ -466,8 +464,7 @@ struct NotchSettingsView: View {
                             Text(mode.title).tag(mode)
                         }
                     }
-                    .labelsHidden()
-                    .frame(width: 150)
+                    .settingsMenuControl()
                 }
             }
         }
