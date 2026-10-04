@@ -26,7 +26,7 @@ TrackPeek controls the Spotify and Apple Music desktop apps already running on y
 - **Global shortcuts** — assign play/pause, previous/next, and overlay visibility in Settings → Shortcuts (`Клавиши`), with conflict feedback and an off switch. No keys are assigned by default.
 - **Lyrics** — synchronized lyrics and karaoke from LRCLIB when available.
 - **Artwork colors and live audio** — configurable accents, equalizer sensitivity, and visual effects. Audio analysis stops on pause and when no visible surface needs it; Reduce Motion is respected.
-- **Spotify and Apple Music** — automatic source selection or a preferred player in Settings.
+- **Spotify and Apple Music** — automatic source selection or a preferred player, available in Settings and the player's **Source** (`Источник`) submenu.
 - **Connection recovery** — reconnects after sleep or player restarts, backs off after temporary errors, and keeps the last track visibly marked as stale with its progress stopped.
 - **Resource modes** — Automatic follows macOS Low Power Mode; Normal and Economical override it. Economical stops live audio analysis and decorative looping effects, reduces progress updates and background polling, and preserves appearance choices.
 - **Diagnostics** — Settings → Resources (`Ресурсы`) shows connection, Automation, polling, and audio-analysis status, with a manual check and a copyable technical report.
@@ -58,6 +58,8 @@ See [display selection details](docs/product/display-selection.md) for behavior 
 The settings sidebar separates General, Notch, Widget, Menu Bar, Shortcuts, Resources, and About. Widget settings group **Template / Placement / Appearance**; choosing a template category only browses its previews. Notch settings separate **Appearance / Behavior**, while Menu Bar separates the menu indicators from the popover. Optional visual effects and general presets expand on demand. Existing preferences and direct links from player menus are preserved.
 
 Right-click the player or use its **…** menu for quick actions. **Copy** (`Копировать`) groups the title and artist/title options; **Player appearance** (`Вид плеера`) groups overlay modes and, when a widget is active, its templates. Lyrics, temporary hiding, refresh, and settings remain directly accessible.
+
+Use **Source** (`Источник`) to choose Spotify, Apple Music, or Automatic without opening Settings. Both controls share the same saved preference. Changing it refreshes the player and clears the previous source's track and lyrics; it does not launch a closed music app or start playback. Automatic prefers a playing source, then the last active source when possible. **Open** follows the source currently displayed in Automatic mode.
 
 ## Focus notch and Lyrics popover
 

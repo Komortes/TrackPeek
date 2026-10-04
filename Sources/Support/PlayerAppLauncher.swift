@@ -4,23 +4,33 @@ enum PlayerAppLauncher {
     /// Opens whichever app the current "Источник" preference resolves to,
     /// so the artwork/menu "open" actions match what TrackPeek is actually
     /// showing instead of always assuming Spotify.
+    @MainActor
     static func openActiveSource() {
         let stored = UserDefaults.standard.string(forKey: MediaSourcePreference.storageKey)
         let preference = stored.flatMap(MediaSourcePreference.init) ?? MediaSourcePreference.fallback
+        let runningApps = NSWorkspace.shared.runningApplications
+        let source = sourceToOpen(
+            preference: preference,
+            resolvedSource: PlaybackCoordinator.shared.model.activeSource,
+            spotifyRunning: runningApps.contains { $0.bundleIdentifier == PlaybackSource.spotify.bundleIdentifier },
+            musicRunning: runningApps.contains { $0.bundleIdentifier == PlaybackSource.appleMusic.bundleIdentifier }
+        )
+        open(bundleIdentifier: source.bundleIdentifier)
+    }
 
+    static func sourceToOpen(
+        preference: MediaSourcePreference,
+        resolvedSource: PlaybackSource?,
+        spotifyRunning: Bool,
+        musicRunning: Bool
+    ) -> PlaybackSource {
         switch preference {
         case .spotify:
-            open(bundleIdentifier: "com.spotify.client")
+            .spotify
         case .appleMusic:
-            open(bundleIdentifier: "com.apple.Music")
+            .appleMusic
         case .auto:
-            let spotifyRunning = NSWorkspace.shared.runningApplications.contains {
-                $0.bundleIdentifier == "com.spotify.client"
-            }
-            let musicRunning = NSWorkspace.shared.runningApplications.contains {
-                $0.bundleIdentifier == "com.apple.Music"
-            }
-            open(bundleIdentifier: spotifyRunning || !musicRunning ? "com.spotify.client" : "com.apple.Music")
+            resolvedSource ?? (spotifyRunning || !musicRunning ? .spotify : .appleMusic)
         }
     }
 

@@ -34,3 +34,54 @@ struct OverlayModeTests {
         defaults.removePersistentDomain(forName: "overlay-mode-tests")
     }
 }
+
+@Suite("Player app selection")
+struct PlayerAppLauncherTests {
+    @Test("explicit preference overrides a previous source and running apps")
+    func explicitPreferenceWins() {
+        #expect(PlayerAppLauncher.sourceToOpen(
+            preference: .spotify, resolvedSource: .appleMusic,
+            spotifyRunning: false, musicRunning: true
+        ) == .spotify)
+        #expect(PlayerAppLauncher.sourceToOpen(
+            preference: .appleMusic, resolvedSource: .spotify,
+            spotifyRunning: true, musicRunning: false
+        ) == .appleMusic)
+    }
+
+    @Test("automatic mode opens the displayed Music source when both apps run")
+    func automaticModeMatchesDisplayedSource() {
+        #expect(PlayerAppLauncher.sourceToOpen(
+            preference: .auto, resolvedSource: .appleMusic,
+            spotifyRunning: true, musicRunning: true
+        ) == .appleMusic)
+    }
+
+    @Test("automatic mode can reopen the displayed source after it closes")
+    func automaticModeCanReopenSource() {
+        #expect(PlayerAppLauncher.sourceToOpen(
+            preference: .auto, resolvedSource: .appleMusic,
+            spotifyRunning: false, musicRunning: false
+        ) == .appleMusic)
+    }
+
+    @Test("automatic mode falls back to running apps before a source is resolved")
+    func automaticModeFallback() {
+        #expect(PlayerAppLauncher.sourceToOpen(
+            preference: .auto, resolvedSource: nil,
+            spotifyRunning: true, musicRunning: true
+        ) == .spotify)
+        #expect(PlayerAppLauncher.sourceToOpen(
+            preference: .auto, resolvedSource: nil,
+            spotifyRunning: true, musicRunning: false
+        ) == .spotify)
+        #expect(PlayerAppLauncher.sourceToOpen(
+            preference: .auto, resolvedSource: nil,
+            spotifyRunning: false, musicRunning: true
+        ) == .appleMusic)
+        #expect(PlayerAppLauncher.sourceToOpen(
+            preference: .auto, resolvedSource: nil,
+            spotifyRunning: false, musicRunning: false
+        ) == .spotify)
+    }
+}

@@ -40,6 +40,8 @@ struct PlayerActionsMenuItems: View {
 
     @Environment(\.openSettings) private var openSettings
 
+    @AppStorage(MediaSourcePreference.storageKey)
+    private var mediaSourceRawValue = MediaSourcePreference.fallback.rawValue
     @AppStorage(OverlayMode.storageKey)
     private var overlayModeRawValue = OverlayMode.fallback.rawValue
     @AppStorage(WidgetPreferences.layoutKey)
@@ -49,10 +51,26 @@ struct PlayerActionsMenuItems: View {
     @AppStorage(SettingsTab.selectionStorageKey)
     private var selectedSettingsTab = SettingsTab.general.rawValue
 
+    private var mediaSource: Binding<MediaSourcePreference> {
+        Binding(
+            get: { MediaSourcePreference(rawValue: mediaSourceRawValue) ?? .fallback },
+            set: { mediaSourceRawValue = $0.rawValue }
+        )
+    }
+
     var body: some View {
         Group {
             Button("Открыть \(sourceName)", systemImage: "arrow.up.right.square") {
                 PlayerAppLauncher.openActiveSource()
+            }
+
+            Menu("Источник", systemImage: "music.note.list") {
+                Picker("Источник трека", selection: mediaSource) {
+                    ForEach(MediaSourcePreference.allCases) { source in
+                        Text(source.title).tag(source)
+                    }
+                }
+                .pickerStyle(.inline)
             }
 
             if let track {

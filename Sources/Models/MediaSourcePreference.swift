@@ -26,7 +26,7 @@ enum MediaSourcePreference: String, CaseIterable, Identifiable, Sendable {
         case .appleMusic:
             "Всегда читает трек из Music.app."
         case .auto:
-            "Использует запущенное приложение; Spotify в приоритете, если оба открыты."
+            "Выбирает плеер, в котором играет музыка; если оба на паузе — последний активный."
         }
     }
 }
