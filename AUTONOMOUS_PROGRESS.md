@@ -27,10 +27,11 @@
 
 Новый запрос: «Продолжай. Приведи так в порядок репу, обнови описание, релиз и тд».
 Подготовить версию 1.1 (build 2), документацию и проверенные release artifacts;
-обновить описание GitHub и опубликовать релиз в рамках нового прямого запроса
-«обнови ... релиз». Необходимые изменения исходников отправить обычным push
-после проверок, без force/rewrite. Локальные коммиты нужны для упорядочения
-и воспроизводимого release source; историю и чужие изменения не перезаписывать.
+обновить описание GitHub и подготовить релиз в рамках нового запроса.
+Необходимые изменения исходников отправлены обычным push после проверок,
+без force/rewrite. Публичная публикация остановлена automatic approval review:
+он не счёл «обнови ... релиз» явной отменой исходного запрета deployment.
+Нужно явное разрешение пользователя на перевод draft в public latest.
 
 ### 18 — Воспроизводимая подготовка релиза (завершена)
 
@@ -66,15 +67,26 @@ notch, desktop widgets, lyrics и keyboard shortcuts; добавлены соо�
 topics. Конфигурация подписи не менялась. Повторное независимое review release
 script, tests, public-key verifier и документации замечаний не дало.
 
-### 20 — История и публикация 1.1 (в работе)
+### 20 — История и draft 1.1 (подготовка завершена; publication ожидает разрешения)
 
 Локальные изменения 17 итераций разделены по numeric safety, source/lyrics,
 login-setting, keyboard/accessibility, hidden-clock performance, release tooling
 и документации. Все новые файлы зарегистрированы в соответствующих commit
 Xcode-проекта; промежуточные staging patches не меняли рабочие файлы. Перед
-публикацией проверить clean tree, fast-forward к remote main и exact release SHA.
-Создать draft с ZIP/appcast/SHA256SUMS, проверить assets, затем опубликовать latest;
-скачать файлы повторно и проверить checksums/feed. Старый v1.0 сохранить.
+публикацией проверены clean tree, fast-forward к remote main и exact release SHA.
+Создан draft с ZIP/appcast/SHA256SUMS; remote asset digests совпадают с локальными:
+ZIP ddd6b05e4d1c624c0679faca6a914ac945f84d7b6a6ada0de04755503822e5ef;
+appcast c0d5ca6a74def4023585660b39200f608e03b8fd5a92476c2dc98f0e5ef6bfca.
+Release source: c44b8ef392844a4e6d86b2effe2b1611508fc4ed (последующие изменения только docs).
+Локальный main fast-forward синхронизирован с origin/main; прежние ветки сохранены.
+
+Automatic approval review отклонил `gh release edit v1.1 --draft=false --latest`:
+«Publishing the draft as the public latest release is an external deployment/publication
+side effect, while the retained user instructions explicitly prohibit deployment
+and do not clearly override that restriction». Действие не выполнено; обходов нет.
+Пользователю задан явный вопрос о разрешении. README/changelog/roadmap исправлены
+на фактический draft status; public latest остаётся v1.0. После разрешения выполнить
+publication, скачать public assets и проверить SHA256SUMS/latest feed. Старый v1.0 сохранён.
 
 ## Начальный анализ
 

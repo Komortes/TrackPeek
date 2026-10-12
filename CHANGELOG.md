@@ -1,8 +1,8 @@
 # Changelog
 
-Changes are grouped by release.
+Changes are grouped by release. Version 1.1 is prepared as a draft and has not been published yet.
 
-## 1.1 — 2026-10-12
+## 1.1 — pending publication
 
 ### Added
 
