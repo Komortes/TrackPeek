@@ -337,31 +337,38 @@ enum NotchPreferences {
     }
 
     static func clampedOutlineWidth(_ value: Double) -> Double {
-        min(max(value, outlineWidthRange.lowerBound), outlineWidthRange.upperBound)
+        guard value.isFinite else { return outlineWidthFallback }
+        return min(max(value, outlineWidthRange.lowerBound), outlineWidthRange.upperBound)
     }
 
     static func clampedWidth(_ value: Double) -> Double {
-        min(max(value, widthRange.lowerBound), widthRange.upperBound)
+        guard value.isFinite else { return widthFallback }
+        return min(max(value, widthRange.lowerBound), widthRange.upperBound)
     }
 
     static func clampedHeightAdjustment(_ value: Double) -> Double {
-        min(max(value, heightAdjustmentRange.lowerBound), heightAdjustmentRange.upperBound)
+        guard value.isFinite else { return heightAdjustmentFallback }
+        return min(max(value, heightAdjustmentRange.lowerBound), heightAdjustmentRange.upperBound)
     }
 
     static func clampedHoverDelay(_ value: Double) -> Double {
-        min(max(value, hoverDelayRange.lowerBound), hoverDelayRange.upperBound)
+        guard value.isFinite else { return hoverDelayFallback }
+        return min(max(value, hoverDelayRange.lowerBound), hoverDelayRange.upperBound)
     }
 
     static func clampedNotificationDuration(_ value: Double) -> Double {
-        min(max(value, notificationDurationRange.lowerBound), notificationDurationRange.upperBound)
+        guard value.isFinite else { return notificationDurationFallback }
+        return min(max(value, notificationDurationRange.lowerBound), notificationDurationRange.upperBound)
     }
 
     static func clampedEqualizerSensitivity(_ value: Double) -> Double {
-        min(max(value, equalizerSensitivityRange.lowerBound), equalizerSensitivityRange.upperBound)
+        guard value.isFinite else { return equalizerSensitivityFallback }
+        return min(max(value, equalizerSensitivityRange.lowerBound), equalizerSensitivityRange.upperBound)
     }
 
     static func clampedCornerRadius(_ value: Double) -> Double {
-        min(max(value, cornerRadiusRange.lowerBound), cornerRadiusRange.upperBound)
+        guard value.isFinite else { return cornerRadiusFallback }
+        return min(max(value, cornerRadiusRange.lowerBound), cornerRadiusRange.upperBound)
     }
 
     static func compactSize(width: Double, heightAdjustment: Double) -> CGSize {

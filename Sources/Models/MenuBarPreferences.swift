@@ -28,10 +28,12 @@ enum MenuBarPreferences {
     }
 
     static func clampedTitleWidth(_ value: Double) -> Double {
-        min(max(value, titleWidthRange.lowerBound), titleWidthRange.upperBound)
+        guard value.isFinite else { return titleWidthFallback }
+        return min(max(value, titleWidthRange.lowerBound), titleWidthRange.upperBound)
     }
 
     static func clampedSpacing(_ value: Double) -> Double {
-        min(max(value, spacingRange.lowerBound), spacingRange.upperBound)
+        guard value.isFinite else { return spacingFallback }
+        return min(max(value, spacingRange.lowerBound), spacingRange.upperBound)
     }
 }

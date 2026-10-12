@@ -14,5 +14,8 @@ struct PlaybackTimeFormatterTests {
     func clampsInvalidTime() {
         #expect(PlaybackTimeFormatter.string(from: -10) == "0:00")
         #expect(PlaybackTimeFormatter.string(from: .infinity) == "0:00")
+        #expect(PlaybackTimeFormatter.string(from: .nan) == "0:00")
+        #expect(PlaybackTimeFormatter.string(from: .greatestFiniteMagnitude) == "0:00")
+        #expect(PlaybackTimeFormatter.string(from: Double(Int.max)) == "0:00")
     }
 }

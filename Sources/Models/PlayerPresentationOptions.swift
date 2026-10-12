@@ -18,7 +18,8 @@ enum ArtworkSizePreference {
     static let step = 2.0
 
     static func clamped(_ value: Double) -> Double {
-        min(max(value, range.lowerBound), range.upperBound)
+        guard value.isFinite else { return fallback }
+        return min(max(value, range.lowerBound), range.upperBound)
     }
 }
 

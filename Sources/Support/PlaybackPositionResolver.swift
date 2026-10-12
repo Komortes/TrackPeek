@@ -1,6 +1,15 @@
 import Foundation
 
 enum PlaybackPositionResolver {
+    static func seekPosition(
+        from position: TimeInterval,
+        by offset: TimeInterval,
+        duration: TimeInterval
+    ) -> TimeInterval? {
+        guard position.isFinite, offset.isFinite, duration.isFinite, duration > 0 else { return nil }
+        return min(max(position + offset, 0), duration)
+    }
+
     static func livePosition(
         snapshotPosition: TimeInterval,
         snapshotDate: Date,
@@ -8,8 +17,11 @@ enum PlaybackPositionResolver {
         duration: TimeInterval,
         isPlaying: Bool
     ) -> TimeInterval {
-        let elapsed = isPlaying ? max(now.timeIntervalSince(snapshotDate), 0) : 0
-        return min(max(snapshotPosition + elapsed, 0), max(duration, 0))
+        guard duration.isFinite, duration > 0 else { return 0 }
+        let interval = now.timeIntervalSince(snapshotDate)
+        let elapsed = isPlaying && interval.isFinite ? max(interval, 0) : 0
+        let position = snapshotPosition.isFinite ? max(snapshotPosition, 0) : 0
+        return min(position + elapsed, duration)
     }
 
     /// Сглаживает рассинхрон между интерполируемой позицией и свежим значением
@@ -33,7 +45,8 @@ enum PlaybackPositionResolver {
         width: CGFloat,
         duration: TimeInterval
     ) -> TimeInterval {
-        guard width > 0, duration > 0 else {
+        guard location.isFinite, width.isFinite, duration.isFinite,
+              width > 0, duration > 0 else {
             return 0
         }
 

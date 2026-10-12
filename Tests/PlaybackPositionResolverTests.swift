@@ -4,6 +4,27 @@ import Testing
 
 @Suite("Playback position resolver")
 struct PlaybackPositionResolverTests {
+    @Test("keyboard and accessibility seeking clamp to the recording and reject unavailable durations")
+    func adjustsPosition() {
+        #expect(PlaybackPositionResolver.seekPosition(from: 12, by: 5, duration: 200) == 17)
+        #expect(PlaybackPositionResolver.seekPosition(from: 2, by: -5, duration: 200) == 0)
+        #expect(PlaybackPositionResolver.seekPosition(from: 198, by: 5, duration: 200) == 200)
+        #expect(PlaybackPositionResolver.seekPosition(from: 12, by: 5, duration: 0) == nil)
+        #expect(PlaybackPositionResolver.seekPosition(from: .nan, by: 5, duration: 200) == nil)
+        #expect(PlaybackPositionResolver.seekPosition(from: 12, by: 5, duration: .infinity) == nil)
+    }
+
+    @Test("invalid snapshots and pointer geometry produce finite positions")
+    func rejectsInvalidValues() {
+        let date = Date()
+        #expect(PlaybackPositionResolver.livePosition(snapshotPosition: .nan, snapshotDate: date, now: date, duration: 200, isPlaying: false) == 0)
+        #expect(PlaybackPositionResolver.livePosition(snapshotPosition: 20, snapshotDate: date, now: date, duration: .infinity, isPlaying: true) == 0)
+        #expect(PlaybackPositionResolver.livePosition(snapshotPosition: 20, snapshotDate: date, now: Date(timeIntervalSince1970: .nan), duration: 200, isPlaying: true) == 20)
+        #expect(PlaybackPositionResolver.position(at: .nan, width: 100, duration: 200) == 0)
+        #expect(PlaybackPositionResolver.position(at: 50, width: .infinity, duration: 200) == 0)
+        #expect(PlaybackPositionResolver.position(at: 50, width: 100, duration: .infinity) == 0)
+    }
+
     @Test("advances a playing snapshot and clamps it to duration")
     func advancesPlayingSnapshot() {
         let snapshotDate = Date(timeIntervalSince1970: 100)
