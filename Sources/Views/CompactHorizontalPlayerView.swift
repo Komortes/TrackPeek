@@ -8,15 +8,18 @@ struct CompactHorizontalPlayerView: View {
     var body: some View {
         HStack(spacing: 12) {
             ZStack(alignment: .topLeading) {
-                TrackArtworkView(
-                    url: track.artworkURL,
-                    size: 112,
-                    cornerRadius: 13,
-                    showsShadow: options.showsArtworkShadow
-                )
-                .contentShape(Rectangle())
-                .onTapGesture { PlayerAppLauncher.openActiveSource() }
-                .help("Открыть плеер")
+                Button { PlayerAppLauncher.openActiveSource() } label: {
+                    TrackArtworkView(
+                        url: track.artworkURL,
+                        size: 112,
+                        cornerRadius: 13,
+                        showsShadow: options.showsArtworkShadow
+                    )
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Открыть \(model.activeSourceDisplayName)")
+                .help("Открыть \(model.activeSourceDisplayName)")
 
                 if options.showsPlaybackStatus {
                     Circle()

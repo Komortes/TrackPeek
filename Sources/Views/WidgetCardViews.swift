@@ -28,14 +28,17 @@ struct WidgetVerticalCard: View {
 
     var body: some View {
         VStack(spacing: 9) {
-            TrackArtworkView(
-                url: track.artworkURL,
-                size: min(size.width * 0.46, 118),
-                cornerRadius: 12,
-                showsShadow: true
-            )
-            .onTapGesture { PlayerAppLauncher.openActiveSource() }
-            .help("Открыть плеер")
+            Button { PlayerAppLauncher.openActiveSource() } label: {
+                TrackArtworkView(
+                    url: track.artworkURL,
+                    size: min(size.width * 0.46, 118),
+                    cornerRadius: 12,
+                    showsShadow: true
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Открыть \(context.model.activeSourceDisplayName)")
+            .help("Открыть \(context.model.activeSourceDisplayName)")
 
             VStack(spacing: 1) {
                 Text(track.title)
@@ -79,13 +82,17 @@ struct WidgetLyricsCard: View {
 
     var body: some View {
         HStack(spacing: 11) {
-            TrackArtworkView(
-                url: track.artworkURL,
-                size: 46,
-                cornerRadius: 9,
-                showsShadow: false
-            )
-            .onTapGesture { PlayerAppLauncher.openActiveSource() }
+            Button { PlayerAppLauncher.openActiveSource() } label: {
+                TrackArtworkView(
+                    url: track.artworkURL,
+                    size: 46,
+                    cornerRadius: 9,
+                    showsShadow: false
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Открыть \(context.model.activeSourceDisplayName)")
+            .help("Открыть \(context.model.activeSourceDisplayName)")
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
@@ -129,13 +136,17 @@ struct WidgetMiniBar: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            TrackArtworkView(
-                url: track.artworkURL,
-                size: 28,
-                cornerRadius: 6,
-                showsShadow: false
-            )
-            .onTapGesture { PlayerAppLauncher.openActiveSource() }
+            Button { PlayerAppLauncher.openActiveSource() } label: {
+                TrackArtworkView(
+                    url: track.artworkURL,
+                    size: 28,
+                    cornerRadius: 6,
+                    showsShadow: false
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Открыть \(context.model.activeSourceDisplayName)")
+            .help("Открыть \(context.model.activeSourceDisplayName)")
 
             VStack(alignment: .leading, spacing: 0) {
                 Text(track.title)
@@ -180,13 +191,17 @@ struct WidgetArtworkSquare: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            TrackArtworkView(
-                url: track.artworkURL,
-                size: max(size.width, size.height),
-                cornerRadius: 0,
-                showsShadow: false
-            )
-            .onTapGesture { PlayerAppLauncher.openActiveSource() }
+            Button { PlayerAppLauncher.openActiveSource() } label: {
+                TrackArtworkView(
+                    url: track.artworkURL,
+                    size: max(size.width, size.height),
+                    cornerRadius: 0,
+                    showsShadow: false
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Открыть \(context.model.activeSourceDisplayName)")
+            .help("Открыть \(context.model.activeSourceDisplayName)")
 
             VStack(alignment: .leading, spacing: 9) {
                 VStack(alignment: .leading, spacing: 3) {
@@ -431,6 +446,7 @@ struct WidgetControls: View {
                 SecondaryControlsView(
                     capabilities: context.model.capabilities,
                     secondary: context.model.secondary,
+                    snapshotDate: context.model.snapshotDate,
                     onShuffle: { enabled in Task { await context.model.setShuffle(enabled) } },
                     onRepeat: { mode in Task { await context.model.setRepeat(mode) } },
                     onVolume: { volume in Task { await context.model.setVolume(volume) } }

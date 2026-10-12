@@ -15,15 +15,18 @@ struct ArtworkVerticalPlayerView: View {
                 onRefresh: { Task { await model.refresh() } }
             )
 
-            TrackArtworkView(
-                url: track.artworkURL,
-                size: artworkSize,
-                cornerRadius: 17,
-                showsShadow: options.showsArtworkShadow
-            )
-            .contentShape(Rectangle())
-            .onTapGesture { PlayerAppLauncher.openActiveSource() }
-            .help("Открыть плеер")
+            Button { PlayerAppLauncher.openActiveSource() } label: {
+                TrackArtworkView(
+                    url: track.artworkURL,
+                    size: artworkSize,
+                    cornerRadius: 17,
+                    showsShadow: options.showsArtworkShadow
+                )
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Открыть \(model.activeSourceDisplayName)")
+            .help("Открыть \(model.activeSourceDisplayName)")
 
             PlaybackControlsView(
                 isPlaying: track.isPlaying,

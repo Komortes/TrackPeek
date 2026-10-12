@@ -28,7 +28,7 @@ struct WidgetLyricStrip: View {
         .focusable()
         .focused($isFocused)
         .onKeyPress(keys: [.space, .leftArrow, .rightArrow], phases: .down) { press in
-            guard press.modifiers.isEmpty else { return .ignored }
+            guard PlaybackKeyboardInput.accepts(press.modifiers) else { return .ignored }
             switch press.key {
             case .space: Task { await context.model.togglePlayback() }
             case .leftArrow: Task { await context.model.previousTrack() }

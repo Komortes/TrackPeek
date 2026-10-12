@@ -6,13 +6,14 @@ import SwiftUI
 struct SecondaryControlsView: View {
     let capabilities: PlaybackCapabilities
     let secondary: PlaybackSecondaryState?
+    let snapshotDate: Date
     let onShuffle: (Bool) -> Void
     let onRepeat: (RepeatMode) -> Void
     let onVolume: (Int) -> Void
 
     /// Локальное значение на время перетаскивания, чтобы слайдер не дёргался
     /// от асинхронного округления источника (Spotify: 55 → 54).
-    @State private var draftVolume: Double?
+    @State private var volumeState = VolumeControlState()
 
     var body: some View {
         HStack(spacing: 10) {
@@ -39,27 +40,43 @@ struct SecondaryControlsView: View {
 
             if capabilities.contains(.volume) {
                 HStack(spacing: 6) {
-                    Image(systemName: "speaker.wave.2.fill")
+                    Image(systemName: volumeState.displayedValue(snapshot: secondary?.volume) == 0
+                        ? "speaker.slash.fill" : "speaker.wave.2.fill")
                         .font(.system(size: 10, weight: .semibold))
                         .foregroundStyle(.secondary)
+                        .accessibilityHidden(true)
 
                     Slider(
                         value: Binding(
-                            get: { draftVolume ?? Double(secondary?.volume ?? 50) },
-                            set: { draftVolume = $0 }
+                            get: { volumeState.displayedValue(snapshot: secondary?.volume) },
+                            set: { value in
+                                if let volume = volumeState.change(to: value) { onVolume(volume) }
+                            }
                         ),
-                        in: 0 ... 100
+                        in: 0 ... 100,
+                        step: 1
                     ) { editing in
-                        guard !editing, let value = draftVolume else { return }
-                        onVolume(Int(value.rounded()))
-                        draftVolume = nil
+                        if let volume = volumeState.editingChanged(editing) { onVolume(volume) }
                     }
                     .controlSize(.mini)
+                    .focusable(interactions: .edit)
+                    .onKeyPress(keys: [.leftArrow, .rightArrow], phases: .down) { press in
+                        guard PlaybackKeyboardInput.accepts(press.modifiers) else { return .ignored }
+                        let step = press.key == .rightArrow ? 1.0 : -1.0
+                        if let volume = volumeState.change(to: volumeState.displayedValue(snapshot: secondary?.volume) + step) {
+                            onVolume(volume)
+                        }
+                        return .handled
+                    }
                     .frame(maxWidth: 110)
                     .accessibilityLabel("Громкость")
+                    .accessibilityValue("\(Int(volumeState.displayedValue(snapshot: secondary?.volume).rounded())) процентов")
+                    .accessibilityHint("Стрелки влево и вправо изменяют громкость на один процент")
+                    .help("Громкость плеера. Стрелки ←/→: на один процент тише/громче.")
                 }
             }
         }
+        .onChange(of: snapshotDate) { _, _ in volumeState.snapshotDidChange() }
     }
 
     private var repeatSymbol: String {

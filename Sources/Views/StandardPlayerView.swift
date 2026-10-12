@@ -15,15 +15,18 @@ struct StandardPlayerView: View {
             )
 
             HStack(spacing: 16) {
-                TrackArtworkView(
-                    url: track.artworkURL,
-                    size: 108,
-                    cornerRadius: 14,
-                    showsShadow: options.showsArtworkShadow
-                )
-                .contentShape(Rectangle())
-                .onTapGesture { PlayerAppLauncher.openActiveSource() }
-                .help("Открыть плеер")
+                Button { PlayerAppLauncher.openActiveSource() } label: {
+                    TrackArtworkView(
+                        url: track.artworkURL,
+                        size: 108,
+                        cornerRadius: 14,
+                        showsShadow: options.showsArtworkShadow
+                    )
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Открыть \(model.activeSourceDisplayName)")
+                .help("Открыть \(model.activeSourceDisplayName)")
 
                 TrackInfoView(
                     track: track,
@@ -53,6 +56,7 @@ struct StandardPlayerView: View {
                     SecondaryControlsView(
                         capabilities: model.capabilities,
                         secondary: model.secondary,
+                        snapshotDate: model.snapshotDate,
                         onShuffle: { enabled in Task { await model.setShuffle(enabled) } },
                         onRepeat: { mode in Task { await model.setRepeat(mode) } },
                         onVolume: { volume in Task { await model.setVolume(volume) } }

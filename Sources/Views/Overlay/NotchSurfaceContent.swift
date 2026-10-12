@@ -42,6 +42,7 @@ struct NotchSurfaceContent: View {
                 )
                 .scaleEffect(1 - revealProgress * 0.015, anchor: .top)
                 .allowsHitTesting(panelState == .collapsed)
+                .accessibilityHidden(panelState != .collapsed)
 
             if panelState == .notification {
                 notificationContent
@@ -54,6 +55,8 @@ struct NotchSurfaceContent: View {
                 .opacity(revealProgress)
                 .scaleEffect(0.985 + revealProgress * 0.015, anchor: .top)
                 .allowsHitTesting(isExpanded && revealProgress > 0.8)
+                .disabled(!isExpanded || revealProgress <= 0.8)
+                .accessibilityHidden(!isExpanded || revealProgress <= 0.8)
         }
         .frame(width: containerSize.width, height: containerSize.height, alignment: .top)
     }
@@ -146,12 +149,13 @@ struct NotchSurfaceContent: View {
             }
             .accessibilityElement(children: .combine)
             .accessibilityLabel("Компактный плеер TrackPeek")
+            .accessibilityValue("\(track.title), \(track.artist). \(track.isPlaying ? "Воспроизводится" : "На паузе")")
             .accessibilityHint("Раскрывает элементы управления воспроизведением")
             .accessibilityAction {
                 guard clickEnabled else { return }
                 onTogglePin()
             }
-            .help(clickEnabled ? "Нажмите, чтобы раскрыть плеер" : "Наведите, чтобы раскрыть плеер")
+            .help("\(track.title) — \(track.artist)\n\(clickEnabled ? "Нажмите, чтобы раскрыть плеер" : "Наведите, чтобы раскрыть плеер")")
         } else {
             HStack(spacing: 8) {
                 Image(systemName: "music.note")
@@ -195,15 +199,18 @@ struct NotchSurfaceContent: View {
 
             HStack(alignment: .center, spacing: isNarrow ? 12 : 15) {
                 VStack(spacing: 7) {
-                    TrackArtworkView(
-                        url: track.artworkURL,
-                        size: artworkSize,
-                        cornerRadius: min(15, artworkSize * 0.19),
-                        showsShadow: true
-                    )
-                    .contentShape(Rectangle())
-                    .onTapGesture { PlayerAppLauncher.openActiveSource() }
-                    .help("Открыть плеер")
+                    Button { PlayerAppLauncher.openActiveSource() } label: {
+                        TrackArtworkView(
+                            url: track.artworkURL,
+                            size: artworkSize,
+                            cornerRadius: min(15, artworkSize * 0.19),
+                            showsShadow: true
+                        )
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Открыть \(model.activeSourceDisplayName)")
+                    .help("Открыть \(model.activeSourceDisplayName)")
 
                     HStack(spacing: 5) {
                         Circle()
@@ -231,17 +238,20 @@ struct NotchSurfaceContent: View {
                             Text(track.title)
                                 .font(.system(size: 14, weight: .semibold, design: .rounded))
                                 .lineLimit(1)
+                                .help(track.title)
 
                             Text(track.artist)
                                 .font(.system(size: 11.5, weight: .medium, design: .rounded))
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)
+                                .help(track.artist)
 
                             if !isNarrow, let album = track.album, !album.isEmpty {
                                 Text(album)
                                     .font(.system(size: 9.5, weight: .medium, design: .rounded))
                                     .foregroundStyle(.tertiary)
                                     .lineLimit(1)
+                                    .help(album)
                             }
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -269,6 +279,8 @@ struct NotchSurfaceContent: View {
                                 ? "Скрыть текст песни"
                                 : "Показать текст песни"
                         )
+                        .accessibilityLabel(appearance.lyricsEnabled.wrappedValue
+                            ? "Скрыть текст песни" : "Показать текст песни")
 
                         Button(action: onCollapse) {
                             Image(systemName: "chevron.up")
@@ -279,6 +291,7 @@ struct NotchSurfaceContent: View {
                         .buttonStyle(.plain)
                         .foregroundStyle(.secondary)
                         .help("Свернуть плеер")
+                        .accessibilityLabel("Свернуть плеер")
                     }
 
                     Spacer(minLength: 6)
@@ -339,6 +352,7 @@ struct NotchSurfaceContent: View {
                         SecondaryControlsView(
                             capabilities: model.capabilities,
                             secondary: model.secondary,
+                            snapshotDate: model.snapshotDate,
                             onShuffle: { enabled in Task { await model.setShuffle(enabled) } },
                             onRepeat: { mode in Task { await model.setRepeat(mode) } },
                             onVolume: { volume in Task { await model.setVolume(volume) } }

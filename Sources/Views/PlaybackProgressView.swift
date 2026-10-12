@@ -15,13 +15,16 @@ struct PlaybackProgressView: View {
     @State private var dragPosition: TimeInterval?
     @State private var isDragging = false
     @State private var isHovering = false
+    @FocusState private var isFocused: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var canSeek: Bool { duration.isFinite && duration > 0 }
 
     var body: some View {
         TimelineView(
             .animation(
                 minimumInterval: resourceSaving ? max(1, minimumUpdateInterval) : minimumUpdateInterval,
-                paused: !isPlaying || isDragging
+                paused: !isPlaying || isDragging || !canSeek
             )
         ) { context in
             let displayedPosition = dragPosition ?? PlaybackPositionResolver.livePosition(
@@ -57,21 +60,23 @@ struct PlaybackProgressView: View {
             .accessibilityValue(
                 "\(PlaybackTimeFormatter.string(from: displayedPosition)) из \(PlaybackTimeFormatter.string(from: duration))"
             )
-            .accessibilityHint("Перетащите или измените значение для перемотки")
+            .accessibilityHint("Перетащите или используйте стрелки влево и вправо для перемотки")
             .accessibilityAdjustableAction { direction in
                 let step = max(duration * 0.02, 5)
-                let target: TimeInterval
+                let offset: TimeInterval
 
                 switch direction {
                 case .increment:
-                    target = min(displayedPosition + step, duration)
+                    offset = step
                 case .decrement:
-                    target = max(displayedPosition - step, 0)
+                    offset = -step
                 @unknown default:
                     return
                 }
 
-                onSeek(target)
+                if let target = PlaybackPositionResolver.seekPosition(from: displayedPosition, by: offset, duration: duration) {
+                    onSeek(target)
+                }
             }
         }
     }
@@ -81,7 +86,7 @@ struct PlaybackProgressView: View {
             let fraction = duration > 0
                 ? min(max(position / duration, 0), 1)
                 : 0
-            let trackHeight: CGFloat = isHovering || isDragging ? 6 : 3
+            let trackHeight: CGFloat = isHovering || isDragging || isFocused ? 6 : 3
 
             ZStack(alignment: .leading) {
                 Capsule()
@@ -108,9 +113,9 @@ struct PlaybackProgressView: View {
                     }
                     .shadow(color: .black.opacity(0.22), radius: 3, y: 1)
                     .offset(x: max((proxy.size.width - 10) * fraction, 0))
-                    .opacity(isHovering || isDragging ? 1 : 0)
+                    .opacity(isHovering || isDragging || isFocused ? 1 : 0)
                     .scaleEffect(
-                        reduceMotion || isHovering || isDragging ? 1 : 0.72
+                        reduceMotion || isHovering || isDragging || isFocused ? 1 : 0.72
                     )
                     .animation(
                         reduceMotion
@@ -124,6 +129,7 @@ struct PlaybackProgressView: View {
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { value in
+                        isFocused = true
                         isDragging = true
                         dragPosition = PlaybackPositionResolver.position(
                             at: value.location.x,
@@ -151,9 +157,26 @@ struct PlaybackProgressView: View {
                     }
                 }
             }
-            .help("Перетащите для перемотки")
+            .help("Перетащите для перемотки. Стрелки ←/→: назад/вперёд на 5 секунд.")
         }
         .frame(height: 16)
-        .allowsHitTesting(duration > 0)
+        .focusable(canSeek, interactions: .edit)
+        .focused($isFocused)
+        .focusEffectDisabled()
+        .overlay {
+            RoundedRectangle(cornerRadius: 4)
+                .stroke(tint.opacity(isFocused ? 0.65 : 0), lineWidth: 1)
+                .padding(-2)
+                .allowsHitTesting(false)
+        }
+        .onKeyPress(keys: [.leftArrow, .rightArrow], phases: .down) { press in
+            guard PlaybackKeyboardInput.accepts(press.modifiers),
+                  let target = PlaybackPositionResolver.seekPosition(
+                    from: position, by: press.key == .rightArrow ? 5 : -5, duration: duration
+                  ) else { return .ignored }
+            onSeek(target)
+            return .handled
+        }
+        .allowsHitTesting(canSeek)
     }
 }
