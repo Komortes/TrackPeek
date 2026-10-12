@@ -23,6 +23,9 @@ final class LyricsStore {
 
     func currentTrackDidChange(_ track: SpotifyTrack?) {
         let request = track.map(LyricsRequest.init(track:))
+        if let activeRequest, activeRequest != request {
+            cancelPendingRequest()
+        }
         guard request != timingRequest || track?.source != timingSource else { return }
         timingRequest = request
         timingSource = track?.source
@@ -73,9 +76,7 @@ final class LyricsStore {
         guard !Task.isCancelled else { return }
         let request = LyricsRequest(track: track)
         guard activeRequest != request else { return }
-        task?.cancel()
-        task = nil
-        activeRequest = nil
+        cancelPendingRequest()
         guard cache[request] == nil || cache[request] == .failed else { return }
 
         cache.removeValue(forKey: request)
@@ -105,5 +106,11 @@ final class LyricsStore {
             activeRequest = nil
             task = nil
         }
+    }
+
+    private func cancelPendingRequest() {
+        task?.cancel()
+        task = nil
+        activeRequest = nil
     }
 }

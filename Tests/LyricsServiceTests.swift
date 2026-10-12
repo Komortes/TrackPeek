@@ -64,6 +64,53 @@ struct TrackLyricsTests {
 @MainActor
 @Suite("Lyrics cache lifecycle")
 struct LyricsStoreLifecycleTests {
+    @Test("a track change without another lyrics surface cancels the obsolete request")
+    func cancelsRequestOnTrackChange() async {
+        let provider = ControlledLyricsProvider()
+        let store = LyricsStore(provider: provider)
+        let old = SpotifyTrack(title: "Old", artist: "Artist", isPlaying: true)
+        let new = SpotifyTrack(title: "New", artist: "Artist", isPlaying: true)
+        store.currentTrackDidChange(old)
+        store.prepare(for: old)
+        guard await provider.waitUntilRequested(count: 1) else { return }
+        store.currentTrackDidChange(new)
+        #expect(!store.isLoading(for: old))
+        await provider.complete(id: 0, lyrics: TrackLyrics(syncedLines: [], plainText: "Obsolete"))
+        for _ in 0..<100 { await Task.yield() }
+        #expect(store.state(for: old) == .loading)
+    }
+
+    @Test("clearing the track cancels loading even when timing has not been initialized")
+    func cancelsRequestWithoutTimingState() async {
+        let provider = ControlledLyricsProvider()
+        let store = LyricsStore(provider: provider)
+        let track = SpotifyTrack(title: "Song", artist: "Artist", isPlaying: true)
+        store.prepare(for: track)
+        guard await provider.waitUntilRequested(count: 1) else { return }
+        store.currentTrackDidChange(nil)
+        #expect(!store.isLoading(for: track))
+        await provider.completeRemaining()
+    }
+
+    @Test("position and source updates for the same recording share the pending lyrics query")
+    func preservesCurrentRequest() async {
+        let provider = ControlledLyricsProvider()
+        let store = LyricsStore(provider: provider)
+        let track = SpotifyTrack(title: "Song", artist: "Artist", isPlaying: true, source: .spotify)
+        store.currentTrackDidChange(track)
+        store.prepare(for: track)
+        guard await provider.waitUntilRequested(count: 1) else { return }
+        store.currentTrackDidChange(track.withPosition(15).tagged(with: .appleMusic))
+        #expect(store.isLoading(for: track))
+        let lyrics = TrackLyrics(syncedLines: [], plainText: "Shared")
+        await provider.complete(id: 0, lyrics: lyrics)
+        for _ in 0..<1000 {
+            if store.state(for: track) == .loaded(lyrics) { break }
+            await Task.yield()
+        }
+        #expect(store.state(for: track) == .loaded(lyrics))
+    }
+
     @Test("lyrics stay visible when duration changes within the same server query")
     func preservesLyricsAcrossEquivalentDurationSnapshots() async {
         let store = LyricsStore(provider: RetryLyricsProvider(failFirst: false))

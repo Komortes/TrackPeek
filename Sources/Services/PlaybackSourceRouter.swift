@@ -12,16 +12,27 @@ import Foundation
 actor PlaybackSourceRouter: SpotifyPlaybackProviding {
     private let spotify: any SpotifyPlaybackProviding
     private let appleMusic: any SpotifyPlaybackProviding
+    private let readPreference: @Sendable () -> MediaSourcePreference
+    private let applicationIsRunning: @Sendable (String) -> Bool
 
     /// Последний источник, отдавший валидный снапшот в режиме auto.
     private var lastActiveSource: PlaybackSource?
 
     init(
         spotify: any SpotifyPlaybackProviding = SpotifyAppleScriptClient(),
-        appleMusic: any SpotifyPlaybackProviding = MusicAppleScriptClient()
+        appleMusic: any SpotifyPlaybackProviding = MusicAppleScriptClient(),
+        preference: @escaping @Sendable () -> MediaSourcePreference = {
+            let stored = UserDefaults.standard.string(forKey: MediaSourcePreference.storageKey)
+            return stored.flatMap(MediaSourcePreference.init) ?? MediaSourcePreference.fallback
+        },
+        isRunning: @escaping @Sendable (String) -> Bool = { bundleIdentifier in
+            NSWorkspace.shared.runningApplications.contains { $0.bundleIdentifier == bundleIdentifier }
+        }
     ) {
         self.spotify = spotify
         self.appleMusic = appleMusic
+        readPreference = preference
+        applicationIsRunning = isRunning
     }
 
     func fetchCurrentTrack() async throws -> SpotifyTrack {
@@ -71,6 +82,7 @@ actor PlaybackSourceRouter: SpotifyPlaybackProviding {
         do {
             primaryResult = .success(try await provider(for: primary).fetchCurrentTrack())
         } catch {
+            if error is CancellationError { throw error }
             primaryResult = .failure(error)
         }
         try Task.checkCancellation()
@@ -82,22 +94,33 @@ actor PlaybackSourceRouter: SpotifyPlaybackProviding {
 
         // Основной кандидат молчит — проверяем второго, но только если его
         // приложение уже запущено (AppleScript иначе может его запустить).
-        if isRunning(secondary.bundleIdentifier),
-           let track = try? await provider(for: secondary).fetchCurrentTrack(),
-           track.isPlaying {
+        var secondaryTrack: SpotifyTrack?
+        if isRunning(secondary.bundleIdentifier) {
+            do {
+                secondaryTrack = try await provider(for: secondary).fetchCurrentTrack()
+            } catch {
+                if error is CancellationError { throw error }
+            }
+        }
+        try Task.checkCancellation()
+        if let track = secondaryTrack, track.isPlaying {
             lastActiveSource = secondary
             return track.tagged(with: secondary)
         }
 
         switch primaryResult {
         case let .success(track):
+            if track.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+               let fallback = secondaryTrack,
+               !fallback.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                lastActiveSource = secondary
+                return fallback.tagged(with: secondary)
+            }
             lastActiveSource = primary
             return track.tagged(with: primary)
         case let .failure(error):
-            try Task.checkCancellation()
             // Второй источник может быть на паузе, но живым.
-            if isRunning(secondary.bundleIdentifier),
-               let track = try? await provider(for: secondary).fetchCurrentTrack() {
+            if let track = secondaryTrack {
                 lastActiveSource = secondary
                 return track.tagged(with: secondary)
             }
@@ -148,13 +171,10 @@ actor PlaybackSourceRouter: SpotifyPlaybackProviding {
     }
 
     private var preference: MediaSourcePreference {
-        let stored = UserDefaults.standard.string(forKey: MediaSourcePreference.storageKey)
-        return stored.flatMap(MediaSourcePreference.init) ?? MediaSourcePreference.fallback
+        readPreference()
     }
 
     private nonisolated func isRunning(_ bundleIdentifier: String) -> Bool {
-        NSWorkspace.shared.runningApplications.contains {
-            $0.bundleIdentifier == bundleIdentifier
-        }
+        applicationIsRunning(bundleIdentifier)
     }
 }

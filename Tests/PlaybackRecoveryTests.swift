@@ -2,6 +2,64 @@ import Foundation
 import Testing
 @testable import TrackPeek
 
+@Suite("Automatic playback source selection")
+struct PlaybackSourceRouterTests {
+    @Test("a paused fallback is read once when the primary fails")
+    func readsFallbackOnce() async throws {
+        let spotify = RouterTestProvider(result: .failure(SpotifyPlaybackError.spotifyNotRunning))
+        let music = RouterTestProvider(result: .success(SpotifyTrack(title: "Paused", artist: "Artist", isPlaying: false)))
+        let router = PlaybackSourceRouter(spotify: spotify, appleMusic: music, preference: { .auto }, isRunning: { _ in true })
+        let track = try await router.fetchCurrentTrack()
+        #expect(track.title == "Paused")
+        #expect(track.source == .appleMusic)
+        #expect(await music.fetchCount == 1)
+        #expect(await router.activeSource() == .appleMusic)
+    }
+
+    @Test("cancellation from the fallback is propagated instead of selecting a paused primary")
+    func propagatesFallbackCancellation() async {
+        let spotify = RouterTestProvider(result: .success(SpotifyTrack(title: "Paused", artist: "Artist", isPlaying: false)))
+        let music = RouterTestProvider(result: .failure(CancellationError()))
+        let router = PlaybackSourceRouter(spotify: spotify, appleMusic: music, preference: { .auto }, isRunning: { _ in true })
+        await #expect(throws: CancellationError.self) { try await router.fetchCurrentTrack() }
+    }
+
+    @Test("a playing secondary wins and subsequent commands go to that player")
+    func routesCommandsToSelectedPlayer() async throws {
+        let spotify = RouterTestProvider(result: .success(SpotifyTrack(title: "Paused", artist: "Artist", isPlaying: false)))
+        let music = RouterTestProvider(result: .success(SpotifyTrack(title: "Playing", artist: "Artist", isPlaying: true)))
+        let router = PlaybackSourceRouter(spotify: spotify, appleMusic: music, preference: { .auto }, isRunning: { _ in true })
+        #expect(try await router.fetchCurrentTrack().source == .appleMusic)
+        try await router.playPause()
+        #expect(await music.playPauseCount == 1)
+        #expect(await spotify.playPauseCount == 0)
+    }
+
+    @Test("a stopped primary cannot hide a paused song in the secondary")
+    func prefersActualSongOverEmptySnapshot() async throws {
+        let spotify = RouterTestProvider(result: .success(SpotifyTrack(title: "", artist: "", isPlaying: false)))
+        let music = RouterTestProvider(result: .success(SpotifyTrack(title: "Paused song", artist: "Artist", isPlaying: false)))
+        let router = PlaybackSourceRouter(spotify: spotify, appleMusic: music, preference: { .auto }, isRunning: { _ in true })
+        #expect(try await router.fetchCurrentTrack().title == "Paused song")
+    }
+}
+
+private actor RouterTestProvider: SpotifyPlaybackProviding {
+    let result: Result<SpotifyTrack, Error>
+    private(set) var fetchCount = 0
+    private(set) var playPauseCount = 0
+    init(result: Result<SpotifyTrack, Error>) { self.result = result }
+    func fetchCurrentTrack() throws -> SpotifyTrack { fetchCount += 1; return try result.get() }
+    func activeSource() -> PlaybackSource { .spotify }
+    func playPause() { playPauseCount += 1 }
+    func nextTrack() { }
+    func previousTrack() { }
+    func seek(to position: TimeInterval) { }
+    func setShuffle(_ enabled: Bool) { }
+    func setRepeat(_ mode: RepeatMode) { }
+    func setVolume(_ volume: Int) { }
+}
+
 @MainActor
 @Suite("Playback lifecycle recovery")
 struct PlaybackRecoveryTests {
