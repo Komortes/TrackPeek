@@ -10,7 +10,6 @@ struct OnboardingView: View {
     @AppStorage(OverlayMode.storageKey)
     private var overlayModeRawValue = OverlayMode.fallback.rawValue
 
-    @State private var launchAtLoginEnabled = LaunchAtLogin.isEnabled
     @State private var permissionStatus: PermissionStatus = .unknown
     @State private var permissionTask: Task<Void, Never>?
 
@@ -104,10 +103,7 @@ struct OnboardingView: View {
                     }
                 }
 
-                Toggle("Запускать при входе в систему", isOn: $launchAtLoginEnabled)
-                    .onChange(of: launchAtLoginEnabled) { _, enabled in
-                        LaunchAtLogin.setEnabled(enabled)
-                    }
+                LaunchAtLoginToggle()
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(16)

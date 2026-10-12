@@ -62,7 +62,6 @@ struct SettingsView: View {
 
     @State private var showsResetConfirmation = false
     @State private var presetRevision = 0
-    @State private var launchAtLoginEnabled = LaunchAtLogin.isEnabled
     private let onboardingController = OnboardingWindowController()
 
     private static let resettableKeys: [String] = [
@@ -335,15 +334,8 @@ struct SettingsView: View {
             )
 
             SettingsGroup {
-                SettingsRow(
-                    title: "Запускать при входе в систему"
-                ) {
-                    Toggle("Запускать при входе в систему", isOn: $launchAtLoginEnabled)
-                        .labelsHidden()
-                        .onChange(of: launchAtLoginEnabled) { _, enabled in
-                            LaunchAtLogin.setEnabled(enabled)
-                        }
-                }
+                LaunchAtLoginToggle()
+                    .padding(14)
 
                 SettingsRowDivider()
 
