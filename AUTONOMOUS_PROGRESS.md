@@ -2,7 +2,7 @@
 
 Запуск: 2026-10-11, Europe/Prague. Исходное рабочее дерево чистое.
 
-## Итог текущей серии — 2026-10-12
+## Итог первой серии — 2026-10-12
 
 Завершены 17 последовательных итераций. Все обнаруженные и выбранные локальные изменения завершены; открытых исправлений или незавершённых функций нет. Последний независимый обзор замечаний не дал.
 
@@ -87,6 +87,17 @@ and do not clearly override that restriction». Действие не выпол
 Пользователю задан явный вопрос о разрешении. README/changelog/roadmap исправлены
 на фактический draft status; public latest остаётся v1.0. После разрешения выполнить
 publication, скачать public assets и проверить SHA256SUMS/latest feed. Старый v1.0 сохранён.
+
+Assets draft скачаны заново в .build/release/1.1-draft-verification. SHA256SUMS,
+codesign после распаковки, обе архитектуры main/helper, версии и Ed25519-подпись
+ZIP по встроенному публичному ключу прошли. Sandboxed codesign не получил trust
+store и вернул CSSMERR_TP_NOT_TRUSTED; вне sandbox подпись валидна. Homebrew Python
+не загрузил pyexpat из-за libexpat symbol mismatch; read-only проверка успешно
+выполнена штатным /usr/bin/python3, окружение Python не изменялось.
+Последняя проверка GitHub: v1.1 isDraft=true/isLatest=false; v1.0 isLatest=true.
+Локальный main чист и синхронизирован с origin/main после документационного
+исправления b9ba735. Публикация — единственное ожидающее действие; новые
+исправления приложения не требуются.
 
 ## Начальный анализ
 
