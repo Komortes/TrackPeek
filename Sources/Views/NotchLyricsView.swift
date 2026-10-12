@@ -11,6 +11,7 @@ struct NotchLyricsView: View {
     var tint: Color = .white
     var lyricOffset: TimeInterval = 0
     var onRetry: (() -> Void)? = nil
+    var updatesEnabled = true
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -55,7 +56,7 @@ struct NotchLyricsView: View {
     }
 
     private func syncedLyrics(_ lines: [LyricsLine]) -> some View {
-        TimelineView(.animation(minimumInterval: 0.25, paused: !isPlaying)) { context in
+        TimelineView(.animation(minimumInterval: 0.25, paused: !isPlaying || !updatesEnabled)) { context in
             let livePosition = PlaybackPositionResolver.livePosition(
                 snapshotPosition: position,
                 snapshotDate: snapshotDate,

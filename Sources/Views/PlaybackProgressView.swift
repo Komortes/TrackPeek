@@ -10,6 +10,7 @@ struct PlaybackProgressView: View {
     var usesCompactTime = false
     var tint: Color = .accentColor
     var minimumUpdateInterval: TimeInterval = 1 / 30
+    var updatesEnabled = true
 
     @Environment(\.resourceSaving) private var resourceSaving
     @State private var dragPosition: TimeInterval?
@@ -24,7 +25,7 @@ struct PlaybackProgressView: View {
         TimelineView(
             .animation(
                 minimumInterval: resourceSaving ? max(1, minimumUpdateInterval) : minimumUpdateInterval,
-                paused: !isPlaying || isDragging || !canSeek
+                paused: !isPlaying || isDragging || !canSeek || !updatesEnabled
             )
         ) { context in
             let displayedPosition = dragPosition ?? PlaybackPositionResolver.livePosition(

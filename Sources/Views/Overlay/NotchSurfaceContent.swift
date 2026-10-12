@@ -307,7 +307,8 @@ struct NotchSurfaceContent: View {
                                 ? palette.primary.onDarkSurface.swiftUIColor
                                 : .white,
                             lyricOffset: lyricsStore.offset(for: track),
-                            onRetry: { lyricsStore.retry(for: track) }
+                            onRetry: { lyricsStore.retry(for: track) },
+                            updatesEnabled: isExpanded
                         )
                     } else {
                         PlaybackProgressView(
@@ -318,7 +319,8 @@ struct NotchSurfaceContent: View {
                             onSeek: { position in Task { await model.seek(to: position) } },
                             tint: appearance.coloredProgress
                                 ? palette.primary.onDarkSurface.swiftUIColor
-                                : .white
+                                : .white,
+                            updatesEnabled: isExpanded
                         )
                     }
 
