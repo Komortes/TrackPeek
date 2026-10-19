@@ -433,15 +433,15 @@ extension LRCParserTests {
         #expect(lines.map(\.time) == [2, 5, 12, 20])
         #expect(TrackLyrics.currentIndex(in: lines, position: 7).map { lines[$0].text } == "")
         let gap = LyricStripPresentation.resolve(state: .loaded(lyrics), position: 7, title: "Song", artist: "Artist")
-        #expect(gap.status == "Проигрыш")
+        #expect(gap.status == String(localized: "Instrumental"))
         #expect(gap.text == "Song — Artist")
         #expect(!TrackLyrics(syncedLines: LRCParser.parse("[00:00]\n[01:00]"), plainText: nil).hasContent)
         let before = LyricStripPresentation.resolve(state: .loaded(lyrics), position: 1, title: "Song", artist: "Artist")
-        #expect(before.status == "Ждём первую строку")
+        #expect(before.status == String(localized: "Waiting for the first line"))
         let plainWithEmptyTiming = TrackLyrics(syncedLines: LRCParser.parse("[00:00]"), plainText: "Words")
         #expect(!plainWithEmptyTiming.isSynced)
         #expect(LyricStripPresentation.resolve(state: .loaded(plainWithEmptyTiming), position: 7,
-            title: "Song", artist: "Artist").status == "Нет синхронизированного текста")
+            title: "Song", artist: "Artist").status == String(localized: "No synchronized lyrics"))
     }
 
     @Test("equal timestamps preserve source order for clearing a line")

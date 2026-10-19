@@ -15,11 +15,11 @@ enum OverlayVisibilityPolicy: String, CaseIterable, Identifiable, Sendable {
     var title: String {
         switch self {
         case .always:
-            "Всегда"
+            String(localized: "Always")
         case .whileSourceRunning:
-            "Пока плеер запущен"
+            String(localized: "While the Player Is Running")
         case .whilePlaying:
-            "Только при воспроизведении"
+            String(localized: "Only While Playing")
         }
     }
 }

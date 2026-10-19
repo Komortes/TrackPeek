@@ -15,14 +15,14 @@ struct PlaybackControlsView: View {
         HStack(spacing: spacing) {
             control(
                 symbol: "backward.fill",
-                label: "Предыдущий трек",
+                label: String(localized: "Previous Track"),
                 isPrimary: false,
                 action: onPrevious
             )
 
             control(
                 symbol: isPlaying ? "pause.fill" : "play.fill",
-                label: isPlaying ? "Пауза" : "Воспроизвести",
+                label: isPlaying ? String(localized: "Pause") : String(localized: "playback.play", defaultValue: "Play"),
                 isPrimary: true,
                 action: {
                     guard !reduceMotion else {
@@ -40,7 +40,7 @@ struct PlaybackControlsView: View {
 
             control(
                 symbol: "forward.fill",
-                label: "Следующий трек",
+                label: String(localized: "Next Track"),
                 isPrimary: false,
                 action: onNext
             )

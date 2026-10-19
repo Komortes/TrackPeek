@@ -7,16 +7,16 @@ enum AudioAnalysisStatus: Equatable, Sendable {
 
     var description: String {
         switch self {
-        case .resourceSaving: "Остановлен: экономия ресурсов"
-        case .paused: "Остановлен: нет воспроизведения"
-        case .notNeeded: "Остановлен: нет видимого потребителя"
-        case .starting: "Подключение к аудиопотоку"
-        case .waitingForAudio: "Ожидание данных аудио"
-        case .running: "Работает"
-        case .stalled: "Нет данных аудио: повторное подключение"
-        case .sourceUnavailable: "Нет процесса плеера"
-        case .unsupported: "Требуется macOS 14.2 или новее"
-        case .failed(let code): "Ошибка захвата аудио (\(code))"
+        case .resourceSaving: String(localized: "Stopped: saving resources")
+        case .paused: String(localized: "Stopped: nothing is playing")
+        case .notNeeded: String(localized: "Stopped: no visible view needs audio")
+        case .starting: String(localized: "Connecting to the audio stream")
+        case .waitingForAudio: String(localized: "Waiting for audio data")
+        case .running: String(localized: "Running")
+        case .stalled: String(localized: "No audio data: reconnecting")
+        case .sourceUnavailable: String(localized: "The player process is not running")
+        case .unsupported: String(localized: "Requires macOS 14.2 or later")
+        case .failed(let code): String(localized: "Audio capture error (\(code))")
         }
     }
 }

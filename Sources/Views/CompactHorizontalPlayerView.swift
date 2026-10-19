@@ -18,8 +18,8 @@ struct CompactHorizontalPlayerView: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Открыть \(model.activeSourceDisplayName)")
-                .help("Открыть \(model.activeSourceDisplayName)")
+                .accessibilityLabel(String(localized: "Open \(model.activeSourceDisplayName)"))
+                .help(String(localized: "Open \(model.activeSourceDisplayName)"))
 
                 if options.showsPlaybackStatus {
                     Circle()
@@ -30,8 +30,8 @@ struct CompactHorizontalPlayerView: View {
                         .padding(7)
                         .help(
                             track.isPlaying
-                                ? "\(track.source?.displayName ?? "Плеер") воспроизводит трек"
-                                : "\(track.source?.displayName ?? "Плеер") на паузе"
+                                ? String(localized: "\(track.source?.displayName ?? String(localized: "Player")) is playing a track")
+                                : String(localized: "\(track.source?.displayName ?? String(localized: "Player")) is paused")
                         )
                 }
             }

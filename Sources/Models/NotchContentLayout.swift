@@ -5,9 +5,9 @@ enum NotchContentLayout: String, CaseIterable, Identifiable, Sendable {
     static let storageKey = "notchContentLayout"
     static let fallback: Self = .standard
     var id: String { rawValue }
-    var title: String { self == .focus ? "Фокус" : "Полный плеер" }
+    var title: String { self == .focus ? String(localized: "Focus") : String(localized: "Full Player") }
     var summary: String {
-        self == .focus ? "Название, управление и прогресс. Без обложки и эффектов." : "Обложка, управление и выбранные эффекты."
+        self == .focus ? String(localized: "Track title, controls and progress. No artwork or effects.") : String(localized: "Artwork, controls and your chosen effects.")
     }
     func size(for state: NotchPanelState, width: Double, heightAdjustment: Double, topInset: Double = 0) -> CGSize {
         switch state {

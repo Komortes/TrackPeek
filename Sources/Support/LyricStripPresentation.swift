@@ -33,17 +33,17 @@ struct LyricStripPresentation: Equatable {
             if lyrics.isSynced, let index = TrackLyrics.currentIndex(in: lyrics.syncedLines, position: position) {
                 let text = lyrics.syncedLines[index].text.trimmingCharacters(in: .whitespacesAndNewlines)
                 return text.isEmpty
-                    ? Self(text: metadata, status: "Проигрыш", symbol: "music.note", canRetry: false)
+                    ? Self(text: metadata, status: String(localized: "Instrumental"), symbol: "music.note", canRetry: false)
                     : Self(text: text, status: nil, symbol: nil, canRetry: false)
             }
-            return Self(text: metadata, status: lyrics.isSynced ? "Ждём первую строку" : "Нет синхронизированного текста",
+            return Self(text: metadata, status: lyrics.isSynced ? String(localized: "Waiting for the first line") : String(localized: "No synchronized lyrics"),
                         symbol: "music.note", canRetry: false)
         case .loading:
-            return Self(text: metadata, status: "Ищем текст…", symbol: "ellipsis", canRetry: false)
+            return Self(text: metadata, status: String(localized: "Finding lyrics…"), symbol: "ellipsis", canRetry: false)
         case .unavailable:
-            return Self(text: metadata, status: "Текст не найден", symbol: "music.note", canRetry: true)
+            return Self(text: metadata, status: String(localized: "Lyrics not found"), symbol: "music.note", canRetry: true)
         case .failed:
-            return Self(text: metadata, status: "Не удалось загрузить текст", symbol: "wifi.exclamationmark", canRetry: true)
+            return Self(text: metadata, status: String(localized: "Could not load lyrics"), symbol: "wifi.exclamationmark", canRetry: true)
         }
     }
 }

@@ -94,9 +94,9 @@ final class GlobalShortcutsController: NSObject {
     func assign(_ shortcut: GlobalShortcut?, to action: ShortcutAction) -> String? {
         var candidateID: UInt32?
         if let shortcut {
-            guard shortcut.isValid else { return "Добавьте ⌘ Command или ⌃ Control к обычной клавише." }
+            guard shortcut.isValid else { return String(localized: "Add ⌘ Command or ⌃ Control to a regular key.") }
             if let duplicate = ShortcutAction.allCases.first(where: { $0 != action && bindings[$0] == shortcut }) {
-                return "Уже назначено: \(duplicate.title)."
+                return String(localized: "Already assigned: \(duplicate.title).")
             }
             clearRegistrations()
             do {

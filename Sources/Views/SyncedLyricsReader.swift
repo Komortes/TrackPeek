@@ -54,7 +54,7 @@ struct SyncedLyricsReader: View {
                         isFollowing = false
                         return .ignored
                     }
-                    .accessibilityLabel("Полный текст песни")
+                    .accessibilityLabel(String(localized: "Full Song Lyrics"))
                     footer {
                         isFollowing = true
                         scroll(to: target, with: proxy)
@@ -84,12 +84,12 @@ struct SyncedLyricsReader: View {
     private func footer(onResume: @escaping () -> Void) -> some View {
         Group {
             if isFollowing {
-                Text("Нажмите строку для перемотки")
+                Text(String(localized: "Click a line to seek"))
                     .font(.system(size: 11)).foregroundStyle(.secondary)
             } else {
-                Button("К текущей строке", systemImage: "location.fill", action: onResume)
+                Button(String(localized: "Current Line"), systemImage: "location.fill", action: onResume)
                     .buttonStyle(.borderless).font(.system(size: 11, weight: .medium))
-                    .help("Вернуться к текущей строке и включить автопрокрутку")
+                    .help(String(localized: "Return to the current line and resume automatic scrolling"))
             }
         }
         .frame(maxWidth: .infinity, minHeight: 26, maxHeight: 26)
@@ -106,17 +106,17 @@ struct LyricsReaderRow: View {
         if let seekPosition {
             Button { onSeek(seekPosition) } label: { label }
                 .buttonStyle(.plain)
-                .help("Перейти к \(PlaybackTimeFormatter.string(from: seekPosition))")
+                .help(String(localized: "Seek to \(PlaybackTimeFormatter.string(from: seekPosition))"))
                 .accessibilityLabel(line.text)
-                .accessibilityValue("\(isCurrent ? "Текущая строка, " : "")\(PlaybackTimeFormatter.string(from: seekPosition))")
-                .accessibilityHint("Перемотать к этой строке")
+                .accessibilityValue("\(isCurrent ? String(localized: "Current line, ") : "")\(PlaybackTimeFormatter.string(from: seekPosition))")
+                .accessibilityHint(String(localized: "Seek to This Line"))
         } else {
             label
         }
     }
 
     private var label: some View {
-        Text(line.text.isEmpty ? "Проигрыш" : line.text)
+        Text(line.text.isEmpty ? String(localized: "Instrumental") : line.text)
             // Highlight changes neither type size nor weight, keeping row geometry
             // stable while the user reads elsewhere in the song.
             .font(.system(size: line.text.isEmpty ? 13 : 16, weight: .medium))

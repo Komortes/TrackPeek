@@ -39,11 +39,11 @@ struct LyricsPlayerView: View {
     @ViewBuilder private var readingArea: some View {
         switch lyricsStore.state(for: track) {
         case .loading:
-            placeholder("Ищем текст…", symbol: "text.quote")
+            placeholder(String(localized: "Finding lyrics…"), symbol: "text.quote")
         case .unavailable, .failed:
             VStack(spacing: 12) {
-                placeholder(lyricsStore.state(for: track) == .unavailable ? "Текст не найден" : "Не удалось загрузить текст", symbol: "quote.bubble")
-                Button("Повторить поиск") { lyricsStore.retry(for: track) }.buttonStyle(.bordered)
+                placeholder(lyricsStore.state(for: track) == .unavailable ? String(localized: "Lyrics not found") : String(localized: "Could not load lyrics"), symbol: "quote.bubble")
+                Button(String(localized: "Search Again")) { lyricsStore.retry(for: track) }.buttonStyle(.bordered)
             }
         case .loaded(let lyrics):
             if lyrics.isSynced {
@@ -60,7 +60,7 @@ struct LyricsPlayerView: View {
                 }
                 .id(LyricsRequest(track: track))
             } else {
-                placeholder("Текст не найден", symbol: "quote.bubble")
+                placeholder(String(localized: "Lyrics not found"), symbol: "quote.bubble")
             }
         }
     }

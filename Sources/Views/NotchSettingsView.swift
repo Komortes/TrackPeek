@@ -3,8 +3,14 @@ import SwiftUI
 
 struct NotchSettingsView: View {
     private enum Page: String, CaseIterable {
-        case appearance = "Оформление"
-        case behavior = "Поведение"
+        case appearance, behavior
+
+        var title: String {
+            switch self {
+            case .appearance: String(localized: "Appearance")
+            case .behavior: String(localized: "Behavior")
+            }
+        }
     }
 
     @State private var selectedPage = Page.appearance
@@ -131,11 +137,11 @@ struct NotchSettingsView: View {
     }
 
     var body: some View {
-        SettingsPage(title: "Чёлка", subtitle: "Плеер у верхнего края экрана.") {
+        SettingsPage(title: String(localized: "Notch"), subtitle: String(localized: "A player at the top of the screen.")) {
             VStack(alignment: .leading, spacing: 12) {
-                Picker("Настройки чёлки", selection: $selectedPage) {
+                Picker(String(localized: "Notch Settings"), selection: $selectedPage) {
                     ForEach(Page.allCases, id: \.self) { page in
-                        Text(page.rawValue).tag(page)
+                        Text(page.title).tag(page)
                     }
                 }
                 .pickerStyle(.segmented)
@@ -167,10 +173,10 @@ struct NotchSettingsView: View {
     }
 
     private var layoutSection: some View {
-        SettingsSection(title: "Содержимое") {
+        SettingsSection(title: String(localized: "Content")) {
             SettingsGroup {
-                SettingsRow(title: "Раскладка", subtitle: (NotchContentLayout(rawValue: contentLayoutRaw) ?? .fallback).summary) {
-                    Picker("Раскладка чёлки", selection: $contentLayoutRaw) {
+                SettingsRow(title: String(localized: "Layout"), subtitle: (NotchContentLayout(rawValue: contentLayoutRaw) ?? .fallback).summary) {
+                    Picker(String(localized: "Notch Layout"), selection: $contentLayoutRaw) {
                         ForEach(NotchContentLayout.allCases) { layout in
                             Text(layout.title).tag(layout.rawValue)
                         }
@@ -180,7 +186,7 @@ struct NotchSettingsView: View {
             }
 
             if isFocusLayout {
-                Text("«Фокус» скрывает обложку, эквалайзер, тексты и эффекты. Настройки полного плеера сохранены.")
+                Text(String(localized: "Focus hides artwork, the equalizer, lyrics and effects. Your Full Player settings are saved."))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -193,9 +199,9 @@ struct NotchSettingsView: View {
 
     private var activationTitle: String {
         switch selectedMode {
-        case .notch: "Чёлка включена"
-        case .floatingWidget: "Сейчас включён виджет"
-        case .off: "Экранный плеер выключен"
+        case .notch: String(localized: "Notch is enabled")
+        case .floatingWidget: String(localized: "Widget is currently enabled")
+        case .off: String(localized: "On-screen player is off")
         }
     }
 
@@ -213,7 +219,7 @@ struct NotchSettingsView: View {
             Spacer()
 
             if !isPanelModeActive {
-                Button("Включить чёлку") {
+                Button(String(localized: "Enable Notch")) {
                     selectedModeRawValue = OverlayMode.notch.rawValue
                 }
                 .controlSize(.small)
@@ -222,9 +228,9 @@ struct NotchSettingsView: View {
     }
 
     private var displaySection: some View {
-        SettingsSection(title: "Размещение") {
+        SettingsSection(title: String(localized: "Placement")) {
             SettingsGroup {
-                SettingsRow(title: "Экран") {
+                SettingsRow(title: String(localized: "Display")) {
                     DisplayTargetPicker(selection: $displayTargetRawValue)
                 }
             }
@@ -232,13 +238,13 @@ struct NotchSettingsView: View {
     }
 
     private var interactionSection: some View {
-        SettingsSection(title: "Раскрытие") {
+        SettingsSection(title: String(localized: "Expansion")) {
             SettingsGroup {
                 SettingsRow(
-                    title: "По наведению",
-                    subtitle: "Открывать плеер под указателем."
+                    title: String(localized: "On Hover"),
+                    subtitle: String(localized: "Open the player under the pointer.")
                 ) {
-                    Toggle("По наведению", isOn: $hoverEnabled)
+                    Toggle(String(localized: "On Hover"), isOn: $hoverEnabled)
                         .labelsHidden()
                 }
 
@@ -246,14 +252,14 @@ struct NotchSettingsView: View {
                     SettingsRowDivider()
 
                     SettingsRow(
-                        title: "Задержка наведения",
-                        subtitle: "Пауза перед раскрытием."
+                        title: String(localized: "Hover Delay"),
+                        subtitle: String(localized: "Delay before expanding.")
                     ) {
                         SettingsValueSlider(
                             value: notchHoverDelay,
                             range: NotchPreferences.hoverDelayRange,
                             step: NotchPreferences.hoverDelayStep,
-                            text: String(format: "%.2f с", NotchPreferences.clampedHoverDelay(hoverDelay))
+                            text: String(format: String(localized: "%.2f s"), locale: Locale.current, NotchPreferences.clampedHoverDelay(hoverDelay))
                         )
                     }
                 }
@@ -261,17 +267,17 @@ struct NotchSettingsView: View {
                 SettingsRowDivider()
 
                 SettingsRow(
-                    title: "По нажатию",
-                    subtitle: "Оставлять плеер открытым после нажатия."
+                    title: String(localized: "On Click"),
+                    subtitle: String(localized: "Keep the player open after clicking.")
                 ) {
-                    Toggle("По нажатию", isOn: $clickEnabled)
+                    Toggle(String(localized: "On Click"), isOn: $clickEnabled)
                         .labelsHidden()
                 }
 
                 SettingsRowDivider()
 
-                SettingsRow(title: "Тактильный отклик", subtitle: "При раскрытии панели.") {
-                    Toggle("Тактильный отклик", isOn: $hapticFeedback)
+                SettingsRow(title: String(localized: "Haptic Feedback"), subtitle: String(localized: "When the panel expands.")) {
+                    Toggle(String(localized: "Haptic Feedback"), isOn: $hapticFeedback)
                         .labelsHidden()
                 }
             }
@@ -279,13 +285,13 @@ struct NotchSettingsView: View {
     }
 
     private var notificationSection: some View {
-        SettingsSection(title: "Смена трека") {
+        SettingsSection(title: String(localized: "Track Changes")) {
             SettingsGroup {
                 SettingsRow(
-                    title: "Показывать новый трек",
-                    subtitle: "Ненадолго раскрывать чёлку."
+                    title: String(localized: "Show New Track"),
+                    subtitle: String(localized: "Briefly expand the notch.")
                 ) {
-                    Toggle("Показывать новый трек", isOn: $notificationsEnabled)
+                    Toggle(String(localized: "Show New Track"), isOn: $notificationsEnabled)
                         .labelsHidden()
                 }
 
@@ -293,14 +299,15 @@ struct NotchSettingsView: View {
                     SettingsRowDivider()
 
                     SettingsRow(
-                        title: "Длительность"
+                        title: String(localized: "Duration")
                     ) {
                         SettingsValueSlider(
                             value: notchNotificationDuration,
                             range: NotchPreferences.notificationDurationRange,
                             step: NotchPreferences.notificationDurationStep,
                             text: String(
-                                format: "%.2f с",
+                                format: String(localized: "%.2f s"),
+                                locale: Locale.current,
                                 NotchPreferences.clampedNotificationDuration(notificationDuration)
                             )
                         )
@@ -311,36 +318,37 @@ struct NotchSettingsView: View {
     }
 
     private var sizeSection: some View {
-        SettingsSection(title: "Размер и форма") {
+        SettingsSection(title: String(localized: "Size and Shape")) {
             if !isFocusLayout {
                 notchSizePreview
             }
 
             SettingsGroup {
                 SettingsRow(
-                    title: "Ширина",
-                    subtitle: "В закрытом состоянии."
+                    title: String(localized: "Width"),
+                    subtitle: String(localized: "When collapsed.")
                 ) {
                     SettingsValueSlider(
                         value: notchWidth,
                         range: NotchPreferences.widthRange,
                         step: NotchPreferences.widthStep,
-                        text: "\(Int(NotchPreferences.clampedWidth(width))) px"
+                        text: String(localized: "\(Int(NotchPreferences.clampedWidth(width))) px")
                     )
                 }
 
                 SettingsRowDivider()
 
                 SettingsRow(
-                    title: "Коррекция высоты",
-                    subtitle: "Подстройка под верхний край экрана."
+                    title: String(localized: "Height Adjustment"),
+                    subtitle: String(localized: "Adjust the fit at the top of the screen.")
                 ) {
                     SettingsValueSlider(
                         value: notchHeightAdjustment,
                         range: NotchPreferences.heightAdjustmentRange,
                         step: NotchPreferences.heightAdjustmentStep,
                         text: String(
-                            format: "%+.0f px",
+                            format: String(localized: "%+.0f px"),
+                            locale: Locale.current,
                             NotchPreferences.clampedHeightAdjustment(heightAdjustment)
                         )
                     )
@@ -349,12 +357,12 @@ struct NotchSettingsView: View {
                 if !isFocusLayout {
                     SettingsRowDivider()
 
-                    SettingsRow(title: "Скругление") {
+                    SettingsRow(title: String(localized: "Corner Radius")) {
                         SettingsValueSlider(
                             value: notchCornerRadius,
                             range: NotchPreferences.cornerRadiusRange,
                             step: NotchPreferences.cornerRadiusStep,
-                            text: "\(Int(NotchPreferences.clampedCornerRadius(cornerRadius))) px"
+                            text: String(localized: "\(Int(NotchPreferences.clampedCornerRadius(cornerRadius))) px")
                         )
                     }
                 }
@@ -363,10 +371,10 @@ struct NotchSettingsView: View {
     }
 
     private var contentSection: some View {
-        SettingsSection(title: "Название и цвет") {
+        SettingsSection(title: String(localized: "Title and Color")) {
             SettingsGroup {
-                SettingsRow(title: "Название в закрытом виде") {
-                    Picker("Название", selection: songInfoVisibility) {
+                SettingsRow(title: String(localized: "Title When Collapsed")) {
+                    Picker(String(localized: "Title"), selection: songInfoVisibility) {
                         ForEach(NotchSongInfoVisibility.allCases) { visibility in
                             Text(visibility.title).tag(visibility)
                         }
@@ -377,18 +385,18 @@ struct NotchSettingsView: View {
                 SettingsRowDivider()
 
                 SettingsRow(
-                    title: "Цветной прогресс"
+                    title: String(localized: "Colored Progress")
                 ) {
-                    Toggle("Цветной прогресс", isOn: $coloredProgress)
+                    Toggle(String(localized: "Colored Progress"), isOn: $coloredProgress)
                         .labelsHidden()
                 }
 
                 SettingsRowDivider()
 
                 SettingsRow(
-                    title: "Источник цвета"
+                    title: String(localized: "Color Source")
                 ) {
-                    Picker("Источник цвета", selection: colorSource) {
+                    Picker(String(localized: "Color Source"), selection: colorSource) {
                         ForEach(NotchColorSource.allCases) { source in
                             Text(source.title).tag(source)
                         }
@@ -400,39 +408,40 @@ struct NotchSettingsView: View {
     }
 
     private var equalizerSection: some View {
-        SettingsSection(title: "Эквалайзер") {
+        SettingsSection(title: String(localized: "Equalizer")) {
             SettingsGroup {
-                SettingsRow(title: "Цветная волна", subtitle: "Использовать выбранную палитру.") {
-                    Toggle("Цветная волна", isOn: $coloredWaveform)
+                SettingsRow(title: String(localized: "Colored Waveform"), subtitle: String(localized: "Use the selected palette.")) {
+                    Toggle(String(localized: "Colored Waveform"), isOn: $coloredWaveform)
                         .labelsHidden()
                 }
 
                 SettingsRowDivider()
 
-                SettingsRow(title: "Чувствительность", subtitle: "Насколько активно волна реагирует на звук.") {
+                SettingsRow(title: String(localized: "Sensitivity"), subtitle: String(localized: "How strongly the waveform responds to sound.")) {
                     SettingsValueSlider(
                         value: notchEqualizerSensitivity,
                         range: NotchPreferences.equalizerSensitivityRange,
                         step: NotchPreferences.equalizerSensitivityStep,
                         text: String(
-                            format: "%.1f×",
+                            format: String(localized: "%.1f×"),
+                            locale: Locale.current,
                             NotchPreferences.clampedEqualizerSensitivity(equalizerSensitivity)
                         )
                     )
-                    .accessibilityLabel("Чувствительность эквалайзера")
+                    .accessibilityLabel(String(localized: "Equalizer Sensitivity"))
                 }
             }
         }
     }
 
     private var effectsSection: some View {
-        SettingsDisclosure(title: "Визуальные эффекты", subtitle: "Контур и пульсация") {
+        SettingsDisclosure(title: String(localized: "Visual Effects"), subtitle: String(localized: "Outline and Pulse")) {
             SettingsGroup {
                 SettingsRow(
-                    title: "Переливающийся контур",
-                    subtitle: "Плавная смена цветов по краям панели."
+                    title: String(localized: "Shimmering Outline"),
+                    subtitle: String(localized: "Colors shift smoothly around the panel edges.")
                 ) {
-                    Toggle("Переливающийся контур", isOn: $outlineShimmer)
+                    Toggle(String(localized: "Shimmering Outline"), isOn: $outlineShimmer)
                         .labelsHidden()
                 }
 
@@ -440,14 +449,15 @@ struct NotchSettingsView: View {
                     SettingsRowDivider()
 
                     SettingsRow(
-                        title: "Толщина контура"
+                        title: String(localized: "Outline Width")
                     ) {
                         SettingsValueSlider(
                             value: notchOutlineWidth,
                             range: NotchPreferences.outlineWidthRange,
                             step: NotchPreferences.outlineWidthStep,
                             text: String(
-                                format: "%.1f px",
+                                format: String(localized: "%.1f px"),
+                                locale: Locale.current,
                                 NotchPreferences.clampedOutlineWidth(outlineWidth)
                             )
                         )
@@ -457,10 +467,10 @@ struct NotchSettingsView: View {
                 SettingsRowDivider()
 
                 SettingsRow(
-                    title: "Пульсация",
-                    subtitle: "Реакция на громкость звука."
+                    title: String(localized: "Pulse"),
+                    subtitle: String(localized: "Responds to audio volume.")
                 ) {
-                    Picker("Пульсация", selection: pulseMode) {
+                    Picker(String(localized: "Pulse"), selection: pulseMode) {
                         ForEach(NotchPulseMode.allCases) { mode in
                             Text(mode.title).tag(mode)
                         }
@@ -503,7 +513,7 @@ struct NotchSettingsView: View {
             .frame(maxWidth: .infinity)
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
 
-            Text("Закрытая панель")
+            Text(String(localized: "Collapsed Panel"))
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }

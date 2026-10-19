@@ -7,7 +7,7 @@ final class SpotifySpikeModel {
     private let provider: any SpotifyPlaybackProviding
 
     private(set) var track: SpotifyTrack?
-    private(set) var statusText = "Обновление…"
+    private(set) var statusText = String(localized: "Refreshing…")
     private(set) var snapshotDate = Date()
     private(set) var availability: PlaybackAvailability = .loading
     /// Реально резолвнутый источник — не гадаем по сохранённой preference,
@@ -49,7 +49,7 @@ final class SpotifySpikeModel {
     }
 
     var activeSourceDisplayName: String {
-        activeSource?.displayName ?? "Плеер"
+        activeSource?.displayName ?? String(localized: "Player")
     }
 
     var capabilities: PlaybackCapabilities {
@@ -90,11 +90,11 @@ final class SpotifySpikeModel {
             activeSource = nil
             lastSuccessfulRefresh = nil
             availability = .loading
-            statusText = "Обновление…"
+            statusText = String(localized: "Refreshing…")
         } else {
             freezeSnapshot()
             availability = .unavailable
-            statusText = "Связь с плеером восстанавливается"
+            statusText = String(localized: "Reconnecting to the player")
         }
     }
 
@@ -134,7 +134,7 @@ final class SpotifySpikeModel {
                 track = nil
                 seekSettlingDeadline = nil
                 availability = .nothingPlaying
-                statusText = "Ничего не воспроизводится"
+                statusText = String(localized: "Nothing is playing")
                 return
             }
 
@@ -142,7 +142,7 @@ final class SpotifySpikeModel {
             track = reconciled(fetched, now: now)
             snapshotDate = now
             availability = .ready
-            statusText = fetched.isPlaying ? "Играет" : "На паузе"
+            statusText = fetched.isPlaying ? String(localized: "Playing") : String(localized: "Paused")
         } catch {
             guard generation == refreshGeneration, !Task.isCancelled else { return }
             handleFailure(error)
@@ -161,7 +161,7 @@ final class SpotifySpikeModel {
         case SpotifyPlaybackError.spotifyNotRunning:
             track = nil
             availability = .spotifyNotRunning
-            statusText = "\(activeSourceDisplayName) не запущен."
+            statusText = String(localized: "\(activeSourceDisplayName) is not running.")
         default:
             freezeSnapshot()
             availability = .unavailable

@@ -199,12 +199,12 @@ struct DisplayTargetPicker: View {
 
     var body: some View {
         VStack(alignment: .trailing, spacing: 5) {
-            Picker("Экран", selection: $selection) {
+            Picker(String(localized: "Display"), selection: $selection) {
                 ForEach(displays) { display in
                     Text(display.title).tag(DisplaySelection.value(for: display.id))
                 }
                 if selectedDisplayIsMissing {
-                    Text("Выбранный монитор отключён").tag(selection)
+                    Text(String(localized: "Selected display is disconnected")).tag(selection)
                 }
                 Divider()
                 ForEach(NotchDisplayTarget.allCases) { target in
@@ -212,9 +212,9 @@ struct DisplayTargetPicker: View {
                 }
             }
             .settingsMenuControl(width: 300)
-            .accessibilityLabel("Монитор для плеера")
+            .accessibilityLabel(String(localized: "Player Display"))
             if selectedDisplayIsMissing {
-                Text("Пока используется основной. Выбор сохранён до подключения.")
+                Text(String(localized: "Using the main display for now. Your selection is saved until it reconnects."))
                     .font(.caption).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }

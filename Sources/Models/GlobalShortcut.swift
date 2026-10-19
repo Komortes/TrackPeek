@@ -6,16 +6,16 @@ enum ShortcutAction: String, CaseIterable, Identifiable, Codable, Sendable {
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .playPause: "Воспроизведение / пауза"
-        case .previousTrack: "Предыдущий трек"
-        case .nextTrack: "Следующий трек"
-        case .toggleOverlay: "Показать / скрыть панель"
+        case .playPause: String(localized: "Play / Pause")
+        case .previousTrack: String(localized: "Previous Track")
+        case .nextTrack: String(localized: "Next Track")
+        case .toggleOverlay: String(localized: "Show / Hide Panel")
         }
     }
     var subtitle: String {
         self == .toggleOverlay
-            ? "Для выбранного виджета или чёлки, с учётом правил видимости."
-            : "Для текущего источника Spotify или Apple Music."
+            ? String(localized: "For the selected widget or notch, following its visibility rules.")
+            : String(localized: "For the current Spotify or Apple Music source.")
     }
 }
 
@@ -53,12 +53,12 @@ struct GlobalShortcut: Codable, Equatable, Hashable, Sendable {
 
     @MainActor private var keyName: String {
         let special: [UInt32: String] = [
-            36: "↩", 48: "⇥", 49: "Пробел", 51: "⌫", 53: "⎋", 64: "F17",
-            65: "Num .", 67: "Num *", 69: "Num +", 71: "⌧", 75: "Num /", 76: "⌤",
-            78: "Num −", 79: "F18", 80: "F19", 81: "Num =", 90: "F20",
+            36: "↩", 48: "⇥", 49: String(localized: "Space"), 51: "⌫", 53: "⎋", 64: "F17",
+            65: String(localized: "Num ."), 67: String(localized: "Num *"), 69: String(localized: "Num +"), 71: "⌧", 75: String(localized: "Num /"), 76: "⌤",
+            78: String(localized: "Num −"), 79: "F18", 80: "F19", 81: String(localized: "Num ="), 90: "F20",
             96: "F5", 97: "F6", 98: "F7", 99: "F3", 100: "F8", 101: "F9", 103: "F11",
             105: "F13", 106: "F16", 107: "F14", 109: "F10", 111: "F12", 113: "F15",
-            114: "Help", 115: "↖", 116: "⇞", 117: "⌦", 118: "F4", 119: "↘", 120: "F2",
+            114: String(localized: "Help"), 115: "↖", 116: "⇞", 117: "⌦", 118: "F4", 119: "↘", 120: "F2",
             121: "⇟", 122: "F1", 123: "←", 124: "→", 125: "↓", 126: "↑"
         ]
         if let name = special[keyCode] { return name }
@@ -79,6 +79,6 @@ struct GlobalShortcut: Codable, Equatable, Hashable, Sendable {
                 }
             }
         }
-        return "Key \(keyCode)"
+        return String(localized: "Key \(keyCode)")
     }
 }

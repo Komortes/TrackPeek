@@ -1,3 +1,4 @@
+import Foundation
 import Carbon
 
 @MainActor
@@ -13,8 +14,8 @@ enum ShortcutRegistrationError: Error, LocalizedError {
     case systemReserved
     var errorDescription: String? {
         switch self {
-        case .unavailable: "Не удалось включить сочетание. Возможно, оно занято другим приложением."
-        case .systemReserved: "Это сочетание используется macOS. Выберите другое."
+        case .unavailable: String(localized: "Could not enable this shortcut. Another app may be using it.")
+        case .systemReserved: String(localized: "macOS uses this shortcut. Choose another one.")
         }
     }
 }

@@ -1,0 +1,22 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "NSAppleEventsUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "TrackPeek uses Automation to read the current track and control Spotify or Apple Music." } },
+        "uk": { "stringUnit": { "state": "translated", "value": "TrackPeek використовує Автоматизацію, щоб читати дані поточної композиції та керувати Spotify або Apple Music." } },
+        "ru": { "stringUnit": { "state": "translated", "value": "TrackPeek использует Automation для чтения текущего трека и управления Spotify или Music." } }
+      }
+    },
+    "NSAudioCaptureUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "TrackPeek analyzes Spotify system audio so the equalizer responds to the music." } },
+        "uk": { "stringUnit": { "state": "translated", "value": "TrackPeek аналізує системний звук Spotify, щоб еквалайзер рухався в такт музиці." } },
+        "ru": { "stringUnit": { "state": "translated", "value": "TrackPeek анализирует системное аудио Spotify, чтобы эквалайзер двигался в ритм музыки." } }
+      }
+    }
+  },
+  "version": "1.0"
+}

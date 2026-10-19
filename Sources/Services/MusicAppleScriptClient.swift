@@ -184,7 +184,7 @@ actor MusicAppleScriptClient: SpotifyPlaybackProviding {
         } catch AppleScriptExecutionError.automationDenied {
             throw SpotifyPlaybackError.automationDenied
         } catch AppleScriptExecutionError.timedOut {
-            throw SpotifyPlaybackError.scriptFailed("Music не отвечает")
+            throw SpotifyPlaybackError.scriptFailed(String(localized: "Music is not responding"))
         } catch let AppleScriptExecutionError.scriptFailed(message) {
             if message.contains("-1743") || message.localizedCaseInsensitiveContains("not authorized")
                 || message.localizedCaseInsensitiveContains("не разрешено") {

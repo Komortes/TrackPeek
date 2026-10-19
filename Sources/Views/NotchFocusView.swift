@@ -29,7 +29,7 @@ struct NotchFocusView: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain).help("\(track.title) — \(track.artist)")
-                    .accessibilityLabel("\(track.title), \(track.artist). Раскрыть плеер")
+                    .accessibilityLabel(String(localized: "\(track.title), \(track.artist). Expand player"))
                 case .notification:
                     Text("\(track.title) — \(track.artist)").font(.system(size: 12, weight: .medium))
                         .lineLimit(1).help("\(track.title) — \(track.artist)")
@@ -44,7 +44,7 @@ struct NotchFocusView: View {
                             }.frame(maxWidth: .infinity, alignment: .leading)
                                 .help("\(track.title) — \(track.artist)")
                             Button(action: onCollapse) { Image(systemName: "chevron.up").frame(width: 24, height: 24) }
-                                .buttonStyle(.plain).help("Свернуть").accessibilityLabel("Свернуть")
+                                .buttonStyle(.plain).help(String(localized: "Collapse")).accessibilityLabel(String(localized: "Collapse"))
                         }
                         PlaybackControlsView(isPlaying: track.isPlaying,
                             onPrevious: { Task { await model.previousTrack() } },
@@ -74,7 +74,7 @@ struct NotchFocusView: View {
                     Text(model.statusText).lineLimit(state == .expanded ? 2 : 1)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     if state == .expanded {
-                        Button("Повторить") { Task { await model.refresh() } }.buttonStyle(.plain)
+                        Button(String(localized: "Retry")) { Task { await model.refresh() } }.buttonStyle(.plain)
                     }
                 }
                 .font(.system(size: 11)).foregroundStyle(.secondary)

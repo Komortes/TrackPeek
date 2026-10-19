@@ -1,6 +1,7 @@
 name: TrackPeek
 
 options:
+  developmentLanguage: en
   deploymentTarget:
     macOS: "14.0"
 
@@ -38,8 +39,8 @@ targets:
         LSUIElement: true
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
-        NSAppleEventsUsageDescription: "TrackPeek использует Automation для чтения текущего трека и управления Spotify или Music."
-        NSAudioCaptureUsageDescription: "TrackPeek анализирует системное аудио Spotify, чтобы эквалайзер двигался в ритм музыки."
+        NSAppleEventsUsageDescription: "TrackPeek uses Automation to read the current track and control Spotify or Apple Music."
+        NSAudioCaptureUsageDescription: "TrackPeek analyzes Spotify system audio so the equalizer responds to the music."
         SUFeedURL: https://github.com/Komortes/TrackPeek/releases/latest/download/appcast.xml
         SUEnableAutomaticChecks: true
         SUScheduledCheckInterval: 86400
@@ -47,6 +48,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.trackpeek.TrackPeek
+        SWIFT_EMIT_LOC_STRINGS: YES
         SWIFT_OBJC_BRIDGING_HEADER: Sources/Support/TrackPeek-Bridging-Header.h
         CODE_SIGN_STYLE: Manual
         CODE_SIGN_IDENTITY: Apple Development
@@ -65,7 +67,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.trackpeek.TrackPeek.ScriptHelper
         GENERATE_INFOPLIST_FILE: YES
         CREATE_INFOPLIST_SECTION_IN_BINARY: YES
-        INFOPLIST_KEY_NSAppleEventsUsageDescription: "TrackPeek использует Automation для чтения текущего трека и управления Spotify или Music."
+        INFOPLIST_KEY_NSAppleEventsUsageDescription: "TrackPeek uses Automation to read the current track and control Spotify or Apple Music."
         INFOPLIST_KEY_LSUIElement: YES
         CODE_SIGN_STYLE: Manual
         CODE_SIGN_IDENTITY: Apple Development

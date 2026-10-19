@@ -8,9 +8,9 @@ enum ResourceUsageMode: String, CaseIterable, Identifiable, Sendable {
     var id: Self { self }
     var title: String {
         switch self {
-        case .automatic: "Автоматически"
-        case .normal: "Обычный"
-        case .economical: "Экономный"
+        case .automatic: String(localized: "Automatic")
+        case .normal: String(localized: "Normal")
+        case .economical: String(localized: "Economical")
         }
     }
 

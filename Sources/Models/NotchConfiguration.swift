@@ -14,13 +14,13 @@ enum NotchDisplayTarget: String, CaseIterable, Identifiable, Sendable {
     var title: String {
         switch self {
         case .automatic:
-            "Автоматически"
+            String(localized: "Automatic")
         case .mainDisplay:
-            "Основной"
+            String(localized: "Main Display")
         case .notchedDisplay:
-            "С чёлкой"
+            String(localized: "Notched Display")
         case .allDisplays:
-            "Все экраны"
+            String(localized: "All Displays")
         }
     }
 
@@ -71,12 +71,12 @@ enum NotchWidgetPosition: String, CaseIterable, Identifiable, Sendable {
 
     var title: String {
         switch self {
-        case .topLeading: "Сверху слева"
-        case .topCenter: "Сверху по центру"
-        case .topTrailing: "Сверху справа"
-        case .bottomLeading: "Снизу слева"
-        case .bottomCenter: "Снизу по центру"
-        case .bottomTrailing: "Снизу справа"
+        case .topLeading: String(localized: "Top Left")
+        case .topCenter: String(localized: "Top Center")
+        case .topTrailing: String(localized: "Top Right")
+        case .bottomLeading: String(localized: "Bottom Left")
+        case .bottomCenter: String(localized: "Bottom Center")
+        case .bottomTrailing: String(localized: "Bottom Right")
         }
     }
 }
@@ -100,50 +100,50 @@ enum NotchWidgetLayout: String, CaseIterable, Identifiable, Sendable {
     var title: String {
         switch self {
         case .pill:
-            "Пилюля"
+            String(localized: "Pill")
         case .edge:
-            "Edge · Боковая панель"
+            String(localized: "Edge · Side Panel")
         case .miniBar:
-            "Мини-строка"
+            String(localized: "Mini Bar")
         case .cardHorizontal:
-            "Обложка сбоку"
+            String(localized: "Side Artwork")
         case .cardVertical:
-            "Обложка сверху"
+            String(localized: "Top Artwork")
         case .artworkSquare:
-            "Квадрат-обложка"
+            String(localized: "Artwork Square")
         case .lyricStrip:
-            "Строка текста"
+            String(localized: "Lyric Strip")
         case .lyricsCard:
-            "Текст песни"
+            String(localized: "Song Lyrics")
         case .karaokeCard:
-            "Караоке"
+            String(localized: "Karaoke")
         case .equalizerCard:
-            "Эквалайзер"
+            String(localized: "Equalizer")
         }
     }
 
     var summary: String {
         switch self {
         case .pill:
-            "Компактная полоска, раскрывается при наведении."
+            String(localized: "A compact strip that expands on hover.")
         case .edge:
-            "Узкая панель у края экрана. Только главное."
+            String(localized: "A narrow panel at the screen edge. Just the essentials.")
         case .miniBar:
-            "Тонкая строка: обложка, название и кнопки."
+            String(localized: "A slim bar with artwork, track title and controls.")
         case .cardHorizontal:
-            "Полный плеер постоянного размера."
+            String(localized: "A full player that stays the same size.")
         case .cardVertical:
-            "Вертикальная карточка с крупной обложкой."
+            String(localized: "A vertical card with large artwork.")
         case .artworkSquare:
-            "Крупная обложка с читаемой подписью и управлением."
+            String(localized: "Large artwork with readable track information and controls.")
         case .lyricStrip:
-            "Одна строка песни. Управление при наведении."
+            String(localized: "One line of lyrics. Hover for controls.")
         case .lyricsCard:
-            "Компактный плеер с синхронизированным текстом."
+            String(localized: "A compact player with synchronized lyrics.")
         case .karaokeCard:
-            "Крупный текст песни в несколько строк."
+            String(localized: "Large lyrics across several lines.")
         case .equalizerCard:
-            "Живая волна во всю карточку."
+            String(localized: "A live waveform across the card.")
         }
     }
 
@@ -206,10 +206,10 @@ enum NotchWidgetLayoutFamily: String, CaseIterable, Identifiable, Sendable {
 
     var title: String {
         switch self {
-        case .compact: "Компактные"
-        case .fullPlayer: "Полный плеер"
-        case .lyrics: "Текст песни"
-        case .visualizer: "Визуализация"
+        case .compact: String(localized: "Compact")
+        case .fullPlayer: String(localized: "Full Player")
+        case .lyrics: String(localized: "Song Lyrics")
+        case .visualizer: String(localized: "Visualizer")
         }
     }
 
@@ -230,11 +230,11 @@ enum NotchSongInfoVisibility: String, CaseIterable, Identifiable, Sendable {
     var title: String {
         switch self {
         case .always:
-            "Всегда"
+            String(localized: "Always")
         case .whilePlaying:
-            "Только при воспроизведении"
+            String(localized: "Only While Playing")
         case .never:
-            "Никогда"
+            String(localized: "Never")
         }
     }
 
@@ -261,9 +261,9 @@ enum NotchColorSource: String, CaseIterable, Identifiable, Sendable {
     var title: String {
         switch self {
         case .artwork:
-            "Обложка (авто)"
+            String(localized: "Artwork (Automatic)")
         case .systemAccent:
-            "Акцент системы"
+            String(localized: "System Accent")
         }
     }
 }
@@ -280,11 +280,11 @@ enum NotchPulseMode: String, CaseIterable, Identifiable, Sendable {
     var title: String {
         switch self {
         case .off:
-            "Выключено"
+            String(localized: "Off")
         case .scale:
-            "Масштаб"
+            String(localized: "Scale")
         case .glow:
-            "Свечение"
+            String(localized: "Glow")
         }
     }
 }

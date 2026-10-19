@@ -19,15 +19,15 @@ struct NotchLyricsView: View {
         Group {
             switch state {
             case .loading:
-                placeholder("Ищем текст…", systemImage: "ellipsis")
+                placeholder(String(localized: "Finding lyrics…"), systemImage: "ellipsis")
             case .unavailable, .failed:
                 HStack(spacing: 8) {
-                    placeholder(state == .unavailable ? "Текст не найден" : "Не удалось загрузить текст", systemImage: "quote.bubble")
+                    placeholder(state == .unavailable ? String(localized: "Lyrics not found") : String(localized: "Could not load lyrics"), systemImage: "quote.bubble")
                     if let onRetry {
                         Button(action: onRetry) { Image(systemName: "arrow.clockwise") }
                             .buttonStyle(.plain)
-                            .help("Повторить поиск текста")
-                            .accessibilityLabel("Повторить поиск текста")
+                            .help(String(localized: "Retry Lyrics Search"))
+                            .accessibilityLabel(String(localized: "Retry Lyrics Search"))
                     }
                 }
             case .loaded(let lyrics):
@@ -36,7 +36,7 @@ struct NotchLyricsView: View {
                 } else if let plain = lyrics.plainText {
                     plainLyrics(plain)
                 } else {
-                    placeholder("Текст не найден", systemImage: "quote.bubble")
+                    placeholder(String(localized: "Lyrics not found"), systemImage: "quote.bubble")
                 }
             }
         }

@@ -98,7 +98,7 @@ struct NotchSurfaceContent: View {
             .padding(.horizontal, 16)
             .frame(maxHeight: .infinity)
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("Новый трек: \(track.title), \(track.artist)")
+            .accessibilityLabel(String(localized: "New track: \(track.title), \(track.artist)"))
         }
     }
 
@@ -148,14 +148,14 @@ struct NotchSurfaceContent: View {
                 onTogglePin()
             }
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("Компактный плеер TrackPeek")
-            .accessibilityValue("\(track.title), \(track.artist). \(track.isPlaying ? "Воспроизводится" : "На паузе")")
-            .accessibilityHint("Раскрывает элементы управления воспроизведением")
+            .accessibilityLabel(String(localized: "TrackPeek Compact Player"))
+            .accessibilityValue("\(track.title), \(track.artist). \(track.isPlaying ? String(localized: "Now playing") : String(localized: "Paused"))")
+            .accessibilityHint(String(localized: "Expands the playback controls"))
             .accessibilityAction {
                 guard clickEnabled else { return }
                 onTogglePin()
             }
-            .help("\(track.title) — \(track.artist)\n\(clickEnabled ? "Нажмите, чтобы раскрыть плеер" : "Наведите, чтобы раскрыть плеер")")
+            .help("\(track.title) — \(track.artist)\n\(clickEnabled ? String(localized: "Click to expand the player") : String(localized: "Hover to expand the player"))")
         } else {
             HStack(spacing: 8) {
                 Image(systemName: "music.note")
@@ -209,15 +209,15 @@ struct NotchSurfaceContent: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("Открыть \(model.activeSourceDisplayName)")
-                    .help("Открыть \(model.activeSourceDisplayName)")
+                    .accessibilityLabel(String(localized: "Open \(model.activeSourceDisplayName)"))
+                    .help(String(localized: "Open \(model.activeSourceDisplayName)"))
 
                     HStack(spacing: 5) {
                         Circle()
                             .fill(track.isPlaying ? palette.primary.onDarkSurface.swiftUIColor : .secondary)
                             .frame(width: 5, height: 5)
 
-                        Text(track.isPlaying ? "ИГРАЕТ" : "ПАУЗА")
+                        Text(track.isPlaying ? String(localized: "PLAYING") : String(localized: "PAUSED"))
                             .font(.system(size: 8, weight: .bold, design: .rounded))
                             .tracking(0.7)
                             .contentTransition(.opacity)
@@ -276,11 +276,11 @@ struct NotchSurfaceContent: View {
                         )
                         .help(
                             appearance.lyricsEnabled.wrappedValue
-                                ? "Скрыть текст песни"
-                                : "Показать текст песни"
+                                ? String(localized: "Hide Lyrics")
+                                : String(localized: "Show Lyrics")
                         )
                         .accessibilityLabel(appearance.lyricsEnabled.wrappedValue
-                            ? "Скрыть текст песни" : "Показать текст песни")
+                            ? String(localized: "Hide Lyrics") : String(localized: "Show Lyrics"))
 
                         Button(action: onCollapse) {
                             Image(systemName: "chevron.up")
@@ -290,8 +290,8 @@ struct NotchSurfaceContent: View {
                         }
                         .buttonStyle(.plain)
                         .foregroundStyle(.secondary)
-                        .help("Свернуть плеер")
-                        .accessibilityLabel("Свернуть плеер")
+                        .help(String(localized: "Collapse Player"))
+                        .accessibilityLabel(String(localized: "Collapse Player"))
                     }
 
                     Spacer(minLength: 6)

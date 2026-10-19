@@ -15,7 +15,7 @@ struct WidgetEdgeCard: View {
             }
             .buttonStyle(.plain)
             .help("\(track.title) — \(track.artist)")
-            .accessibilityLabel("\(track.title), \(track.artist). Информация о треке")
+            .accessibilityLabel(String(localized: "\(track.title), \(track.artist). Track information"))
             .popover(isPresented: $showsDetails, arrowEdge: onRight ? .trailing : .leading) {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(track.title)
@@ -36,16 +36,16 @@ struct WidgetEdgeCard: View {
             }
             .padding(.bottom, 4)
 
-            PlaybackControlButton(symbol: "backward.fill", label: "Предыдущий трек", isPrimary: false) {
+            PlaybackControlButton(symbol: "backward.fill", label: String(localized: "Previous Track"), isPrimary: false) {
                 Task { await context.model.previousTrack() }
             }
             PlaybackControlButton(
                 symbol: track.isPlaying ? "pause.fill" : "play.fill",
-                label: track.isPlaying ? "Пауза" : "Воспроизвести", isPrimary: true
+                label: track.isPlaying ? String(localized: "Pause") : String(localized: "playback.play", defaultValue: "Play"), isPrimary: true
             ) {
                 Task { await context.model.togglePlayback() }
             }
-            PlaybackControlButton(symbol: "forward.fill", label: "Следующий трек", isPrimary: false) {
+            PlaybackControlButton(symbol: "forward.fill", label: String(localized: "Next Track"), isPrimary: false) {
                 Task { await context.model.nextTrack() }
             }
 
@@ -61,8 +61,8 @@ struct WidgetEdgeCard: View {
                             .frame(width: 38 * (track.duration > 0 ? min(max(position / track.duration, 0), 1) : 0))
                     }
                     .frame(width: 38, height: 2)
-                    .accessibilityLabel("Прогресс")
-                    .accessibilityValue("\(PlaybackTimeFormatter.string(from: position)) из \(PlaybackTimeFormatter.string(from: track.duration))")
+                    .accessibilityLabel(String(localized: "Progress"))
+                    .accessibilityValue(String(localized: "\(PlaybackTimeFormatter.string(from: position)) of \(PlaybackTimeFormatter.string(from: track.duration))"))
             }
             .padding(.top, 6)
         }

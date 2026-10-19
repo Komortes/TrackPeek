@@ -20,7 +20,7 @@ struct SecondaryControlsView: View {
             if capabilities.contains(.shuffle) {
                 toggleButton(
                     symbol: "shuffle",
-                    label: "Перемешивание",
+                    label: String(localized: "Shuffle"),
                     isOn: secondary?.isShuffling == true
                 ) {
                     onShuffle(!(secondary?.isShuffling == true))
@@ -30,7 +30,7 @@ struct SecondaryControlsView: View {
             if capabilities.contains(.repeatTrack) {
                 toggleButton(
                     symbol: repeatSymbol,
-                    label: "Повтор",
+                    label: String(localized: "Repeat"),
                     isOn: (secondary?.repeatMode ?? .off) != .off
                 ) {
                     // Spotify не умеет repeat-one — цикл off → all → off.
@@ -69,10 +69,10 @@ struct SecondaryControlsView: View {
                         return .handled
                     }
                     .frame(maxWidth: 110)
-                    .accessibilityLabel("Громкость")
-                    .accessibilityValue("\(Int(volumeState.displayedValue(snapshot: secondary?.volume).rounded())) процентов")
-                    .accessibilityHint("Стрелки влево и вправо изменяют громкость на один процент")
-                    .help("Громкость плеера. Стрелки ←/→: на один процент тише/громче.")
+                    .accessibilityLabel(String(localized: "Volume"))
+                    .accessibilityValue(String(localized: "\(Int(volumeState.displayedValue(snapshot: secondary?.volume).rounded())) percent"))
+                    .accessibilityHint(String(localized: "Left and right arrows change volume by one percent"))
+                    .help(String(localized: "Player volume. ←/→ arrows: decrease/increase by one percent."))
                 }
             }
         }

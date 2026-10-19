@@ -76,7 +76,7 @@ final class MenuBarControlsController: NSObject {
         let next = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         next.button?.image = NSImage(
             systemSymbolName: "forward.fill",
-            accessibilityDescription: "Следующий трек"
+            accessibilityDescription: String(localized: "Next Track")
         )
         next.button?.target = self
         next.button?.action = #selector(nextTapped)
@@ -84,7 +84,7 @@ final class MenuBarControlsController: NSObject {
         let playPause = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         playPause.button?.image = NSImage(
             systemSymbolName: "play.fill",
-            accessibilityDescription: "Играть"
+            accessibilityDescription: String(localized: "Play")
         )
         playPause.button?.target = self
         playPause.button?.action = #selector(playPauseTapped)
@@ -92,7 +92,7 @@ final class MenuBarControlsController: NSObject {
         let previous = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         previous.button?.image = NSImage(
             systemSymbolName: "backward.fill",
-            accessibilityDescription: "Предыдущий трек"
+            accessibilityDescription: String(localized: "Previous Track")
         )
         previous.button?.target = self
         previous.button?.action = #selector(previousTapped)
@@ -134,7 +134,7 @@ final class MenuBarControlsController: NSObject {
 
         playPauseItem?.button?.image = NSImage(
             systemSymbolName: isPlaying ? "pause.fill" : "play.fill",
-            accessibilityDescription: isPlaying ? "Пауза" : "Играть"
+            accessibilityDescription: isPlaying ? String(localized: "Pause") : String(localized: "Play")
         )
 
         for item in [previousItem, playPauseItem, nextItem] {

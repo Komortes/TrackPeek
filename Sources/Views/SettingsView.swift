@@ -15,18 +15,18 @@ enum SettingsTab: String, CaseIterable {
 
     var title: String {
         switch self {
-        case .resources: "Ресурсы"
-        case .about: "О приложении"
+        case .resources: String(localized: "Resources")
+        case .about: String(localized: "About")
         case .shortcuts:
-            "Клавиши"
+            String(localized: "Shortcuts")
         case .general:
-            "Основные"
+            String(localized: "General")
         case .notch:
-            "Чёлка"
+            String(localized: "Notch")
         case .widget:
-            "Виджет"
+            String(localized: "Widget")
         case .menuBar:
-            "Строка меню"
+            String(localized: "Menu Bar")
         }
     }
 
@@ -178,12 +178,12 @@ struct SettingsView: View {
                 set: { if let tab = $0 { selectedTabRawValue = tab.rawValue } }
             )) {
                 navigationRow(.general)
-                Section("Плеер") {
+                Section(String(localized: "Player")) {
                     navigationRow(.notch)
                     navigationRow(.widget)
                     navigationRow(.menuBar)
                 }
-                Section("Приложение") {
+                Section(String(localized: "Application")) {
                     navigationRow(.shortcuts)
                     navigationRow(.resources)
                     navigationRow(.about)
@@ -197,7 +197,7 @@ struct SettingsView: View {
         }
         .navigationSplitViewStyle(.balanced)
         .toolbar(removing: .sidebarToggle)
-        .navigationTitle("Настройки TrackPeek")
+        .navigationTitle(String(localized: "TrackPeek Settings"))
         .frame(width: 940, height: 680)
         .background(SettingsWindowToolbar())
     }
@@ -211,7 +211,7 @@ struct SettingsView: View {
     @ViewBuilder private var selectedPage: some View {
         switch selectedTab {
         case .general:
-            SettingsPage(title: "Основные", subtitle: "Источник музыки, экранная панель и запуск приложения.") {
+            SettingsPage(title: String(localized: "General"), subtitle: String(localized: "Music source, on-screen panel and app startup.")) {
                 playbackSection
                 launchSection
                 presetsSection
@@ -225,25 +225,25 @@ struct SettingsView: View {
         case .shortcuts:
             ShortcutSettingsView()
         case .resources:
-            SettingsPage(title: "Ресурсы и диагностика", subtitle: "Энергопотребление, подключение и аудиозахват.") {
+            SettingsPage(title: String(localized: "Resources and Diagnostics"), subtitle: String(localized: "Energy use, connection and audio capture.")) {
                 resourceSection
                 PlaybackDiagnosticsView(coordinator: .shared)
             }
         case .about:
-            SettingsPage(title: "О приложении") {
+            SettingsPage(title: String(localized: "About")) {
                 aboutSection
             }
         }
     }
 
     private var playbackSection: some View {
-        SettingsSection(title: "Музыка и управление") {
+        SettingsSection(title: String(localized: "Music and Controls")) {
             SettingsGroup {
                 SettingsRow(
-                    title: "Источник музыки",
+                    title: String(localized: "Music Source"),
                     subtitle: mediaSource.wrappedValue.summary
                 ) {
-                    Picker("Источник музыки", selection: mediaSource) {
+                    Picker(String(localized: "Music Source"), selection: mediaSource) {
                         ForEach(MediaSourcePreference.allCases) { source in
                             Text(source.title).tag(source)
                         }
@@ -253,13 +253,13 @@ struct SettingsView: View {
 
                 SettingsRowDivider()
 
-                SettingsRow(title: "Панель на экране", subtitle: selectedMode.summary) {
-                    Picker("Панель на экране", selection: Binding(
+                SettingsRow(title: String(localized: "On-Screen Panel"), subtitle: selectedMode.summary) {
+                    Picker(String(localized: "On-Screen Panel"), selection: Binding(
                         get: { selectedMode },
                         set: { selectedModeRawValue = $0.rawValue }
                     )) {
                         ForEach(OverlayMode.allCases) { mode in
-                            Text(mode == .off ? "Выключена" : mode.title).tag(mode)
+                            Text(mode == .off ? String(localized: "overlay.off", defaultValue: "Off") : mode.title).tag(mode)
                         }
                     }
                     .pickerStyle(.segmented)
@@ -270,10 +270,10 @@ struct SettingsView: View {
                 SettingsRowDivider()
 
                 SettingsRow(
-                    title: "Когда показывать панель",
-                    subtitle: "Для чёлки и виджета."
+                    title: String(localized: "When to Show the Panel"),
+                    subtitle: String(localized: "For the notch and widget.")
                 ) {
-                    Picker("Показывать панель", selection: Binding(
+                    Picker(String(localized: "settings.showPanel", defaultValue: "Show Panel"), selection: Binding(
                         get: {
                             OverlayVisibilityPolicy(rawValue: visibilityPolicyRawValue) ?? .fallback
                         },
@@ -287,21 +287,21 @@ struct SettingsView: View {
                 }
             }
 
-            Text("Строка меню доступна всегда, даже когда экранная панель выключена.")
+            Text(String(localized: "The menu bar is always available, even when the on-screen panel is off."))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
     }
 
     private var presetsSection: some View {
-        SettingsDisclosure(title: "Быстрая настройка", subtitle: "Готовые сочетания поведения и оформления чёлки и виджета.") {
+        SettingsDisclosure(title: String(localized: "Quick Setup"), subtitle: String(localized: "Behavior and appearance presets for the notch and widget.")) {
             SettingsGroup {
                 SettingsRow(
-                    title: "Поведение",
-                    subtitle: "Скорость раскрытия и уведомления о новых треках."
+                    title: String(localized: "Behavior"),
+                    subtitle: String(localized: "Expansion speed and new-track notifications.")
                 ) {
-                    Picker("Поведение", selection: behaviorPresetSelection) {
-                        Text("Пользовательский").tag("")
+                    Picker(String(localized: "Behavior"), selection: behaviorPresetSelection) {
+                        Text(String(localized: "Custom")).tag("")
                         ForEach(BehaviorPreset.allCases) { preset in
                             Text(preset.title).tag(preset.rawValue)
                         }
@@ -312,11 +312,11 @@ struct SettingsView: View {
                 SettingsRowDivider()
 
                 SettingsRow(
-                    title: "Стиль",
-                    subtitle: "Контур, цвета обложки и пульсация."
+                    title: String(localized: "Style"),
+                    subtitle: String(localized: "Outline, artwork colors and pulse.")
                 ) {
-                    Picker("Стиль", selection: stylePresetSelection) {
-                        Text("Пользовательский").tag("")
+                    Picker(String(localized: "Style"), selection: stylePresetSelection) {
+                        Text(String(localized: "Custom")).tag("")
                         ForEach(StylePreset.allCases) { preset in
                             Text(preset.title).tag(preset.rawValue)
                         }
@@ -328,10 +328,10 @@ struct SettingsView: View {
     }
 
     private var resourceSection: some View {
-        SettingsSection(title: "Ресурсы", subtitle: "Оформление сохраняется и возвращается при выходе из экономного режима.") {
+        SettingsSection(title: String(localized: "Resources"), subtitle: String(localized: "Your appearance settings are saved and restored when you leave Economical mode.")) {
             SettingsGroup {
-                SettingsRow(title: "Режим", subtitle: "Автоматический следует режиму энергосбережения macOS, а не питанию от батареи.") {
-                    Picker("Режим использования ресурсов", selection: $resourceUsageModeRaw) {
+                SettingsRow(title: String(localized: "Mode"), subtitle: String(localized: "Automatic follows macOS Low Power Mode, not whether you are on battery power.")) {
+                    Picker(String(localized: "Resource Usage Mode"), selection: $resourceUsageModeRaw) {
                         ForEach(ResourceUsageMode.allCases) { mode in
                             Text(mode.title).tag(mode.rawValue)
                         }
@@ -340,10 +340,10 @@ struct SettingsView: View {
                 }
                 SettingsRowDivider()
                 SettingsRow(
-                    title: PlaybackCoordinator.shared.isSavingResources ? "Экономия активна" : "Обычная работа",
+                    title: PlaybackCoordinator.shared.isSavingResources ? String(localized: "Saving resources") : String(localized: "Normal operation"),
                     subtitle: PlaybackCoordinator.shared.isSavingResources
-                        ? "Аудиозахват и декоративные анимации выключены. Прогресс обновляется раз в секунду."
-                        : "Обычная частота обновлений. Эффекты зависят от оформления и воспроизведения."
+                        ? String(localized: "Audio capture and decorative animations are off. Progress updates once per second.")
+                        : String(localized: "Normal update rate. Effects depend on appearance settings and playback.")
                 ) {
                     Image(systemName: PlaybackCoordinator.shared.isSavingResources ? "leaf.fill" : "leaf")
                         .foregroundStyle(.secondary)
@@ -353,7 +353,7 @@ struct SettingsView: View {
     }
 
     private var launchSection: some View {
-        SettingsSection(title: "Запуск") {
+        SettingsSection(title: String(localized: "Startup")) {
             SettingsGroup {
                 LaunchAtLoginToggle()
                     .padding(.horizontal, 14)
@@ -369,22 +369,22 @@ struct SettingsView: View {
                     .resizable().frame(width: 52, height: 52)
                 VStack(alignment: .leading, spacing: 4) {
                     Text("TrackPeek").font(.title3.weight(.semibold))
-                    Text("Версия \(appVersion)").font(.caption).foregroundStyle(.secondary)
+                    Text(String(localized: "Version \(appVersion)")).font(.caption).foregroundStyle(.secondary)
                 }
                 Spacer()
-                Button("Проверить обновления") {
+                Button(String(localized: "Check for Updates")) {
                     SparkleUpdaterController.shared.checkForUpdates()
                 }
             }
             SettingsGroup {
-                SettingsRow(title: "Первоначальная настройка", subtitle: "Источник музыки, разрешения и автозапуск.") {
-                    Button("Открыть") { onboardingController.show() }
+                SettingsRow(title: String(localized: "Initial Setup"), subtitle: String(localized: "Music source, permissions and Open at Login.")) {
+                    Button(String(localized: "Open")) { onboardingController.show() }
                 }
             }
-            SettingsSection(title: "Сброс") {
+            SettingsSection(title: String(localized: "settings.reset", defaultValue: "Reset")) {
                 SettingsGroup {
-                    SettingsRow(title: "Вернуть настройки по умолчанию", subtitle: "Оформление, расположение и горячие клавиши.") {
-                        Button("Сбросить настройки", role: .destructive) {
+                    SettingsRow(title: String(localized: "Restore Default Settings"), subtitle: String(localized: "Appearance, placement and keyboard shortcuts.")) {
+                        Button(String(localized: "Reset Settings"), role: .destructive) {
                             showsResetConfirmation = true
                         }
                     }
@@ -392,14 +392,14 @@ struct SettingsView: View {
             }
         }
         .confirmationDialog(
-            "Сбросить все настройки TrackPeek?",
+            String(localized: "Reset all TrackPeek settings?"),
             isPresented: $showsResetConfirmation,
             titleVisibility: .visible
         ) {
-            Button("Сбросить", role: .destructive) { resetAllSettings() }
-            Button("Отмена", role: .cancel) {}
+            Button(String(localized: "Reset"), role: .destructive) { resetAllSettings() }
+            Button(String(localized: "Cancel"), role: .cancel) {}
         } message: {
-            Text("Чёлка, плеер и режим отображения вернутся к значениям по умолчанию.")
+            Text(String(localized: "Notch, player and display mode settings will return to their defaults."))
         }
     }
 

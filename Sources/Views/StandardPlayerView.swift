@@ -25,8 +25,8 @@ struct StandardPlayerView: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Открыть \(model.activeSourceDisplayName)")
-                .help("Открыть \(model.activeSourceDisplayName)")
+                .accessibilityLabel(String(localized: "Open \(model.activeSourceDisplayName)"))
+                .help(String(localized: "Open \(model.activeSourceDisplayName)"))
 
                 TrackInfoView(
                     track: track,

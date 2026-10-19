@@ -486,8 +486,8 @@ struct PlaybackDiagnosticsTests {
         )
         let report = diagnostics.report(version: "1.0", build: "1")
         #expect(report.contains("Music"))
-        #expect(report.contains("Доступ запрещён"))
-        #expect(report.contains("Проверить снова"))
+        #expect(report.contains(String(localized: "Access denied")))
+        #expect(report.contains(String(localized: "After granting access, click Check Again")))
         #expect(!report.contains("/Users/"))
     }
 
@@ -499,9 +499,9 @@ struct PlaybackDiagnosticsTests {
             nextRefreshDate: Date(timeIntervalSince1970: 200), audioStatus: .notNeeded
         )
         let report = diagnostics.report(version: "1.0", build: "1")
-        #expect(report.contains("показан последний трек"))
-        #expect(report.contains("нет видимого потребителя"))
-        #expect(!report.contains("Подключён"))
+        #expect(report.contains(String(localized: "Disconnected · showing the last track")))
+        #expect(report.contains(String(localized: "Stopped: no visible view needs audio")))
+        #expect(!report.contains(String(localized: "Connected")))
     }
 }
 

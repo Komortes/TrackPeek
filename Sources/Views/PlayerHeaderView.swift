@@ -40,6 +40,6 @@ struct PlayerStatusBadge: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(sourceName)
-        .accessibilityValue(isPlaying.map { $0 ? "Воспроизводится" : "На паузе" } ?? "")
+        .accessibilityValue(isPlaying.map { $0 ? String(localized: "Now playing") : String(localized: "Paused") } ?? "")
     }
 }

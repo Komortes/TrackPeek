@@ -43,18 +43,20 @@ struct OnboardingView: View {
                     .resizable()
                     .frame(width: 72, height: 72)
 
-                Text("Добро пожаловать в TrackPeek")
+                Text(String(localized: "Welcome to TrackPeek"))
                     .font(.title2.weight(.semibold))
+                    .fixedSize(horizontal: false, vertical: true)
 
-                Text("Плеер вокруг чёлки и в строке меню для Spotify и Apple Music.")
+                Text(String(localized: "A notch and menu bar player for Spotify and Apple Music."))
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
             VStack(alignment: .leading, spacing: 14) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Label("Источник музыки", systemImage: "music.note.list")
+                    Label(String(localized: "Music Source"), systemImage: "music.note.list")
                         .font(.subheadline.weight(.semibold))
 
                     Picker("", selection: mediaSource) {
@@ -67,10 +69,10 @@ struct OnboardingView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 6) {
-                    Label("Где показывать плеер", systemImage: "macbook.and.iphone")
+                    Label(String(localized: "Where to Show the Player"), systemImage: "macbook.and.iphone")
                         .font(.subheadline.weight(.semibold))
 
-                    Picker("Где показывать плеер", selection: $overlayModeRawValue) {
+                    Picker(String(localized: "Where to Show the Player"), selection: $overlayModeRawValue) {
                         ForEach(OverlayMode.allCases) { mode in
                             Text(mode.title).tag(mode.rawValue)
                         }
@@ -87,16 +89,16 @@ struct OnboardingView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 6) {
-                    Label("Доступ к плееру", systemImage: "lock.shield")
+                    Label(String(localized: "Player Access"), systemImage: "lock.shield")
                         .font(.subheadline.weight(.semibold))
 
-                    Text("TrackPeek управляет плеером через Apple Events — macOS спросит разрешение один раз.")
+                    Text(String(localized: "TrackPeek controls the player through Apple Events. macOS will ask for permission once."))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
 
                     HStack(spacing: 8) {
-                        Button("Проверить доступ", action: checkPermission)
+                        Button(String(localized: "Check Access"), action: checkPermission)
                             .disabled(isChecking)
 
                         permissionStatusView
@@ -110,7 +112,7 @@ struct OnboardingView: View {
             .background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 10))
 
             HStack(spacing: 10) {
-                Button("Настроить подробнее") {
+                Button(String(localized: "More Settings")) {
                     let tab: SettingsTab = switch OverlayMode(rawValue: overlayModeRawValue) {
                     case .notch: .notch
                     case .floatingWidget: .widget
@@ -123,7 +125,7 @@ struct OnboardingView: View {
                 .buttonStyle(.bordered)
                 .controlSize(.large)
 
-                Button("Готово") {
+                Button(String(localized: "Done")) {
                     onFinish()
                 }
                 .buttonStyle(.borderedProminent)
@@ -170,11 +172,11 @@ struct OnboardingView: View {
             ProgressView()
                 .controlSize(.small)
         case .granted:
-            Label("Доступ есть", systemImage: "checkmark.circle.fill")
+            Label(String(localized: "Access granted"), systemImage: "checkmark.circle.fill")
                 .foregroundStyle(.green)
                 .font(.caption)
         case .playerNotRunning:
-            Label("Плеер не запущен — запрос появится позже", systemImage: "info.circle")
+            Label(String(localized: "The player is not running. Permission will be requested later"), systemImage: "info.circle")
                 .foregroundStyle(.secondary)
                 .font(.caption)
         case .failed(let message):

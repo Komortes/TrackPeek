@@ -30,7 +30,7 @@ struct SpotifySpikeModelTests {
         await model.refresh()
 
         #expect(model.track?.title == "Reckoner")
-        #expect(model.statusText == "Играет")
+        #expect(model.statusText == String(localized: "Playing"))
         #expect(model.availability == .ready)
     }
 

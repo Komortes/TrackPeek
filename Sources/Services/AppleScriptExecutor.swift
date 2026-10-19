@@ -11,10 +11,10 @@ enum AppleScriptExecutionError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case let .scriptFailed(message): message
-        case .timedOut: "Приложение не отвечает"
-        case .busy: "Предыдущая команда плеера ещё выполняется"
-        case .automationDenied: "Нет разрешения Automation"
-        case .helperUnavailable: "Подключение к плееру прервано. Выполняется восстановление"
+        case .timedOut: String(localized: "The app is not responding")
+        case .busy: String(localized: "The previous player command is still running")
+        case .automationDenied: String(localized: "Automation permission is missing")
+        case .helperUnavailable: String(localized: "The player connection was interrupted. Reconnecting")
         }
     }
 }
@@ -99,7 +99,7 @@ private actor ScriptSupervisor {
         try Task.checkCancellation()
         guard timeout > .zero else { throw AppleScriptExecutionError.timedOut }
         guard source.utf8.count <= AppleScriptIPC.maximumSourceLength else {
-            throw AppleScriptExecutionError.scriptFailed("Слишком большой запрос к плееру")
+            throw AppleScriptExecutionError.scriptFailed(String(localized: "The player request is too large"))
         }
         let id = UUID()
         let cancellation = ScriptCancellation()
@@ -230,7 +230,7 @@ private actor ScriptSupervisor {
             case -1743, -1744:
                 result = .failure(AppleScriptExecutionError.automationDenied)
             default:
-                result = .failure(AppleScriptExecutionError.scriptFailed(reply.errorMessage ?? "Ошибка плеера"))
+                result = .failure(AppleScriptExecutionError.scriptFailed(reply.errorMessage ?? String(localized: "Player error")))
             }
         } else {
             failGeneration(activeError: AppleScriptExecutionError.helperUnavailable)

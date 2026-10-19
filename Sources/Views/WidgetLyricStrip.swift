@@ -107,15 +107,15 @@ struct LyricStripContent: View {
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.18), value: presentation.text)
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.15), value: showsControls)
         .accessibilityElement(children: .contain)
-        .accessibilityAction(named: Text(isPlaying ? "Пауза" : "Воспроизвести"), onPlayPause)
-        .accessibilityAction(named: Text("Предыдущий трек"), onPrevious)
-        .accessibilityAction(named: Text("Следующий трек"), onNext)
+        .accessibilityAction(named: Text(isPlaying ? String(localized: "Pause") : String(localized: "playback.play", defaultValue: "Play")), onPlayPause)
+        .accessibilityAction(named: Text(String(localized: "Previous Track")), onPrevious)
+        .accessibilityAction(named: Text(String(localized: "Next Track")), onNext)
     }
 
     private var retryButton: some View {
         Button(action: onRetry) { Image(systemName: "arrow.clockwise").frame(width: 24, height: 28) }
             .buttonStyle(.plain).foregroundStyle(.white.opacity(0.8))
-            .help("Повторить поиск текста").accessibilityLabel("Повторить поиск текста")
+            .help(String(localized: "Retry Lyrics Search")).accessibilityLabel(String(localized: "Retry Lyrics Search"))
     }
 }
 
@@ -140,16 +140,16 @@ struct WidgetLyricStripUnavailable: View {
     }
 
     private var actionTitle: String {
-        model.availability == .spotifyNotRunning || model.availability == .nothingPlaying ? "Открыть плеер" : "Повторить"
+        model.availability == .spotifyNotRunning || model.availability == .nothingPlaying ? String(localized: "Open Player") : String(localized: "Retry")
     }
 
     private var title: String {
         switch model.availability {
-        case .loading: "Обновляем трек…"
-        case .ready, .nothingPlaying: "Выберите трек в \(model.activeSourceDisplayName)"
-        case .spotifyNotRunning: "\(model.activeSourceDisplayName) не запущен"
-        case .automationDenied: "Нет доступа к плееру"
-        case .unavailable: "Плеер временно недоступен"
+        case .loading: String(localized: "Refreshing track…")
+        case .ready, .nothingPlaying: String(localized: "Select a track in \(model.activeSourceDisplayName)")
+        case .spotifyNotRunning: String(localized: "\(model.activeSourceDisplayName) is not running")
+        case .automationDenied: String(localized: "No access to the player")
+        case .unavailable: String(localized: "The player is temporarily unavailable")
         }
     }
 }

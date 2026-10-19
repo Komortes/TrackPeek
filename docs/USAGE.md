@@ -2,6 +2,8 @@
 
 Detailed behavior for TrackPeek 1.1 (build 3), including the updated Settings window. See the [README](../README.md) for installation and [release notes](releases/1.1.md) for changes since 1.0. UI labels are currently in Russian; English descriptions below include their matching labels.
 
+Current source builds additionally support English and Ukrainian. They follow macOS language preferences, including the per-app language selection in System Settings → General → Language & Region; relaunch after a language change. The 1.1 release download still uses the Russian interface described below.
+
 ## Displays and placement
 
 - **Named monitor:** stays selected across reconnections. If disconnected, the panel temporarily uses the primary display and returns when the selected monitor reconnects.

@@ -57,11 +57,11 @@ struct PlaybackProgressView: View {
             .font(.system(size: 10, weight: .medium, design: .rounded).monospacedDigit())
             .foregroundStyle(.secondary)
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Прогресс воспроизведения")
+            .accessibilityLabel(String(localized: "Playback Progress"))
             .accessibilityValue(
-                "\(PlaybackTimeFormatter.string(from: displayedPosition)) из \(PlaybackTimeFormatter.string(from: duration))"
+                String(localized: "\(PlaybackTimeFormatter.string(from: displayedPosition)) of \(PlaybackTimeFormatter.string(from: duration))")
             )
-            .accessibilityHint("Перетащите или используйте стрелки влево и вправо для перемотки")
+            .accessibilityHint(String(localized: "Drag or use the left and right arrows to seek"))
             .accessibilityAdjustableAction { direction in
                 let step = max(duration * 0.02, 5)
                 let offset: TimeInterval
@@ -158,7 +158,7 @@ struct PlaybackProgressView: View {
                     }
                 }
             }
-            .help("Перетащите для перемотки. Стрелки ←/→: назад/вперёд на 5 секунд.")
+            .help(String(localized: "Drag to seek. ←/→ arrows: back/forward 5 seconds."))
         }
         .frame(height: 16)
         .focusable(canSeek, interactions: .edit)

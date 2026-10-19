@@ -38,8 +38,8 @@ struct WidgetVerticalCard: View {
                 )
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Открыть \(context.model.activeSourceDisplayName)")
-            .help("Открыть \(context.model.activeSourceDisplayName)")
+            .accessibilityLabel(String(localized: "Open \(context.model.activeSourceDisplayName)"))
+            .help(String(localized: "Open \(context.model.activeSourceDisplayName)"))
 
             VStack(spacing: 1) {
                 Text(track.title)
@@ -92,8 +92,8 @@ struct WidgetLyricsCard: View {
                 )
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Открыть \(context.model.activeSourceDisplayName)")
-            .help("Открыть \(context.model.activeSourceDisplayName)")
+            .accessibilityLabel(String(localized: "Open \(context.model.activeSourceDisplayName)"))
+            .help(String(localized: "Open \(context.model.activeSourceDisplayName)"))
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
@@ -146,8 +146,8 @@ struct WidgetMiniBar: View {
                 )
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Открыть \(context.model.activeSourceDisplayName)")
-            .help("Открыть \(context.model.activeSourceDisplayName)")
+            .accessibilityLabel(String(localized: "Open \(context.model.activeSourceDisplayName)"))
+            .help(String(localized: "Open \(context.model.activeSourceDisplayName)"))
 
             VStack(alignment: .leading, spacing: 0) {
                 Text(track.title)
@@ -201,8 +201,8 @@ struct WidgetArtworkSquare: View {
                 )
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Открыть \(context.model.activeSourceDisplayName)")
-            .help("Открыть \(context.model.activeSourceDisplayName)")
+            .accessibilityLabel(String(localized: "Open \(context.model.activeSourceDisplayName)"))
+            .help(String(localized: "Open \(context.model.activeSourceDisplayName)"))
 
             VStack(alignment: .leading, spacing: 9) {
                 VStack(alignment: .leading, spacing: 3) {
@@ -280,11 +280,11 @@ struct WidgetKaraokeCard: View {
     private var karaokeLines: some View {
         switch context.lyricsStore.state(for: track) {
         case .loading:
-            karaokePlaceholder("Ищем текст…")
+            karaokePlaceholder(String(localized: "Finding lyrics…"))
         case .unavailable, .failed:
             VStack(spacing: 6) {
-                karaokePlaceholder(context.lyricsStore.state(for: track) == .unavailable ? "Текст не найден" : "Не удалось загрузить текст")
-                Button("Повторить поиск") { context.lyricsStore.retry(for: track) }
+                karaokePlaceholder(context.lyricsStore.state(for: track) == .unavailable ? String(localized: "Lyrics not found") : String(localized: "Could not load lyrics"))
+                Button(String(localized: "Search Again")) { context.lyricsStore.retry(for: track) }
                     .buttonStyle(.plain)
                     .font(.system(size: 11, weight: .medium))
             }
@@ -299,7 +299,7 @@ struct WidgetKaraokeCard: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
             } else {
-                karaokePlaceholder("Текст не найден")
+                karaokePlaceholder(String(localized: "Lyrics not found"))
             }
         }
     }

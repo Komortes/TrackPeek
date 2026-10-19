@@ -14,26 +14,26 @@ enum PlayerLayout: String, CaseIterable, Identifiable, Sendable {
     var title: String {
         switch self {
         case .lyrics:
-            "Текст"
+            String(localized: "Lyrics")
         case .compactHorizontal:
-            "Compact"
+            String(localized: "Compact")
         case .standard:
-            "Standard"
+            String(localized: "Standard")
         case .artworkVertical:
-            "Artwork"
+            String(localized: "Artwork")
         }
     }
 
     var summary: String {
         switch self {
         case .lyrics:
-            "Полный текст песни; нажатие на строку перематывает воспроизведение."
+            String(localized: "Full song lyrics. Click a line to seek to it.")
         case .compactHorizontal:
-            "Быстрый горизонтальный контроллер."
+            String(localized: "A compact horizontal controller.")
         case .standard:
-            "Сбалансированный вид с альбомом."
+            String(localized: "A balanced layout with album information.")
         case .artworkVertical:
-            "Вертикальный вид с крупной обложкой."
+            String(localized: "A vertical layout with large artwork.")
         }
     }
 

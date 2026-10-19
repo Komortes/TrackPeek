@@ -7,32 +7,32 @@ struct LyricsActionsMenu: View {
 
     private var offset: TimeInterval { store.offset(for: track) }
     private var offsetLabel: String {
-        guard offset != 0 else { return "Без поправки" }
+        guard offset != 0 else { return String(localized: "No adjustment") }
         let seconds = abs(offset).formatted(.number.precision(.fractionLength(1)))
-        return offset > 0 ? "На \(seconds) с раньше" : "На \(seconds) с позже"
+        return offset > 0 ? String(localized: "\(seconds) s earlier") : String(localized: "\(seconds) s later")
     }
 
     var body: some View {
-        Menu("Текст песни") {
+        Menu(String(localized: "Song Lyrics")) {
             switch store.state(for: track) {
             case .loaded(let lyrics):
                 if lyrics.isSynced {
                     Text(offsetLabel)
-                    Button("Раньше на 0,5 с") { store.setOffset(offset + 0.5, for: track) }
+                    Button(String(localized: "0.5 s Earlier")) { store.setOffset(offset + 0.5, for: track) }
                         .disabled(offset >= 10)
-                    Button("Позже на 0,5 с") { store.setOffset(offset - 0.5, for: track) }
+                    Button(String(localized: "0.5 s Later")) { store.setOffset(offset - 0.5, for: track) }
                         .disabled(offset <= -10)
-                    Button("Сбросить поправку") { store.setOffset(0, for: track) }
+                    Button(String(localized: "Reset Timing")) { store.setOffset(0, for: track) }
                         .disabled(offset == 0)
                     Divider()
-                    Text("Только для текущей песни")
+                    Text(String(localized: "For this song only"))
                 } else {
-                    Text("Текст без синхронизации")
+                    Text(String(localized: "Unsynchronized lyrics"))
                 }
             case .failed, .unavailable:
-                Button("Повторить поиск") { store.retry(for: track) }
+                Button(String(localized: "Search Again")) { store.retry(for: track) }
             case .loading:
-                Button(store.isLoading(for: track) ? "Ищем текст…" : "Найти текст") {
+                Button(store.isLoading(for: track) ? String(localized: "Finding lyrics…") : String(localized: "Find Lyrics")) {
                     store.prepare(for: track)
                 }
                 .disabled(store.isLoading(for: track))

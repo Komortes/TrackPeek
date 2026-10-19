@@ -2,6 +2,12 @@
 
 Changes are grouped by release.
 
+## Unreleased
+
+- English and Ukrainian localization across settings, onboarding, player menus, tooltips, accessibility, status messages and diagnostics, with Russian retained.
+- Native macOS language selection, English fallback, localized permission explanations, decimal formatting and volume percentage plural forms.
+- Removed README screenshots while a new visual direction is being considered.
+
 ## 1.1 — 2026-10-19 (build 3)
 
 ### Settings improvements

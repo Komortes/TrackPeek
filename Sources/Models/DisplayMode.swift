@@ -18,22 +18,22 @@ enum OverlayMode: String, CaseIterable, Identifiable, Sendable {
     var title: String {
         switch self {
         case .off:
-            "Только Menu Bar"
+            String(localized: "Menu Bar Only")
         case .notch:
-            "Чёлка"
+            String(localized: "Notch")
         case .floatingWidget:
-            "Виджет"
+            String(localized: "Widget")
         }
     }
 
     var summary: String {
         switch self {
         case .off:
-            "Без экранной панели: трек и управление в строке меню."
+            String(localized: "Track information and controls in the menu bar, with no on-screen panel.")
         case .notch:
-            "Компактная чёлка, которая раскрывается при наведении."
+            String(localized: "A compact notch player that expands on hover.")
         case .floatingWidget:
-            "Пилюля или карточка у края любого экрана."
+            String(localized: "A pill or card at the edge of any display.")
         }
     }
 

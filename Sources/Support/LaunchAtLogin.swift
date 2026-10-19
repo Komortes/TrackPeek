@@ -1,3 +1,4 @@
+import Foundation
 import ServiceManagement
 import Observation
 
@@ -28,9 +29,9 @@ final class LaunchAtLogin {
         if let errorMessage { return errorMessage }
         switch status {
         case .requiresApproval:
-            return "Разрешите запуск TrackPeek в системных настройках входа."
+            return String(localized: "Allow TrackPeek to open at login in System Settings.")
         case .notFound:
-            return "macOS не нашла приложение для запуска при входе."
+            return String(localized: "macOS could not find the app to open at login.")
         default:
             return nil
         }
@@ -53,8 +54,8 @@ final class LaunchAtLogin {
             }
         } catch {
             errorMessage = enabled
-                ? "Не удалось включить запуск при входе. Проверьте системные настройки."
-                : "Не удалось отключить запуск при входе. Проверьте системные настройки."
+                ? String(localized: "Could not enable Open at Login. Check System Settings.")
+                : String(localized: "Could not disable Open at Login. Check System Settings.")
         }
         status = readStatus()
     }

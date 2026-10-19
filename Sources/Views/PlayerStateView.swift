@@ -41,22 +41,22 @@ struct PlayerStateView: View {
     private var action: some View {
         switch availability {
         case .spotifyNotRunning, .nothingPlaying:
-            Button("Открыть \(sourceName)") {
+            Button(String(localized: "Open \(sourceName)")) {
                 PlayerAppLauncher.openActiveSource()
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
         case .unavailable:
-            Button("Повторить", action: onRetry)
+            Button(String(localized: "Retry"), action: onRetry)
                 .buttonStyle(.bordered)
                 .controlSize(.small)
         case .automationDenied:
             VStack(spacing: 6) {
-                Button("Повторить", action: onRetry)
+                Button(String(localized: "Retry"), action: onRetry)
                     .buttonStyle(.bordered)
                     .controlSize(.small)
 
-                Button("Открыть Настройки конфиденциальности") {
+                Button(String(localized: "Open Privacy & Security Settings")) {
                     if let url = URL(
                         string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation"
                     ) {
@@ -74,15 +74,15 @@ struct PlayerStateView: View {
     private var title: String {
         switch availability {
         case .loading:
-            "Обновляем трек"
+            String(localized: "Refreshing track")
         case .nothingPlaying:
-            "Ничего не воспроизводится"
+            String(localized: "Nothing is playing")
         case .spotifyNotRunning:
-            "\(sourceName) не запущен"
+            String(localized: "\(sourceName) is not running")
         case .automationDenied:
-            "Нет доступа к плееру"
+            String(localized: "No access to the player")
         case .unavailable:
-            "Не удалось прочитать состояние"
+            String(localized: "Could not read player status")
         case .ready:
             ""
         }
@@ -93,13 +93,13 @@ struct PlayerStateView: View {
         case .loading:
             ""
         case .nothingPlaying:
-            "Запустите воспроизведение в \(sourceName)"
+            String(localized: "Start playback in \(sourceName)")
         case .spotifyNotRunning:
-            "Откройте \(sourceName), чтобы продолжить"
+            String(localized: "Open \(sourceName) to continue")
         case .automationDenied:
-            "Разрешение Automation отозвано. Включите его для TrackPeek заново."
+            String(localized: "Automation permission was revoked. Enable it again for TrackPeek.")
         case .unavailable:
-            "Попробуйте обновить информацию о треке"
+            String(localized: "Try refreshing the track information")
         case .ready:
             ""
         }
@@ -132,7 +132,7 @@ struct PlaybackConnectionBadge: View {
         } label: {
             HStack(spacing: 4) {
                 Image(systemName: "exclamationmark.triangle.fill")
-                if !compact { Text("Нет связи") }
+                if !compact { Text(String(localized: "Disconnected")) }
             }
             .font(.system(size: 10, weight: .semibold))
             .foregroundStyle(.orange)
@@ -141,7 +141,7 @@ struct PlaybackConnectionBadge: View {
         }
         .buttonStyle(.plain)
         .disabled(model.isRefreshing)
-        .help("Показан последний трек. Нажмите, чтобы проверить подключение.")
-        .accessibilityLabel("Нет связи с плеером. Показан последний трек. Проверить снова")
+        .help(String(localized: "Showing the last track. Click to check the connection."))
+        .accessibilityLabel(String(localized: "Player disconnected. Showing the last track. Check again"))
     }
 }

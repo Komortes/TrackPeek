@@ -21,9 +21,9 @@
 	<key>LSUIElement</key>
 	<true/>
 	<key>NSAppleEventsUsageDescription</key>
-	<string>TrackPeek использует Automation для чтения текущего трека и управления Spotify или Music.</string>
+	<string>TrackPeek uses Automation to read the current track and control Spotify or Apple Music.</string>
 	<key>NSAudioCaptureUsageDescription</key>
-	<string>TrackPeek анализирует системное аудио Spotify, чтобы эквалайзер двигался в ритм музыки.</string>
+	<string>TrackPeek analyzes Spotify system audio so the equalizer responds to the music.</string>
 	<key>SUEnableAutomaticChecks</key>
 	<true/>
 	<key>SUFeedURL</key>

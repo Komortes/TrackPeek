@@ -2,11 +2,17 @@ import SwiftUI
 
 struct WidgetSettingsView: View {
     private enum Page: String, CaseIterable, Identifiable {
-        case template = "Шаблон"
-        case placement = "Размещение"
-        case appearance = "Оформление"
+        case template, placement, appearance
 
         var id: Self { self }
+
+        var title: String {
+            switch self {
+            case .template: String(localized: "Template")
+            case .placement: String(localized: "Placement")
+            case .appearance: String(localized: "Appearance")
+            }
+        }
     }
 
     @State private var selectedPage = Page.template
@@ -110,11 +116,11 @@ struct WidgetSettingsView: View {
     }
 
     var body: some View {
-        SettingsPage(title: "Виджет", subtitle: "Плавающий плеер на рабочем столе.") {
+        SettingsPage(title: String(localized: "Widget"), subtitle: String(localized: "A floating player on your desktop.")) {
             VStack(alignment: .leading, spacing: 12) {
-                Picker("Настройки виджета", selection: $selectedPage) {
+                Picker(String(localized: "Widget Settings"), selection: $selectedPage) {
                     ForEach(Page.allCases) { page in
-                        Text(page.rawValue).tag(page)
+                        Text(page.title).tag(page)
                     }
                 }
                 .pickerStyle(.segmented)
@@ -144,7 +150,7 @@ struct WidgetSettingsView: View {
     private var activationStatus: some View {
         HStack(spacing: 8) {
             Label(
-                selectedMode == .floatingWidget ? "Виджет включён" : "Виджет выключен",
+                selectedMode == .floatingWidget ? String(localized: "Widget is enabled") : String(localized: "Widget is disabled"),
                 systemImage: selectedMode == .floatingWidget ? "checkmark.circle.fill" : "rectangle.on.rectangle"
             )
             .foregroundStyle(.secondary)
@@ -157,7 +163,7 @@ struct WidgetSettingsView: View {
             Spacer()
 
             if selectedMode != .floatingWidget {
-                Button("Включить виджет") {
+                Button(String(localized: "Enable Widget")) {
                     selectedModeRawValue = OverlayMode.floatingWidget.rawValue
                 }
                 .controlSize(.small)
@@ -168,8 +174,8 @@ struct WidgetSettingsView: View {
     // MARK: Шаблон
 
     private var layoutSection: some View {
-        SettingsSection(title: "Шаблоны", subtitle: "Просмотр категории не меняет выбранный шаблон.") {
-            Picker("Категория шаблонов", selection: layoutFamily) {
+        SettingsSection(title: String(localized: "Templates"), subtitle: String(localized: "Browsing a category does not change the selected template.")) {
+            Picker(String(localized: "Template Category"), selection: layoutFamily) {
                 ForEach(NotchWidgetLayoutFamily.allCases) { family in
                     Text(family.title).tag(family)
                 }
@@ -244,24 +250,24 @@ struct WidgetSettingsView: View {
 
     private var placementSection: some View {
         SettingsSection(
-            title: "Расположение",
-            subtitle: "Где держать виджет и можно ли его перетаскивать.",
+            title: String(localized: "Location"),
+            subtitle: String(localized: "Where the widget appears and whether it can be dragged."),
             symbolName: "arrow.up.and.down.and.arrow.left.and.right"
         ) {
             SettingsGroup {
                 SettingsRow(
-                    title: "Монитор",
-                    subtitle: "Где показывать виджет."
+                    title: String(localized: "Monitor"),
+                    subtitle: String(localized: "Where to show the widget.")
                 ) {
                     DisplayTargetPicker(selection: $displayTargetRawValue)
                 }
 
                 if selectedLayout == .edge {
                     SettingsRowDivider()
-                    SettingsRow(title: "Край экрана", subtitle: "По центру выбранного края, с учётом Dock.") {
-                        Picker("Край экрана", selection: $edgeOnRight) {
-                            Text("Слева").tag(false)
-                            Text("Справа").tag(true)
+                    SettingsRow(title: String(localized: "Screen Edge"), subtitle: String(localized: "Centered on the selected edge, allowing space for the Dock.")) {
+                        Picker(String(localized: "Screen Edge"), selection: $edgeOnRight) {
+                            Text(String(localized: "Left")).tag(false)
+                            Text(String(localized: "Right")).tag(true)
                         }
                         .pickerStyle(.segmented)
                         .labelsHidden()
@@ -269,7 +275,7 @@ struct WidgetSettingsView: View {
                     }
                 } else if !freeMoveEnabled {
                     SettingsRowDivider()
-                    SettingsRow(title: "Позиция", subtitle: selectedPosition.title) {
+                    SettingsRow(title: String(localized: "Position"), subtitle: selectedPosition.title) {
                         positionSchematic
                     }
                 }
@@ -278,10 +284,10 @@ struct WidgetSettingsView: View {
                     SettingsRowDivider()
 
                     SettingsRow(
-                        title: "Свободное перемещение",
-                        subtitle: "Перетаскивайте виджет за фон в любое место; позиция запоминается."
+                        title: String(localized: "Free Movement"),
+                        subtitle: String(localized: "Drag the widget by its background to move it. Its position is saved.")
                     ) {
-                        Toggle("Свободное перемещение", isOn: $freeMoveEnabled)
+                        Toggle(String(localized: "Free Movement"), isOn: $freeMoveEnabled)
                             .labelsHidden()
                     }
 
@@ -289,20 +295,20 @@ struct WidgetSettingsView: View {
                         SettingsRowDivider()
 
                         SettingsRow(
-                            title: "Зафиксировать позицию",
-                            subtitle: "Защита от случайного перетаскивания."
+                            title: String(localized: "Lock Position"),
+                            subtitle: String(localized: "Prevent accidental dragging.")
                         ) {
-                            Toggle("Зафиксировать позицию", isOn: $positionLocked)
+                            Toggle(String(localized: "Lock Position"), isOn: $positionLocked)
                                 .labelsHidden()
                         }
 
                         SettingsRowDivider()
 
                         SettingsRow(
-                            title: "Сбросить позицию",
-                            subtitle: "Вернуть к точке «\(selectedPosition.title)»."
+                            title: String(localized: "Reset Position"),
+                            subtitle: String(localized: "Return to “\(selectedPosition.title)”.")
                         ) {
-                            Button("Сбросить") {
+                            Button(String(localized: "Reset")) {
                                 UserDefaults.standard.removeObject(
                                     forKey: WidgetPreferences.originXKey
                                 )
@@ -383,36 +389,36 @@ struct WidgetSettingsView: View {
     private var windowBehaviorSection: some View {
         VStack(alignment: .leading, spacing: 14) {
             SettingsSectionHeader(
-                title: "Поведение окна",
-                subtitle: "Как виджет ведёт себя относительно других окон и Spaces."
+                title: String(localized: "Window Behavior"),
+                subtitle: String(localized: "How the widget behaves around other windows and Spaces.")
             )
 
             SettingsGroup {
                 SettingsRow(
-                    title: "Поверх остальных окон",
-                    subtitle: "Виджет не перекрывается обычными окнами."
+                    title: String(localized: "Keep on Top"),
+                    subtitle: String(localized: "Keep the widget above regular windows.")
                 ) {
-                    Toggle("Поверх остальных окон", isOn: $alwaysOnTop)
+                    Toggle(String(localized: "Keep on Top"), isOn: $alwaysOnTop)
                         .labelsHidden()
                 }
 
                 SettingsRowDivider()
 
                 SettingsRow(
-                    title: "На всех рабочих столах",
-                    subtitle: "Виджет виден на каждом Space."
+                    title: String(localized: "Show on All Desktops"),
+                    subtitle: String(localized: "The widget appears on every Space.")
                 ) {
-                    Toggle("На всех рабочих столах", isOn: $allSpaces)
+                    Toggle(String(localized: "Show on All Desktops"), isOn: $allSpaces)
                         .labelsHidden()
                 }
 
                 SettingsRowDivider()
 
                 SettingsRow(
-                    title: "Скрывать в полноэкранном режиме",
-                    subtitle: "Не показывать виджет поверх fullscreen-приложений."
+                    title: String(localized: "Hide in Full Screen"),
+                    subtitle: String(localized: "Do not show the widget over full-screen apps.")
                 ) {
-                    Toggle("Скрывать в полноэкранном режиме", isOn: $hideInFullscreen)
+                    Toggle(String(localized: "Hide in Full Screen"), isOn: $hideInFullscreen)
                         .labelsHidden()
                 }
 
@@ -425,13 +431,13 @@ struct WidgetSettingsView: View {
     private var appearanceSection: some View {
         VStack(alignment: .leading, spacing: 20) {
             if selectedLayout.supportsOptionalLyrics {
-                SettingsSection(title: "Содержимое") {
+                SettingsSection(title: String(localized: "Content")) {
                     SettingsGroup {
                         SettingsRow(
-                            title: "Текст песни вместо прогресса",
-                            subtitle: "Для текущего шаблона «\(selectedLayout.title)»."
+                            title: String(localized: "Replace Progress with Lyrics"),
+                            subtitle: String(localized: "For the current “\(selectedLayout.title)” template.")
                         ) {
-                            Toggle("Текст песни", isOn: $lyricsEnabled)
+                            Toggle(String(localized: "Song Lyrics"), isOn: $lyricsEnabled)
                                 .labelsHidden()
                         }
                     }
@@ -439,63 +445,63 @@ struct WidgetSettingsView: View {
             }
 
             if selectedLayout == .lyricStrip {
-                SettingsSection(title: "Размер") {
+                SettingsSection(title: String(localized: "Size")) {
                     SettingsGroup {
-                        SettingsRow(title: "Ширина строки", subtitle: "Высота остаётся 56 pt, в том числе при наведении.") {
+                        SettingsRow(title: String(localized: "Strip Width"), subtitle: String(localized: "Stays 56 pt tall, including on hover.")) {
                             SettingsValueSlider(
                                 value: Binding(get: { NotchPreferences.clampedWidth(width) + 80 },
                                                set: { width = NotchPreferences.clampedWidth($0 - 80) }),
                                 range: 320...500, step: 5,
-                                text: "\(Int(NotchPreferences.clampedWidth(width) + 80)) pt"
+                                text: String(localized: "\(Int(NotchPreferences.clampedWidth(width) + 80)) pt")
                             )
                         }
                     }
-                    Text("Одна строка песни на спокойном фоне. Без синхронизации — название и исполнитель. Обложка, эквалайзер и эффекты здесь отключены; настройки других шаблонов сохранены.")
+                    Text(String(localized: "One line of lyrics on a quiet background. Without synchronized lyrics, the title and artist appear instead. Artwork, the equalizer and effects are disabled here; other templates keep their settings."))
                         .font(.caption).foregroundStyle(.secondary)
                 }
             } else if selectedLayout == .edge {
-                SettingsSection(title: "Цвета") {
+                SettingsSection(title: String(localized: "Colors")) {
                     SettingsGroup {
-                        SettingsRow(title: "Цветной прогресс", subtitle: "Небольшой акцент под кнопками.") {
-                            Toggle("Цветной прогресс", isOn: $coloredProgress).labelsHidden()
+                        SettingsRow(title: String(localized: "Colored Progress"), subtitle: String(localized: "A small accent below the controls.")) {
+                            Toggle(String(localized: "Colored Progress"), isOn: $coloredProgress).labelsHidden()
                         }
                         SettingsRowDivider()
                         colorSourceRow
                     }
-                    Text("Edge сохраняет постоянный размер и спокойное оформление без эквалайзера и пульсации.")
+                    Text(String(localized: "Edge keeps a fixed size and a quiet appearance without an equalizer or pulse."))
                         .font(.caption).foregroundStyle(.secondary)
                 }
             } else {
-                SettingsSection(title: "Размер и цвета") {
+                SettingsSection(title: String(localized: "Size and Colors")) {
                     SettingsGroup {
                         SettingsRow(
-                            title: "Ширина",
-                            subtitle: "Базовая ширина пилюли; размеры карточек следуют за ней."
+                            title: String(localized: "Width"),
+                            subtitle: String(localized: "Base pill width. Card sizes adjust to match.")
                         ) {
                             SettingsValueSlider(
                                 value: widgetWidth,
                                 range: NotchPreferences.widthRange,
                                 step: NotchPreferences.widthStep,
-                                text: "\(Int(NotchPreferences.clampedWidth(width))) px"
+                                text: String(localized: "\(Int(NotchPreferences.clampedWidth(width))) px")
                             )
                         }
                         SettingsRowDivider()
                         colorSourceRow
                         if selectedLayout.usesProgressColor {
                             SettingsRowDivider()
-                            SettingsRow(title: "Цветной прогресс", subtitle: "Акцент на полосе воспроизведения и тексте.") {
-                                Toggle("Цветной прогресс", isOn: $coloredProgress).labelsHidden()
+                            SettingsRow(title: String(localized: "Colored Progress"), subtitle: String(localized: "An accent on the progress bar and lyrics.")) {
+                                Toggle(String(localized: "Colored Progress"), isOn: $coloredProgress).labelsHidden()
                             }
                         }
                         if selectedLayout != .artworkSquare {
                             SettingsRowDivider()
-                            SettingsRow(title: "Стекло из обложки", subtitle: "Размытая обложка вместо чёрного фона карточек.") {
-                                Toggle("Стекло из обложки", isOn: $glassBackground).labelsHidden()
+                            SettingsRow(title: String(localized: "Artwork Glass"), subtitle: String(localized: "Blurred artwork replaces the black card background.")) {
+                                Toggle(String(localized: "Artwork Glass"), isOn: $glassBackground).labelsHidden()
                             }
                             if !selectedLayout.hasEqualizer {
                                 SettingsRowDivider()
-                                SettingsRow(title: "Цветной фон", subtitle: "Мягкий градиент из выбранной палитры.") {
-                                    Toggle("Цветной фон", isOn: $coloredWaveform).labelsHidden()
+                                SettingsRow(title: String(localized: "Colored Background"), subtitle: String(localized: "A soft gradient from the selected palette.")) {
+                                    Toggle(String(localized: "Colored Background"), isOn: $coloredWaveform).labelsHidden()
                                 }
                             }
                         }
@@ -503,44 +509,44 @@ struct WidgetSettingsView: View {
                 }
 
                 if selectedLayout.hasEqualizer {
-                    SettingsSection(title: "Эквалайзер") {
+                    SettingsSection(title: String(localized: "Equalizer")) {
                         SettingsGroup {
-                            SettingsRow(title: "Цветная волна", subtitle: "Использовать выбранную палитру.") {
-                                Toggle("Цветная волна", isOn: $coloredWaveform).labelsHidden()
+                            SettingsRow(title: String(localized: "Colored Waveform"), subtitle: String(localized: "Use the selected palette.")) {
+                                Toggle(String(localized: "Colored Waveform"), isOn: $coloredWaveform).labelsHidden()
                             }
                             SettingsRowDivider()
-                            SettingsRow(title: "Чувствительность", subtitle: "Насколько активно волна реагирует на звук.") {
+                            SettingsRow(title: String(localized: "Sensitivity"), subtitle: String(localized: "How strongly the waveform responds to sound.")) {
                                 SettingsValueSlider(
                                     value: widgetSensitivity,
                                     range: NotchPreferences.equalizerSensitivityRange,
                                     step: NotchPreferences.equalizerSensitivityStep,
-                                    text: String(format: "%.1f×", NotchPreferences.clampedEqualizerSensitivity(equalizerSensitivity))
+                                    text: String(format: String(localized: "%.1f×"), locale: Locale.current, NotchPreferences.clampedEqualizerSensitivity(equalizerSensitivity))
                                 )
-                                .accessibilityLabel("Чувствительность эквалайзера")
+                                .accessibilityLabel(String(localized: "Equalizer Sensitivity"))
                             }
                         }
                     }
                 }
 
-                SettingsDisclosure(title: "Дополнительные эффекты", subtitle: "Переливающийся контур и пульсация.") {
+                SettingsDisclosure(title: String(localized: "Additional Effects"), subtitle: String(localized: "Shimmering outline and pulse.")) {
                     SettingsGroup {
-                        SettingsRow(title: "Переливающийся контур", subtitle: "Обводка плавно меняет цвет по палитре обложки.") {
-                            Toggle("Переливающийся контур", isOn: $outlineShimmer).labelsHidden()
+                        SettingsRow(title: String(localized: "Shimmering Outline"), subtitle: String(localized: "The outline shifts smoothly through the artwork palette.")) {
+                            Toggle(String(localized: "Shimmering Outline"), isOn: $outlineShimmer).labelsHidden()
                         }
                         if outlineShimmer {
                             SettingsRowDivider()
-                            SettingsRow(title: "Толщина контура") {
+                            SettingsRow(title: String(localized: "Outline Width")) {
                                 SettingsValueSlider(
                                     value: widgetOutlineWidth,
                                     range: NotchPreferences.outlineWidthRange,
                                     step: NotchPreferences.outlineWidthStep,
-                                    text: String(format: "%.1f px", NotchPreferences.clampedOutlineWidth(outlineWidth))
+                                    text: String(format: String(localized: "%.1f px"), locale: Locale.current, NotchPreferences.clampedOutlineWidth(outlineWidth))
                                 )
                             }
                         }
                         SettingsRowDivider()
-                        SettingsRow(title: "Пульсация", subtitle: "Реакция на громкость: масштаб или свечение.") {
-                            Picker("Пульсация", selection: pulseMode) {
+                        SettingsRow(title: String(localized: "Pulse"), subtitle: String(localized: "Responds to volume by scaling or glowing.")) {
+                            Picker(String(localized: "Pulse"), selection: pulseMode) {
                                 ForEach(NotchPulseMode.allCases) { mode in
                                     Text(mode.title).tag(mode)
                                 }
@@ -554,8 +560,8 @@ struct WidgetSettingsView: View {
     }
 
     private var colorSourceRow: some View {
-        SettingsRow(title: "Источник цвета", subtitle: "Палитра обложки или системный акцент.") {
-            Picker("Источник цвета", selection: colorSource) {
+        SettingsRow(title: String(localized: "Color Source"), subtitle: String(localized: "Artwork palette or system accent.")) {
+            Picker(String(localized: "Color Source"), selection: colorSource) {
                 ForEach(NotchColorSource.allCases) { source in
                     Text(source.title).tag(source)
                 }

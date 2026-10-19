@@ -1,3 +1,4 @@
+import Foundation
 struct PlayerPresentationOptions: Equatable, Sendable {
     let showsAlbum: Bool
     let showsPlaybackStatus: Bool
@@ -35,9 +36,9 @@ enum PopoverBackgroundStyle: String, CaseIterable, Identifiable, Sendable {
     var title: String {
         switch self {
         case .systemMaterial:
-            "Системный материал"
+            String(localized: "System Material")
         case .artworkBlur:
-            "Размытая обложка"
+            String(localized: "Blurred Artwork")
         }
     }
 }

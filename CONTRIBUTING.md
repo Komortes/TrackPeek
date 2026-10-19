@@ -25,6 +25,7 @@ xcodebuild \
   test
 
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s script/tests -v
+python3 script/validate_localizations.py
 mkdir -p .build
 xcrun swiftc -parse-as-library -D SIGNATURE_TESTS \
   -module-cache-path .build/release-swift-cache \
@@ -36,6 +37,8 @@ git diff --check
 ```
 
 For an Intel development Mac, use arch=x86_64 in the test destination. App-hosted tests suppress normal startup services and use substitute playback providers, clocks, and services. Add regression coverage for behavior changes; use native UI checks for focus, VoiceOver labels, and panel interactions.
+
+See [localization](docs/LOCALIZATION.md) for English, Ukrainian and Russian string catalogs. Preserve formatting arguments and native plural forms; the validator checks translation coverage and argument types.
 
 Report the OS, Xcode version, checks run, and scenarios that need hardware or permission testing. Physical notch placement, monitor reconnection, macOS 14 runtime behavior, and actual permission dialogs require separate manual verification.
 

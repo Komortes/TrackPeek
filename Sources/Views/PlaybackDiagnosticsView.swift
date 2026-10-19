@@ -25,23 +25,23 @@ struct PlaybackDiagnosticsView: View {
     }
 
     var body: some View {
-        SettingsSection(title: "Диагностика", subtitle: "Текущее подключение и работа аудиоанализа.") {
+        SettingsSection(title: String(localized: "Diagnostics"), subtitle: String(localized: "Current connection and audio analysis status.")) {
             SettingsGroup {
-                SettingsRow(title: "Плеер", subtitle: diagnostics.connection) {
+                SettingsRow(title: String(localized: "Player"), subtitle: diagnostics.connection) {
                     HStack(spacing: 8) {
                         if coordinator.model.isRefreshing {
                             ProgressView()
                                 .controlSize(.small)
-                                .accessibilityLabel("Проверка подключения")
+                                .accessibilityLabel(String(localized: "Checking connection"))
                         }
-                        Text(diagnostics.source?.displayName ?? "Не определён")
+                        Text(diagnostics.source?.displayName ?? String(localized: "Unknown"))
                             .foregroundStyle(.secondary)
                     }
                 }
                 SettingsRowDivider()
-                SettingsRow(title: "Доступ к плееру", subtitle: diagnostics.permission) {
+                SettingsRow(title: String(localized: "Player Access"), subtitle: diagnostics.permission) {
                     if diagnostics.availability == .automationDenied {
-                        Button("Открыть разрешения") {
+                        Button(String(localized: "Open Permissions")) {
                             if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation") {
                                 NSWorkspace.shared.open(url)
                             }
@@ -49,16 +49,16 @@ struct PlaybackDiagnosticsView: View {
                     }
                 }
                 SettingsRowDivider()
-                SettingsRow(title: "Аудиоанализ", subtitle: diagnostics.audioStatus.description) {
+                SettingsRow(title: String(localized: "Audio Analysis"), subtitle: diagnostics.audioStatus.description) {
                     if canRetryAudio {
-                        Button("Повторить захват") { coordinator.audioMonitor.retryIfNeeded() }
+                        Button(String(localized: "Retry Capture")) { coordinator.audioMonitor.retryIfNeeded() }
                     }
                 }
             }
             HStack(spacing: 10) {
-                Button("Проверить снова") { coordinator.requestRefresh() }
+                Button(String(localized: "Check Again")) { coordinator.requestRefresh() }
                     .disabled(coordinator.model.isRefreshing || coordinator.isSleeping)
-                Button(copied ? "Отчёт скопирован" : "Скопировать отчёт") {
+                Button(copied ? String(localized: "Report Copied") : String(localized: "Copy Report")) {
                     let info = Bundle.main.infoDictionary
                     let report = diagnostics.report(
                         version: info?["CFBundleShortVersionString"] as? String ?? "—",
@@ -68,22 +68,22 @@ struct PlaybackDiagnosticsView: View {
                     copied = NSPasteboard.general.setString(report, forType: .string)
                 }
             }
-            Text("Отчёт содержит только техническое состояние, без названий песен и истории прослушивания.")
+            Text(String(localized: "The report contains only technical status, with no song titles or listening history."))
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            SettingsDisclosure(title: "Подробности подключения", subtitle: "Последний ответ и расписание проверок.") {
+            SettingsDisclosure(title: String(localized: "Connection Details"), subtitle: String(localized: "Last response and check schedule.")) {
                 SettingsGroup {
-                    SettingsRow(title: "Последняя успешная проверка", subtitle: "Последний ответ плеера, включая состояние без трека.") {
+                    SettingsRow(title: String(localized: "Last Successful Check"), subtitle: String(localized: "The last player response, including when no track was selected.")) {
                         if let date = diagnostics.lastSuccessfulRefresh {
                             Text(date, format: .dateTime.day().month().hour().minute().second())
                                 .font(.caption.monospacedDigit())
                         } else {
-                            Text("Ещё не было").foregroundStyle(.secondary)
+                            Text(String(localized: "Not yet")).foregroundStyle(.secondary)
                         }
                     }
                     SettingsRowDivider()
-                    SettingsRow(title: "Следующая проверка", subtitle: diagnostics.retryStatus) {
+                    SettingsRow(title: String(localized: "Next Check"), subtitle: diagnostics.retryStatus) {
                         if coordinator.model.isRefreshing {
                             ProgressView().controlSize(.small)
                         } else if let date = diagnostics.nextRefreshDate {

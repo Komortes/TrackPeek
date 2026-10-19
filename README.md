@@ -48,6 +48,8 @@ Lyrics requests send song metadata to LRCLIB. Remote artwork uses player-provide
 
 Built with **Swift 6, SwiftUI and AppKit**. Use the Xcode project; the root `Package.swift` does not configure the complete app. Setup, tests and conventions are in [CONTRIBUTING.md](CONTRIBUTING.md).
 
+Current source builds include **English, Ukrainian and Russian**. The app follows macOS language preferences; change its language in System Settings → General → Language & Region, then relaunch. These translations are not yet part of the 1.1 download. See [localization](docs/LOCALIZATION.md) for translation conventions.
+
 <details>
 <summary>Build and run locally</summary>
 

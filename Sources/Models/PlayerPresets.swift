@@ -52,9 +52,9 @@ enum BehaviorPreset: String, CaseIterable, Identifiable, PresetDefinition {
 
     var title: String {
         switch self {
-        case .calm: "Спокойное"
-        case .balanced: "Сбалансированное"
-        case .fast: "Быстрое"
+        case .calm: String(localized: "Calm")
+        case .balanced: String(localized: "Balanced")
+        case .fast: String(localized: "Fast")
         }
     }
 
@@ -93,9 +93,9 @@ enum StylePreset: String, CaseIterable, Identifiable, PresetDefinition {
 
     var title: String {
         switch self {
-        case .minimal: "Минимальный"
-        case .colored: "Цветной"
-        case .vivid: "Живой"
+        case .minimal: String(localized: "Minimal")
+        case .colored: String(localized: "Colorful")
+        case .vivid: String(localized: "Lively")
         }
     }
 

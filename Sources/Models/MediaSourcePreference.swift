@@ -1,3 +1,4 @@
+import Foundation
 enum MediaSourcePreference: String, CaseIterable, Identifiable, Sendable {
     case spotify
     case appleMusic
@@ -15,18 +16,18 @@ enum MediaSourcePreference: String, CaseIterable, Identifiable, Sendable {
         case .appleMusic:
             "Apple Music"
         case .auto:
-            "Автоматически"
+            String(localized: "Automatic")
         }
     }
 
     var summary: String {
         switch self {
         case .spotify:
-            "Всегда читает трек из Spotify."
+            String(localized: "Always reads the track from Spotify.")
         case .appleMusic:
-            "Всегда читает трек из Music.app."
+            String(localized: "Always reads the track from Music.app.")
         case .auto:
-            "Выбирает плеер, в котором играет музыка; если оба на паузе — последний активный."
+            String(localized: "Uses the player that is playing music, or the last active player if both are paused.")
         }
     }
 }

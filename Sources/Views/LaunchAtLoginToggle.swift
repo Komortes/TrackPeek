@@ -8,10 +8,11 @@ struct LaunchAtLoginToggle: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 16) {
-                Text("Запускать при входе в систему")
+                Text(String(localized: "Open at Login"))
                     .font(.system(size: 13, weight: .medium))
+                    .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 0)
-                Toggle("Запускать при входе в систему", isOn: Binding(
+                Toggle(String(localized: "Open at Login"), isOn: Binding(
                     get: { controller.isEnabled },
                     set: { controller.setEnabled($0) }
                 ))
@@ -25,7 +26,7 @@ struct LaunchAtLoginToggle: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             if controller.showsSystemSettings {
-                Button("Открыть настройки входа") {
+                Button(String(localized: "Open Login Settings")) {
                     SMAppService.openSystemSettingsLoginItems()
                 }
                 .controlSize(.small)

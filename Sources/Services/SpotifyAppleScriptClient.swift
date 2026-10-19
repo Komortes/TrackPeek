@@ -21,13 +21,13 @@ enum SpotifyPlaybackError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .spotifyNotRunning:
-            "Spotify не запущен."
+            String(localized: "Spotify is not running.")
         case let .scriptFailed(message):
-            "Spotify недоступен: \(message)"
+            String(localized: "Spotify is unavailable: \(message)")
         case .invalidResponse:
-            "Spotify вернул неожиданный ответ."
+            String(localized: "Spotify returned an unexpected response.")
         case .automationDenied:
-            "Нет разрешения управлять плеером. Разрешите Automation в Настройках конфиденциальности."
+            String(localized: "Permission to control the player is missing. Allow Automation in Privacy & Security settings.")
         }
     }
 }
@@ -146,7 +146,7 @@ actor SpotifyAppleScriptClient: SpotifyPlaybackProviding {
         } catch AppleScriptExecutionError.automationDenied {
             throw SpotifyPlaybackError.automationDenied
         } catch AppleScriptExecutionError.timedOut {
-            throw SpotifyPlaybackError.scriptFailed("Spotify не отвечает")
+            throw SpotifyPlaybackError.scriptFailed(String(localized: "Spotify is not responding"))
         } catch let AppleScriptExecutionError.scriptFailed(message) {
             if message.contains("-1743") || message.localizedCaseInsensitiveContains("not authorized")
                 || message.localizedCaseInsensitiveContains("не разрешено") {

@@ -60,12 +60,12 @@ struct PlayerActionsMenuItems: View {
 
     var body: some View {
         Group {
-            Button("Открыть \(sourceName)", systemImage: "arrow.up.right.square") {
+            Button(String(localized: "Open \(sourceName)"), systemImage: "arrow.up.right.square") {
                 PlayerAppLauncher.openActiveSource()
             }
 
-            Menu("Источник", systemImage: "music.note.list") {
-                Picker("Источник трека", selection: mediaSource) {
+            Menu(String(localized: "Source"), systemImage: "music.note.list") {
+                Picker(String(localized: "Track Source"), selection: mediaSource) {
                     ForEach(MediaSourcePreference.allCases) { source in
                         Text(source.title).tag(source)
                     }
@@ -78,12 +78,12 @@ struct PlayerActionsMenuItems: View {
                     .disabled(PlaybackCoordinator.shared.model.isStale)
             }
 
-            Menu("Копировать", systemImage: "doc.on.doc") {
-                Button("Название") {
+            Menu(String(localized: "Copy"), systemImage: "doc.on.doc") {
+                Button(String(localized: "Title")) {
                     copy(track?.title ?? "")
                 }
 
-                Button("Исполнителя и трек") {
+                Button(String(localized: "Artist and Track")) {
                     guard let track else { return }
                     copy("\(track.artist) — \(track.title)")
                 }
@@ -92,8 +92,8 @@ struct PlayerActionsMenuItems: View {
 
             Divider()
 
-            Menu("Вид плеера", systemImage: "rectangle.on.rectangle") {
-                Picker("Экранный плеер", selection: $overlayModeRawValue) {
+            Menu(String(localized: "Player Appearance"), systemImage: "rectangle.on.rectangle") {
+                Picker(String(localized: "On-Screen Player"), selection: $overlayModeRawValue) {
                     ForEach(OverlayMode.allCases) { mode in
                         Text(mode.title).tag(mode.rawValue)
                     }
@@ -103,8 +103,8 @@ struct PlayerActionsMenuItems: View {
                 if OverlayMode(rawValue: overlayModeRawValue) == .floatingWidget {
                     Divider()
 
-                    Menu("Шаблон виджета") {
-                        Picker("Шаблон виджета", selection: $widgetLayoutRawValue) {
+                    Menu(String(localized: "Widget Template")) {
+                        Picker(String(localized: "Widget Template"), selection: $widgetLayoutRawValue) {
                             ForEach(NotchWidgetLayout.allCases) { layout in
                                 Text(layout.title).tag(layout.rawValue)
                             }
@@ -116,7 +116,7 @@ struct PlayerActionsMenuItems: View {
 
             if OverlayMode(rawValue: overlayModeRawValue) != .off {
                 Button(
-                    temporarilyHidden ? "Показать панель" : "Временно скрыть",
+                    temporarilyHidden ? String(localized: "Show Panel") : String(localized: "Hide Temporarily"),
                     systemImage: temporarilyHidden ? "eye" : "eye.slash"
                 ) {
                     temporarilyHidden.toggle()
@@ -125,9 +125,9 @@ struct PlayerActionsMenuItems: View {
 
             Divider()
 
-            Button("Обновить", systemImage: "arrow.clockwise", action: onRefresh)
+            Button(String(localized: "Refresh"), systemImage: "arrow.clockwise", action: onRefresh)
 
-            Button("Настройки…", systemImage: "gearshape") {
+            Button(String(localized: "Settings…"), systemImage: "gearshape") {
                 selectedSettingsTab = switch OverlayMode(rawValue: overlayModeRawValue) {
                 case .notch: SettingsTab.notch.rawValue
                 case .floatingWidget: SettingsTab.widget.rawValue
@@ -136,7 +136,7 @@ struct PlayerActionsMenuItems: View {
                 SettingsWindowPresentation.present(openSettings: openSettings.callAsFunction)
             }
 
-            Button("Завершить TrackPeek", systemImage: "power") {
+            Button(String(localized: "Quit TrackPeek"), systemImage: "power") {
                 NSApplication.shared.terminate(nil)
             }
         }
@@ -165,8 +165,8 @@ struct PlayerMoreMenu: View {
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
         .fixedSize()
-        .help("Дополнительные действия")
-        .accessibilityLabel("Дополнительные действия")
+        .help(String(localized: "More Actions"))
+        .accessibilityLabel(String(localized: "More Actions"))
     }
 }
 

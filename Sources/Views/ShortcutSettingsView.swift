@@ -7,14 +7,14 @@ struct ShortcutSettingsView: View {
     @State private var inputSourceRevision = 0
 
     var body: some View {
-        SettingsPage(title: "Горячие клавиши", subtitle: "Управляйте музыкой, пока работаете в другом приложении.") {
+        SettingsPage(title: String(localized: "Keyboard Shortcuts"), subtitle: String(localized: "Control music while working in another app.")) {
             SettingsGroup {
-                SettingsRow(title: "Глобальные сочетания", subtitle: "При отключении выбранные клавиши сохраняются.") {
-                    Toggle("Глобальные сочетания", isOn: Binding(get: { controller.isEnabled }, set: { controller.setEnabled($0) }))
+                SettingsRow(title: String(localized: "Global Shortcuts"), subtitle: String(localized: "Your shortcuts stay saved when disabled.")) {
+                    Toggle(String(localized: "Global Shortcuts"), isOn: Binding(get: { controller.isEnabled }, set: { controller.setEnabled($0) }))
                         .labelsHidden()
                 }
             }
-            SettingsSection(title: "Действия", subtitle: "Нажмите поле и введите сочетание с ⌘ Command или ⌃ Control.") {
+            SettingsSection(title: String(localized: "Actions"), subtitle: String(localized: "Click a field and press a shortcut with ⌘ Command or ⌃ Control.")) {
                 SettingsGroup {
                     ForEach(ShortcutAction.allCases) { action in
                         if action != ShortcutAction.allCases.first { SettingsRowDivider() }
@@ -39,8 +39,8 @@ struct ShortcutSettingsView: View {
                                     } label: { Image(systemName: "xmark.circle") }
                                     .buttonStyle(.borderless)
                                     .disabled(controller.bindings[action] == nil)
-                                    .help("Удалить сочетание")
-                                    .accessibilityLabel("Удалить сочетание: \(action.title)")
+                                    .help(String(localized: "Remove Shortcut"))
+                                    .accessibilityLabel(String(localized: "Remove shortcut: \(action.title)"))
                                 }
                             }
                             if let error = assignmentErrors[action] ?? controller.errors[action] {
@@ -51,13 +51,13 @@ struct ShortcutSettingsView: View {
                         }
                     }
                 }
-                Text("Esc — отменить · Delete — очистить. Во время записи сочетания TrackPeek приостановлены.")
+                Text(String(localized: "Esc to cancel · Delete to clear. TrackPeek shortcuts are paused while recording."))
                     .font(.caption).foregroundStyle(.secondary)
                 if !controller.errors.isEmpty {
-                    Button("Повторить подключение сочетаний") { controller.retryRegistration() }
+                    Button(String(localized: "Reconnect Shortcuts")) { controller.retryRegistration() }
                 }
             }
-            Text("По умолчанию клавиши не назначены. Выбирайте свободные сочетания: не все команды других приложений можно проверить заранее. Показ панели учитывает режим и правила видимости на вкладке «Основные».")
+            Text(String(localized: "No shortcuts are assigned by default. Choose unused combinations: shortcuts in other apps cannot always be checked in advance. Panel visibility follows the mode and rules in General settings."))
                 .font(.caption).foregroundStyle(.secondary)
         }
         .onDisappear { controller.endRecording() }
@@ -71,7 +71,7 @@ struct ShortcutSettingsView: View {
 
     private func shortcutTitle(_ action: ShortcutAction) -> String {
         _ = inputSourceRevision
-        return controller.bindings[action]?.displayName ?? "Назначить…"
+        return controller.bindings[action]?.displayName ?? String(localized: "Assign…")
     }
 
     private func handle(_ event: NSEvent, for action: ShortcutAction) {
@@ -111,9 +111,9 @@ private struct ShortcutRecorder: NSViewRepresentable {
         button.onCancel = onCancel
         button.onKey = onKey
         button.isRecording = isRecording
-        button.title = isRecording ? "Нажмите сочетание…" : title
+        button.title = isRecording ? String(localized: "Press a shortcut…") : title
         button.setAccessibilityLabel("\(actionTitle): \(button.title)")
-        button.setAccessibilityHelp("Нажмите для назначения горячей клавиши. Escape отменяет запись.")
+        button.setAccessibilityHelp(String(localized: "Click to assign a keyboard shortcut. Escape cancels recording."))
     }
 
     static func dismantleNSView(_ button: RecorderButton, coordinator: ()) {
