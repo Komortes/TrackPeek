@@ -14,11 +14,6 @@
   </p>
 </div>
 
-<p align="center">
-  <img src="docs/images/notch-player.jpg" width="451" alt="Expanded TrackPeek player with album artwork, playback controls, progress and a colorful equalizer">
-  <br><sub>The expanded player in TrackPeek 1.1.</sub>
-</p>
-
 ## What you can do
 
 - **Choose your place.** A menu bar player, full or Focus notch, and ten desktop widget templates. A physical notch is optional for menu bar and desktop widgets.
@@ -40,11 +35,6 @@ Releases use **Apple Development signing and are not notarized**. If macOS block
 ## A place on your desktop
 
 Choose a monitor and a preset position, or enable free movement. Appearance controls adapt to the selected widget template; your choices stay saved when you switch layouts.
-
-<p align="center">
-  <img src="docs/images/widget-settings.jpg" width="820" alt="TrackPeek widget placement settings with monitor selection, six positions, free movement and window behavior">
-  <br><sub>Widget placement in 1.1. Screenshots captured on macOS 26.2; the interface currently uses Russian labels.</sub>
-</p>
 
 Right-click the player or use its **…** menu for source selection, lyrics, appearance and quick actions. For keyboard controls, all templates, resource modes and troubleshooting, see the [usage guide](docs/USAGE.md).
 
