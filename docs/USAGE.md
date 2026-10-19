@@ -1,8 +1,8 @@
 # Using TrackPeek
 
-Detailed behavior for TrackPeek 1.1 (build 3), including the updated Settings window. See the [README](../README.md) for installation and [release notes](releases/1.1.md) for changes since 1.0. UI labels are currently in Russian; English descriptions below include their matching labels.
+Detailed behavior for TrackPeek 1.1 (build 4), including the updated Settings window. See the [README](../README.md) for installation and [release notes](releases/1.1.md) for changes since 1.0. English labels are used below, with Russian equivalents for existing users.
 
-Current source builds additionally support English and Ukrainian. They follow macOS language preferences, including the per-app language selection in System Settings → General → Language & Region; relaunch after a language change. The 1.1 release download still uses the Russian interface described below.
+The app includes English, Ukrainian and Russian for Settings, onboarding, player menus, help, accessibility, diagnostics and permission explanations. It follows macOS language preferences. Choose TrackPeek’s language in System Settings → General → Language & Region, then quit and reopen TrackPeek. English is the fallback for unsupported languages. Song metadata and lyrics keep their original language.
 
 ## Displays and placement
 

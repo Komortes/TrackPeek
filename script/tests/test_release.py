@@ -60,11 +60,60 @@ class ReleasePreflightTests(unittest.TestCase):
     def test_extra_arguments_are_rejected(self):
         self.assert_rejected_without_changes("Usage:", "1.1", "2", "unexpected")
 
-    def test_valid_release_reaches_build_without_changing_configuration(self):
+    def test_valid_release_prepares_build_specific_artifacts_without_changing_configuration(self):
+        def stub(path, body):
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(body)
+            path.chmod(0o755)
+
+        for command in ("xcodegen", "xcodebuild", "xcrun", "codesign", "lipo"):
+            stub(self.root / "bin" / command, '#!/bin/sh\nprintf invoked >> "$RELEASE_TEST_ROOT/invoked"\n')
+        stub(self.root / "bin/ditto", '#!/bin/sh\nfor destination do :; done\nprintf "fixture archive" > "$destination"\n')
+        stub(self.root / "bin/PlistBuddy", '''#!/bin/sh
+case "$2" in
+  'Print :CFBundleShortVersionString') printf 1.1 ;;
+  'Print :CFBundleVersion') printf 2 ;;
+  'Print :SUPublicEDKey') printf fixture-key ;;
+  *) exit 1 ;;
+esac
+''')
+        # Replace this fixed system-tool path only in the isolated script copy.
+        # Every build, signing and packaging tool is a fake; no app is built.
+        script = self.root / "script/release.sh"
+        script.write_text(script.read_text().replace("/usr/libexec/PlistBuddy", "PlistBuddy"))
+        sparkle = self.root / ".build/xcode-release/SourcePackages/artifacts/sparkle/Sparkle/bin"
+        stub(sparkle / "generate_keys", "#!/bin/sh\nprintf fixture-key\n")
+        stub(sparkle / "generate_appcast", '''#!/usr/bin/python3
+from pathlib import Path
+import sys
+from xml.sax.saxutils import escape
+
+directory = Path(sys.argv[-1])
+archive = next(directory.glob("*.zip"))
+notes = archive.with_suffix(".txt").read_text()
+prefix = sys.argv[sys.argv.index("--download-url-prefix") + 1]
+xml = ('<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle"><channel><item>'
+       '<sparkle:version>2</sparkle:version><sparkle:shortVersionString>1.1</sparkle:shortVersionString>'
+       '<description>' + escape(notes) + '</description>'
+       '<enclosure url="' + escape(prefix + archive.name) + '" length="' + str(archive.stat().st_size) + '" '
+       'sparkle:edSignature="fixture-signature" /></item></channel></rss>')
+(directory / "appcast.xml").write_text(xml)
+''')
+        stub(self.root / ".build/verify-update", "#!/bin/sh\nexit 0\n")
+
         result = self.run_script("1.1", "2")
-        self.assertEqual(result.returncode, 99, result.stdout + result.stderr)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertTrue((self.root / "invoked").exists())
         self.assertEqual(self.config.read_text(), self.original)
+        release = self.root / ".build/release/1.1"
+        archive_name = "TrackPeek-1.1-build2.zip"
+        self.assertTrue((release / archive_name).is_file())
+        self.assertEqual((release / archive_name).read_bytes(), b"fixture archive")
+        self.assertEqual((release / "TrackPeek-1.1-build2.txt").read_text(), "TrackPeek 1.1\nRelease notes.\n")
+        self.assertIn(f"/releases/download/v1.1/{archive_name}", (release / "appcast.xml").read_text())
+        self.assertIn(f"  {archive_name}\n", (release / "SHA256SUMS").read_text())
+        self.assertIn(archive_name, result.stdout)
+        self.assertFalse((release / "TrackPeek-1.1.zip").exists())
 
     def test_help_does_not_build(self):
         result = self.run_script("--help")

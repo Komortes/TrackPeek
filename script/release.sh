@@ -11,6 +11,8 @@ BUILD_NUMBER="$2"
 [[ "$VERSION" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]] || fail "Version must contain two or three numeric components."
 [[ "$BUILD_NUMBER" =~ ^[1-9][0-9]*$ ]] || fail "Build number must be a positive integer without leading zeros."
 APP_NAME="TrackPeek"
+ARTIFACT_BASENAME="$APP_NAME-$VERSION-build$BUILD_NUMBER"
+ARCHIVE_NAME="$ARTIFACT_BASENAME.zip"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 RELEASE_DIR="$ROOT_DIR/.build/release/$VERSION"
 DERIVED_DATA="$ROOT_DIR/.build/xcode-release"
@@ -54,10 +56,10 @@ EXPECTED_KEY="$(/usr/libexec/PlistBuddy -c 'Print :SUPublicEDKey' "$PLIST")"
 [[ "$("$SPARKLE_BIN/generate_keys" -p)" == "$EXPECTED_KEY" ]] || fail "Existing Sparkle signing key does not match the app's public key."
 
 mkdir -p "$RELEASE_DIR"
-ZIP_PATH="$RELEASE_DIR/$APP_NAME-$VERSION.zip"
+ZIP_PATH="$RELEASE_DIR/$ARCHIVE_NAME"
 ditto -c -k --sequesterRsrc --keepParent "$APP_BUNDLE" "$ZIP_PATH"
 # Plain text notes remain readable by the Sparkle version shipped in 1.0.
-sed -E 's/^#{1,6} //; s/\*\*//g; s/`//g' "$NOTES_PATH" > "$RELEASE_DIR/$APP_NAME-$VERSION.txt"
+sed -E 's/^#{1,6} //; s/\*\*//g; s/`//g' "$NOTES_PATH" > "$RELEASE_DIR/$ARTIFACT_BASENAME.txt"
 "$SPARKLE_BIN/generate_appcast" \
   --download-url-prefix "$DOWNLOAD_PREFIX" \
   --link "$REPOSITORY_URL/releases/tag/v$VERSION" \
@@ -69,7 +71,7 @@ item_value() { xmllint --xpath "string(/rss/channel/item/*[local-name()='$1'])" 
 xmllint --noout "$APPCAST"
 [[ "$(xmllint --xpath 'count(/rss/channel/item)' "$APPCAST")" == "1" ]] || fail "Expected exactly one update."
 [[ "$(item_value version)" == "$BUILD_NUMBER" && "$(item_value shortVersionString)" == "$VERSION" ]] || fail "Appcast version does not match the app."
-[[ "$(xmllint --xpath 'string(/rss/channel/item/enclosure/@url)' "$APPCAST")" == "$DOWNLOAD_PREFIX$APP_NAME-$VERSION.zip" ]] || fail "Appcast archive URL is incorrect."
+[[ "$(xmllint --xpath 'string(/rss/channel/item/enclosure/@url)' "$APPCAST")" == "$DOWNLOAD_PREFIX$ARCHIVE_NAME" ]] || fail "Appcast archive URL is incorrect."
 [[ "$(xmllint --xpath 'string(/rss/channel/item/enclosure/@length)' "$APPCAST")" == "$(stat -f '%z' "$ZIP_PATH")" ]] || fail "Appcast archive size is incorrect."
 [[ -n "$(item_value description)" ]] || fail "Appcast release notes are missing."
 SIGNATURE="$(xmllint --xpath 'string(/rss/channel/item/enclosure/@*[local-name()="edSignature"])' "$APPCAST")"
@@ -79,12 +81,13 @@ xcrun swiftc -parse-as-library -module-cache-path "$ROOT_DIR/.build/release-swif
 "$ROOT_DIR/.build/verify-update" "$PLIST" "$ZIP_PATH" "$SIGNATURE"
 
 cd "$RELEASE_DIR"
-shasum -a 256 "$APP_NAME-$VERSION.zip" appcast.xml > SHA256SUMS
+shasum -a 256 "$ARCHIVE_NAME" appcast.xml > SHA256SUMS
 shasum -a 256 -c SHA256SUMS
 
 echo
 echo "Prepared TrackPeek $VERSION (build $BUILD_NUMBER), universal arm64 + x86_64."
 echo "Artifacts: $RELEASE_DIR"
+echo "Archive: $ZIP_PATH"
 echo "Signing: Apple Development; not notarized. Nothing was published."
 echo
 echo "After reviewing, committing, and pushing the release source, create a draft"

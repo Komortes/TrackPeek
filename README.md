@@ -8,7 +8,7 @@
     <img src="https://img.shields.io/badge/macOS-14%2B-18181b?style=flat-square&amp;logo=apple&amp;logoColor=white" alt="macOS 14 or later">
   </p>
   <p>
-    <a href="https://github.com/Komortes/TrackPeek/releases/download/v1.1/TrackPeek-1.1.zip"><strong>Download 1.1 for macOS</strong></a>
+    <a href="https://github.com/Komortes/TrackPeek/releases/download/v1.1/TrackPeek-1.1-build4.zip"><strong>Download 1.1 for macOS</strong></a>
     &nbsp;·&nbsp; <a href="docs/releases/1.1.md">Release notes</a>
     &nbsp;·&nbsp; <a href="docs/USAGE.md">Usage guide</a>
   </p>
@@ -23,12 +23,14 @@
 
 ## Install
 
-1. Download [TrackPeek 1.1](https://github.com/Komortes/TrackPeek/releases/download/v1.1/TrackPeek-1.1.zip).
+1. Download [TrackPeek 1.1 (build 4)](https://github.com/Komortes/TrackPeek/releases/download/v1.1/TrackPeek-1.1-build4.zip).
 2. Unzip it, move `TrackPeek.app` to `/Applications`, and open it.
 3. Start Spotify or Apple Music and allow **Automation** access when macOS asks.
 4. Choose a player and surface in onboarding or Settings. The menu bar remains available when the desktop overlay is off.
 
-Requires **macOS 14 or later**. The live equalizer needs **macOS 14.2 or later** and audio-capture permission. The 1.1 archive supports Apple silicon and Intel; runtime verification was performed on an Apple silicon Mac with macOS 26.2. The interface currently uses Russian labels.
+Requires **macOS 14 or later**. The live equalizer needs **macOS 14.2 or later** and audio-capture permission. The 1.1 archive supports Apple silicon and Intel; runtime verification was performed on an Apple silicon Mac with macOS 26.2.
+
+Build 4 includes **English, Ukrainian and Russian**. TrackPeek follows macOS language preferences; choose its language in System Settings → General → Language & Region, then quit and reopen the app.
 
 Releases use **Apple Development signing and are not notarized**. If macOS blocks first launch, follow [Apple's instructions](https://support.apple.com/en-asia/guide/mac-help/mh40616/mac) for a download you trust. See [release preparation](docs/RELEASING.md) for the distribution details.
 
@@ -48,7 +50,7 @@ Lyrics requests send song metadata to LRCLIB. Remote artwork uses player-provide
 
 Built with **Swift 6, SwiftUI and AppKit**. Use the Xcode project; the root `Package.swift` does not configure the complete app. Setup, tests and conventions are in [CONTRIBUTING.md](CONTRIBUTING.md).
 
-Current source builds include **English, Ukrainian and Russian**. The app follows macOS language preferences; change its language in System Settings → General → Language & Region, then relaunch. These translations are not yet part of the 1.1 download. See [localization](docs/LOCALIZATION.md) for translation conventions.
+See [localization](docs/LOCALIZATION.md) for language resources, translation conventions and validation.
 
 <details>
 <summary>Build and run locally</summary>

@@ -2,11 +2,14 @@
 
 Changes are grouped by release.
 
-## Unreleased
+## 1.1 — 2026-10-19 (build 4)
 
 - English and Ukrainian localization across settings, onboarding, player menus, tooltips, accessibility, status messages and diagnostics, with Russian retained.
 - Native macOS language selection, English fallback, localized permission explanations, decimal formatting and volume percentage plural forms.
+- Long onboarding headings and descriptions wrap instead of being truncated.
 - Removed README screenshots while a new visual direction is being considered.
+
+Build 4 is available in `TrackPeek-1.1-build4.zip`. The original `TrackPeek-1.1.zip` remains available as build 3 for recovery; its public `v1.1` tag is unchanged. Build 4 source is recorded by [`v1.1-build4`](https://github.com/Komortes/TrackPeek/tree/v1.1-build4).
 
 ## 1.1 — 2026-10-19 (build 3)
 
