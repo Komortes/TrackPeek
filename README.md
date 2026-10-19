@@ -8,7 +8,7 @@
     <img src="https://img.shields.io/badge/macOS-14%2B-18181b?style=flat-square&amp;logo=apple&amp;logoColor=white" alt="macOS 14 or later">
   </p>
   <p>
-    <a href="https://github.com/Komortes/TrackPeek/releases/download/v1.1/TrackPeek-1.1-build4.zip"><strong>Download 1.1 for macOS</strong></a>
+    <a href="https://github.com/Komortes/TrackPeek/releases/download/v1.1/TrackPeek-1.1-build5.zip"><strong>Download 1.1 for macOS</strong></a>
     &nbsp;·&nbsp; <a href="docs/releases/1.1.md">Release notes</a>
     &nbsp;·&nbsp; <a href="docs/USAGE.md">Usage guide</a>
   </p>
@@ -23,16 +23,14 @@
 
 ## Install
 
-1. Download [TrackPeek 1.1 (build 4)](https://github.com/Komortes/TrackPeek/releases/download/v1.1/TrackPeek-1.1-build4.zip).
+1. Download [TrackPeek 1.1 (build 5)](https://github.com/Komortes/TrackPeek/releases/download/v1.1/TrackPeek-1.1-build5.zip).
 2. Unzip it, move `TrackPeek.app` to `/Applications`, and open it.
 3. Start Spotify or Apple Music and allow **Automation** access when macOS asks.
 4. Choose a player and surface in onboarding or Settings. The menu bar remains available when the desktop overlay is off.
 
 Requires **macOS 14 or later**. The live equalizer needs **macOS 14.2 or later** and audio-capture permission. The 1.1 archive supports Apple silicon and Intel; runtime verification was performed on an Apple silicon Mac with macOS 26.2.
 
-Build 4 includes **English, Ukrainian and Russian**. TrackPeek follows macOS language preferences; choose its language in System Settings → General → Language & Region, then quit and reopen the app.
-
-The development version also has an in-app selector in **Settings → General → App Language**: English, Українська, Русский, or Follow macOS. Use **Restart Now** to apply the choice. This selector is not included in the published build 4 yet.
+Choose **English, Українська, Русский, or Follow macOS** in **Settings → General → App Language**. The choice is saved for TrackPeek independently of the system language. Use **Restart Now** to apply it and reopen Settings; your other preferences are retained.
 
 Releases use **Apple Development signing and are not notarized**. If macOS blocks first launch, follow [Apple's instructions](https://support.apple.com/en-asia/guide/mac-help/mh40616/mac) for a download you trust. See [release preparation](docs/RELEASING.md) for the distribution details.
 

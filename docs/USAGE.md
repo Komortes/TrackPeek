@@ -1,10 +1,10 @@
 # Using TrackPeek
 
-Detailed behavior for TrackPeek 1.1 (build 4), including the updated Settings window. See the [README](../README.md) for installation and [release notes](releases/1.1.md) for changes since 1.0. English labels are used below, with Russian equivalents for existing users.
+Detailed behavior for TrackPeek 1.1 (build 5), including the updated Settings window. See the [README](../README.md) for installation and [release notes](releases/1.1.md) for changes since 1.0. English labels are used below, with Russian equivalents for existing users.
 
-The app includes English, Ukrainian and Russian for Settings, onboarding, player menus, help, accessibility, diagnostics and permission explanations. It follows macOS language preferences. Choose TrackPeek’s language in System Settings → General → Language & Region, then quit and reopen TrackPeek. English is the fallback for unsupported languages. Song metadata and lyrics keep their original language.
+The app includes English, Ukrainian and Russian for Settings, onboarding, player menus, help, accessibility, diagnostics and permission explanations. English is the fallback for unsupported languages. Song metadata and lyrics keep their original language.
 
-In the development version, open **Settings → General → App Language** to select **English**, **Українська**, **Русский**, or **Follow macOS**. Your choice is saved for TrackPeek independently of the system language. Click **Restart Now** to apply it and reopen Settings, or quit and reopen later. Choosing the original option before restarting cancels the pending change. Resetting appearance and player settings preserves the language choice. The in-app selector will be available in the next release; published 1.1 build 4 uses the macOS controls described above.
+Open **Settings → General → App Language** to select **English**, **Українська**, **Русский**, or **Follow macOS**. Your choice is saved for TrackPeek independently of the system language. Click **Restart Now** to apply it and reopen Settings, or quit and reopen later. Choosing the original option before restarting cancels the pending change. Other preferences are retained, and resetting appearance and player settings preserves the language choice. If restarting fails, TrackPeek stays open, restores its global shortcuts, and shows how to apply the choice by quitting and reopening.
 
 ## Displays and placement
 
@@ -17,7 +17,7 @@ See [display selection details](product/display-selection.md) for behavior and v
 
 ## Settings organization
 
-The settings sidebar separates General, Notch, Widget, Menu Bar, Shortcuts, Resources, and About. General follows **music source → screen panel → visibility**, with launch at login in its own section.
+The settings sidebar separates General, Notch, Widget, Menu Bar, Shortcuts, Resources, and About. General follows **music source → screen panel → visibility**, with launch at login and app language in their own sections.
 
 Widget settings group **Template / Placement / Appearance**. All four template categories are visible; browsing a category leaves the selected template unchanged. Placement starts with the monitor, followed by the position and free-movement options. Position locking and reset appear when free movement is enabled.
 

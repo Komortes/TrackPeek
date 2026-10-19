@@ -2,10 +2,12 @@
 
 Changes are grouped by release.
 
-## Unreleased
+## 1.1 — 2026-10-19 (build 5)
 
 - Choose English, Ukrainian, Russian, or Follow macOS directly in Settings → General → App Language. The choice is saved for TrackPeek and takes effect after restarting the app.
 - A Restart Now button applies the pending language and reopens Settings. If relaunch fails, the current app stays open and its shortcuts are restored.
+
+Build 5 is available in `TrackPeek-1.1-build5.zip`, with source recorded by [`v1.1-build5`](https://github.com/Komortes/TrackPeek/tree/v1.1-build5). Existing preferences are retained. The build 3 and build 4 archives and their public source tags remain unchanged for manual recovery.
 
 ## 1.1 — 2026-10-19 (build 4)
 

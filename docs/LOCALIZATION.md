@@ -2,12 +2,13 @@
 
 TrackPeek uses native Foundation/SwiftUI localization with English as the
 development language and Ukrainian (`uk`) and Russian (`ru`) translations.
-The development version includes a language selector in Settings → General →
+TrackPeek 1.1 build 5 includes a language selector in Settings → General →
 App Language: Follow macOS, English, Українська, or Русский. An explicit choice
-is stored in the app's `AppleLanguages` preference; Follow macOS removes only
-that app override. Restart Now applies the selection and reopens Settings.
-Published 1.1 build 4 still uses the per-app language controls in System Settings
-→ General → Language & Region, followed by a relaunch.
+is stored in the app's `AppleLanguages` preference independently of the system
+language; Follow macOS removes only that app override. Restart Now applies the
+selection and reopens Settings while retaining other preferences. If relaunch
+fails, the current app stays open and restores its global shortcuts. Quitting
+and reopening later also applies the saved choice.
 
 User-facing text includes settings, onboarding, player states, menus, help,
 accessibility descriptions, diagnostics and permission explanations. Song
