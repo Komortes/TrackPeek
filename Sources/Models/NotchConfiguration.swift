@@ -152,6 +152,34 @@ enum NotchWidgetLayout: String, CaseIterable, Identifiable, Sendable {
         self != .pill
     }
 
+    /// Only these templates can replace their progress bar with lyrics.
+    var supportsOptionalLyrics: Bool {
+        switch self {
+        case .pill, .cardHorizontal, .cardVertical:
+            true
+        case .miniBar, .edge, .artworkSquare, .lyricsCard, .lyricStrip, .karaokeCard, .equalizerCard:
+            false
+        }
+    }
+
+    var hasEqualizer: Bool {
+        switch self {
+        case .pill, .miniBar, .cardHorizontal, .equalizerCard:
+            true
+        case .edge, .cardVertical, .artworkSquare, .lyricsCard, .lyricStrip, .karaokeCard:
+            false
+        }
+    }
+
+    var usesProgressColor: Bool {
+        switch self {
+        case .pill, .edge, .cardHorizontal, .cardVertical, .lyricsCard, .karaokeCard:
+            true
+        case .miniBar, .artworkSquare, .lyricStrip, .equalizerCard:
+            false
+        }
+    }
+
     /// Группа назначения — используется, чтобы сначала выбрать смысл,
     /// а затем конкретный визуальный вариант внутри него.
     var family: NotchWidgetLayoutFamily {

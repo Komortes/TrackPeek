@@ -25,6 +25,7 @@ struct WidgetSurfaceContent: View {
             audioMonitor: audioMonitor,
             palette: palette,
             coloredProgress: appearance.coloredProgress,
+            coloredWaveform: appearance.coloredWaveform,
             equalizerSensitivity: appearance.equalizerSensitivityOverride ?? NotchPreferences.equalizerSensitivityFallback
         )
     }

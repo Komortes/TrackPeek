@@ -137,13 +137,13 @@ struct NotchPlayerView: View {
         return layout.isAlwaysExpanded ? layout : nil
     }
 
-    /// Нужна ли загрузка текста: включён тумблер или выбрана лирическая раскладка.
+    /// Загружать текст только для раскладки, которая может его показать.
     private var lyricsNeeded: Bool {
-        guard !isFocusLayout, cardLayout != .edge else { return false }
+        guard !isFocusLayout else { return false }
+        guard let cardLayout else { return appearance.lyricsEnabled.wrappedValue }
         if cardLayout == .lyricStrip { return panelLayoutState.isVisible }
-        return appearance.lyricsEnabled.wrappedValue
-            || cardLayout == .lyricsCard
-            || cardLayout == .karaokeCard
+        return cardLayout.family == .lyrics
+            || (cardLayout.supportsOptionalLyrics && appearance.lyricsEnabled.wrappedValue)
     }
 
     private struct PaletteRequest: Equatable {

@@ -1,4 +1,6 @@
+import AppKit
 import Foundation
+import SwiftUI
 import Testing
 @testable import TrackPeek
 
@@ -72,4 +74,96 @@ extension WidgetPreferencesTests {
         #expect(bounds.contains(CGRect(origin: left, size: size)))
         #expect(bounds.contains(CGRect(origin: right, size: size)))
     }
+}
+
+@MainActor
+@Suite("Widget lyrics demand", .serialized, .timeLimit(.minutes(1)))
+struct WidgetLyricsDemandTests {
+    @Test("templates without lyrics ignore a saved lyrics switch until a capable template is selected",
+          arguments: [NotchWidgetLayout.miniBar, .edge, .artworkSquare, .equalizerCard])
+    func unsupportedTemplateDoesNotLoadLyrics(layout: NotchWidgetLayout) async throws {
+        let suiteName = "widget-lyrics-demand.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        defaults.set(OverlayMode.floatingWidget.rawValue, forKey: OverlayMode.storageKey)
+        defaults.set(layout.rawValue, forKey: WidgetPreferences.layoutKey)
+        defaults.set(true, forKey: WidgetPreferences.lyricsEnabledKey)
+        defaults.set(NotchColorSource.systemAccent.rawValue, forKey: WidgetPreferences.colorSourceKey)
+        defaults.set(false, forKey: WidgetPreferences.outlineShimmerKey)
+        defaults.set(NotchPulseMode.off.rawValue, forKey: WidgetPreferences.pulseModeKey)
+
+        let track = SpotifyTrack(title: "Fixture", artist: "Fixture", duration: 240, isPlaying: false)
+        let model = SpotifySpikeModel(provider: WidgetLyricsPlaybackProvider(track: track))
+        await model.refresh()
+        let provider = WidgetLyricsProvider()
+        let store = LyricsStore(provider: provider)
+        let size = CGSize(width: 360, height: 240)
+        let panel = NotchPanelLayoutState(size: size)
+        panel.isVisible = true
+        let content = NotchPlayerView(
+            model: model, audioMonitor: SpotifyAudioMonitor(), lyricsStore: store,
+            pointerState: NotchPointerState(), panelLayoutState: panel, onStateChange: { _ in }
+        )
+        .defaultAppStorage(defaults)
+        let host = NSHostingView(rootView: content)
+        let window = NSWindow(contentRect: CGRect(origin: .zero, size: size),
+            styleMask: [.titled], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = host
+        window.orderBack(nil)
+        defer {
+            window.orderOut(nil)
+            window.contentView = nil
+            window.close()
+        }
+
+        await settleLayout(host)
+        #expect(await provider.requestCount == 0, "A template with no lyrics must not start a lookup")
+        #expect(store.state(for: track) == .loading, "No lookup result should have been cached")
+
+        // Positive control: the same mounted view must react to a real preference
+        // change and load lyrics once a template that displays them is selected.
+        defaults.set(NotchWidgetLayout.cardVertical.rawValue, forKey: WidgetPreferences.layoutKey)
+        for _ in 0..<20 {
+            if store.state(for: track) == .unavailable { break }
+            await settleLayout(host)
+        }
+        #expect(store.state(for: track) == .unavailable)
+        #expect(await provider.requestCount == 1)
+        #expect(defaults.bool(forKey: WidgetPreferences.lyricsEnabledKey), "The user's choice stays saved")
+    }
+
+    private func settleLayout(_ host: NSView) async {
+        for _ in 0..<20 {
+            host.layoutSubtreeIfNeeded()
+            host.displayIfNeeded()
+            await withCheckedContinuation { continuation in
+                DispatchQueue.main.async {
+                    RunLoop.main.perform(inModes: [.default]) { continuation.resume() }
+                }
+            }
+        }
+    }
+}
+
+private actor WidgetLyricsProvider: LyricsProviding {
+    private(set) var requestCount = 0
+    func fetchLyrics(for _: LyricsRequest) -> TrackLyrics? {
+        requestCount += 1
+        return nil
+    }
+}
+
+private actor WidgetLyricsPlaybackProvider: SpotifyPlaybackProviding {
+    let track: SpotifyTrack
+    init(track: SpotifyTrack) { self.track = track }
+    func fetchCurrentTrack() -> SpotifyTrack { track }
+    func activeSource() -> PlaybackSource { .spotify }
+    func playPause() {}
+    func nextTrack() {}
+    func previousTrack() {}
+    func seek(to _: TimeInterval) {}
+    func setShuffle(_: Bool) {}
+    func setRepeat(_: RepeatMode) {}
+    func setVolume(_: Int) {}
 }

@@ -300,7 +300,7 @@ extension NotchConfigurationTests {
         await model.refresh()
         let context = WidgetCardContext(
             model: model, lyricsStore: LyricsStore(), audioMonitor: SpotifyAudioMonitor(),
-            palette: .fallback, coloredProgress: true, equalizerSensitivity: 1
+            palette: .fallback, coloredProgress: true, coloredWaveform: true, equalizerSensitivity: 1
         )
         let content = HStack(alignment: .top, spacing: 24) {
             WidgetEdgeCard(context: context, track: track)
@@ -373,5 +373,73 @@ private struct LayoutPreviewLyricsProvider: LyricsProviding {
             .init(time: 60, text: "And carry every word anew"),
             .init(time: 80, text: "Until the morning comes again")
         ], plainText: nil)
+    }
+}
+
+@Suite("Widget waveform rendering")
+struct WidgetWaveformRenderingTests {
+    @Test("wave color follows waveform preference, independently of progress color",
+          arguments: [NotchWidgetLayout.miniBar, .equalizerCard], [false, true])
+    @MainActor
+    func waveformUsesItsOwnColorPreference(layout: NotchWidgetLayout, coloredWaveform: Bool) async throws {
+        let track = SpotifyTrack(title: "Track", artist: "Artist", duration: 240, position: 45, isPlaying: false)
+        let model = SpotifySpikeModel(provider: NotchRenderingSpotifyProvider(track: track))
+        await model.refresh()
+        let green = ArtworkColor(red: 0, green: 1, blue: 0)
+        let size = CGSize(width: 360, height: layout == .miniBar ? 44 : 126)
+        let appearance = OverlayAppearance(
+            width: 280, coloredProgress: !coloredWaveform, coloredWaveform: coloredWaveform,
+            colorSource: .artwork, pulseMode: .off, outlineShimmer: false, outlineWidth: 1,
+            equalizerSensitivityOverride: 1, lyricsEnabled: .constant(false)
+        )
+        // Exercise the real surface-to-card wiring, without OverlayChrome. A paused
+        // fake track gives a stable resting spectrum and never requests audio capture.
+        let content = WidgetSurfaceContent(
+            model: model, audioMonitor: SpotifyAudioMonitor(), lyricsStore: LyricsStore(),
+            appearance: appearance, palette: ArtworkPalette(primary: green, secondary: green, tertiary: green),
+            layout: layout, containerSize: size, songInfoVisibility: .always,
+            isPointerInside: false, isVisible: true, onCollapse: {}
+        )
+        .frame(width: size.width, height: size.height)
+        .environment(\.colorScheme, .dark)
+        .background(.black)
+        let renderer = ImageRenderer(content: content)
+        renderer.scale = 2
+        let image = try #require(renderer.cgImage)
+        let bitmap = NSBitmapImageRep(cgImage: image)
+
+        // MiniBar: right padding 12 + controls (3 × 32 + 2 × 6) + gap 10,
+        // then the 22 × 14 wave. Equalizer: top 62 pt region above metadata.
+        // These regions contain only bars and black background, never tinted controls.
+        let waveRect = layout == .miniBar
+            ? CGRect(x: 208, y: 15, width: 22, height: 14)
+            : CGRect(x: 16, y: 12, width: 328, height: 62)
+        var visiblePixels = 0
+        var coloredPixels = 0
+        for y in Int(waveRect.minY * 2)..<Int(waveRect.maxY * 2) {
+            for x in Int(waveRect.minX * 2)..<Int(waveRect.maxX * 2) {
+                let color = try #require(bitmap.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB))
+                let maximum = max(color.redComponent, color.greenComponent, color.blueComponent)
+                let minimum = min(color.redComponent, color.greenComponent, color.blueComponent)
+                if maximum > 0.2 {
+                    visiblePixels += 1
+                    if maximum - minimum > 0.15 { coloredPixels += 1 }
+                }
+            }
+        }
+        // The visibility assertion prevents an empty/misplaced crop passing as white.
+        #expect(visiblePixels > 20)
+        let coloredFraction = Double(coloredPixels) / Double(max(visiblePixels, 1))
+        if coloredWaveform {
+            #expect(coloredFraction > 0.9)
+        } else {
+            #expect(coloredFraction < 0.02)
+        }
+
+        let output = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent(".build/widget-waveform-rendering", isDirectory: true)
+        try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
+        let png = try #require(bitmap.representation(using: .png, properties: [:]))
+        try png.write(to: output.appendingPathComponent("\(layout.rawValue)-wave-\(coloredWaveform).png"))
     }
 }
