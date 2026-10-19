@@ -1,8 +1,17 @@
 # Changelog
 
-Changes are grouped by release. Version 1.1 is prepared as a draft and has not been published yet.
+Changes are grouped by release.
 
-## 1.1 — pending publication
+## 1.1 — 2026-10-19 (build 3)
+
+### Settings improvements
+
+- Compact Settings window with even margins and a simpler General page: music source, screen panel, visibility, then launch at login.
+- Widget placement starts with the monitor and shows only the controls relevant to fixed positioning or free movement.
+- Visible widget template categories, clearer subsection names, and lyrics options alongside the current template's appearance.
+- Connection diagnostics keep status and recovery actions visible, with check times in expandable details.
+- Widget appearance omits controls that do not apply to the current template; templates with no lyrics no longer start unnecessary lyrics lookups from a saved switch.
+- MiniBar and Equalizer wave colors follow their own setting independently of progress color.
 
 ### Added
 

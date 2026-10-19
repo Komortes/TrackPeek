@@ -13,7 +13,7 @@
 
 TrackPeek is a native macOS companion for the Spotify and Apple Music desktop apps. Control playback from the menu bar, expand a notch player, or keep a widget on your chosen monitor. Read synchronized lyrics, use keyboard controls, and choose a resource mode that fits your Mac. A physical notch is optional for menu bar and desktop widgets.
 
-**Release status:** 1.1 (build 2) is prepared as a draft and awaits publication approval. The latest public download is [1.0](https://github.com/Komortes/TrackPeek/releases/tag/v1.0); this README describes the current development version. See the [changelog](CHANGELOG.md) and [1.1 release notes](docs/releases/1.1.md).
+**Version 1.1 (build 3)** includes the compact Settings window, clearer widget options, and corrected lyrics and waveform behavior. [Download 1.1](https://github.com/Komortes/TrackPeek/releases/download/v1.1/TrackPeek-1.1.zip) · [Release notes](docs/releases/1.1.md) · [Changelog](CHANGELOG.md).
 
 ## What you can do
 
@@ -28,7 +28,7 @@ TrackPeek is a native macOS companion for the Spotify and Apple Music desktop ap
 
 ## Install
 
-1. Download `TrackPeek-<version>.zip` from [Releases](https://github.com/Komortes/TrackPeek/releases).
+1. Download [TrackPeek 1.1](https://github.com/Komortes/TrackPeek/releases/download/v1.1/TrackPeek-1.1.zip).
 2. Unzip it, move `TrackPeek.app` to `/Applications`, and open it.
 3. Start Spotify or Apple Music and allow **Automation** access when macOS asks.
 4. Choose a player and surface in onboarding or Settings. The menu bar remains available when the desktop overlay is off.

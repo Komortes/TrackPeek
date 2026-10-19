@@ -1,6 +1,6 @@
 # Using TrackPeek
 
-Detailed behavior for TrackPeek 1.1. See the [README](../README.md) for installation and [release notes](releases/1.1.md) for changes since 1.0. UI labels are currently in Russian; English descriptions below include their matching labels.
+Detailed behavior for TrackPeek 1.1 (build 3), including the updated Settings window. See the [README](../README.md) for installation and [release notes](releases/1.1.md) for changes since 1.0. UI labels are currently in Russian; English descriptions below include their matching labels.
 
 ## Displays and placement
 
@@ -13,7 +13,13 @@ See [display selection details](product/display-selection.md) for behavior and v
 
 ## Settings organization
 
-The settings sidebar separates General, Notch, Widget, Menu Bar, Shortcuts, Resources, and About. Widget settings group **Template / Placement / Appearance**; choosing a template category only browses its previews. Notch settings separate **Appearance / Behavior**, while Menu Bar separates the menu indicators from the popover. Optional visual effects and general presets expand on demand. Existing preferences and direct links from player menus are preserved.
+The settings sidebar separates General, Notch, Widget, Menu Bar, Shortcuts, Resources, and About. General follows **music source → screen panel → visibility**, with launch at login in its own section.
+
+Widget settings group **Template / Placement / Appearance**. All four template categories are visible; browsing a category leaves the selected template unchanged. Placement starts with the monitor, followed by the position and free-movement options. Position locking and reset appear when free movement is enabled.
+
+Appearance shows controls that apply to the selected template. **Replace progress with lyrics** is available for Pill, Side artwork and Top artwork (`Пилюля / Обложка сбоку / Обложка сверху`); the dedicated lyrics templates show text without that switch. Templates with no lyrics do not start a lookup from its saved value. Progress color appears where there is a progress bar or colored lyric text. Wave color and sensitivity appear where there is an equalizer. Top artwork, Lyrics and Karaoke offer **Colored background** (`Цветной фон`) for the palette gradient; Artwork Square omits background options hidden behind its cover. Wave color is independent of progress color. Choices stay saved when you switch templates.
+
+Notch settings separate **Appearance / Behavior** (`Оформление / Поведение`), while Menu Bar separates **Indicators and buttons / Player window** (`Индикаторы и кнопки / Окно плеера`). Optional visual effects and general presets expand on demand. Existing preferences and direct links from player menus are preserved.
 
 Right-click the player or use its **…** menu for quick actions. **Copy** (`Копировать`) groups the title and artist/title options; **Player appearance** (`Вид плеера`) groups overlay modes and, when a widget is active, its templates. Lyrics, temporary hiding, refresh, and settings remain directly accessible.
 
@@ -25,7 +31,7 @@ The launch-at-login switch reflects the system's registration. If macOS requires
 
 ## Focus notch and Lyrics popover
 
-- **Settings → Notch → Appearance → Layout → Focus** (`Чёлка → Вид → Раскладка → Фокус`) selects the restrained notch layout. Its collapsed title avoids the camera gap on notched displays, and expanded controls sit below the safe top area. Width and height correction remain adjustable; the full player's effect settings are preserved.
+- **Settings → Notch → Appearance → Layout → Focus** (`Чёлка → Оформление → Раскладка → Фокус`) selects the restrained notch layout. Its collapsed title avoids the camera gap on notched displays, and expanded controls sit below the safe top area. Width and height correction remain adjustable; the full player's effect settings are preserved.
 - **Settings → Menu Bar → Player window → Lyrics** (`Строка меню → Окно плеера → Текст`) opens a fixed-size reading panel. Synchronized lyrics show the whole song with the current line highlighted. Click a lyric to seek to it, including the current timing adjustment; a paused track stays paused. Scroll to read another verse: automatic following pauses until you select **Back to current line** (`К текущей строке`). Changing the song/source or reopening the panel restores following. Plain text remains manually scrollable and selectable, without line seeking. Missing lyrics and network failures have separate states and a retry action. Playback and seeking remain at the bottom.
 
 Both layouts retain the existing menus and playback source. Lyrics uses the shared store, a neutral system background, and no artwork. Its lyric schedule and progress updates stop when the view closes; Focus creates its progress view only while expanded. Neither layout changes widget selection or overwrites other layouts' appearance choices.
@@ -74,7 +80,7 @@ The collapsed notch pauses the hidden expanded player's progress and lyric clock
 
 Artwork keeps its current image while a different resolution of the same cover loads. A new track clears the previous cover immediately. Loading indicators appear only after a short delay and stay static in small artwork slots, Reduce Motion, and Economical mode; missing or failed artwork uses a sized music-note placeholder.
 
-The audio-analysis status reports **Running** only after a valid audio buffer has arrived. If valid buffers stop for three seconds, TrackPeek recreates the capture with delays of 2, 4, 8, 16, then at most 30 seconds. Silent buffers are healthy; silence alone does not trigger reconnects. **Resources → Diagnostics** shows waiting/stalled states and offers a manual retry after a capture failure.
+The audio-analysis status reports **Running** only after a valid audio buffer has arrived. If valid buffers stop for three seconds, TrackPeek recreates the capture with delays of 2, 4, 8, 16, then at most 30 seconds. Silent buffers are healthy; silence alone does not trigger reconnects. **Resources → Diagnostics** shows connection, player access and audio-analysis status, with a manual retry after a capture failure. Last and next check times expand under **Connection details** (`Подробности подключения`); refresh and report-copy actions remain visible.
 
 ## Privacy and network use
 
