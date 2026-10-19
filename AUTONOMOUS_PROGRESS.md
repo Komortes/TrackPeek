@@ -283,10 +283,23 @@ links и diff-check прошли. App result: Test-TrackPeek-2026.10.19_13-19-04
 Xcode сообщил только ожидаемый skipped AppIntents metadata extraction: зависимости
 AppIntents.framework нет. App/installer runtime не менял установленную копию.
 
-Следом: focused commits, normal push main, target draft на точный pushed SHA,
-замена трёх draft assets, скачивание/проверка draft, publication latest и повторная
-проверка public ZIP/feed/checksums. Полный Sparkle installer flow не заявляется
-проверенным: installed app и пользовательские preferences не заменять.
+Выполнено: commits 0a3e16e (widget behavior), 1f01314 (settings UI), 8675224
+(build 3/docs) отправлены normal push в main. Существующий draft обновлён на
+86752246dea8ceb7a12b4529bfd798d198bfa4e7, три assets заменены до publication.
+Скачанный draft прошёл SHA256, deep codesign, universal main/helper, Ed25519,
+versions/notes/feed checks. Независимый release review замечаний не нашёл.
+
+1.1 опубликована 2026-10-19 11:22:55 UTC как latest stable, isDraft=false,
+isPrerelease=false. Тег v1.1 указывает на 86752246dea8ceb7a12b4529bfd798d198bfa4e7.
+Публичные ZIP/appcast/SHA256SUMS скачаны без авторизации в
+.build/release/1.1-build3-public-verification: побайтно совпадают с проверенными
+artifacts, SHA256SUMS и Ed25519 прошли. latest/download/appcast.xml перенаправляет
+на v1.1 и объявляет 1.1 build 3 с правильным URL архива. Исходный релиз 1.0
+не менялся. Полный Sparkle installer flow не заявляется проверенным:
+установленная копия и пользовательские preferences не заменялись.
+
+Релиз: https://github.com/Komortes/TrackPeek/releases/tag/v1.1
+Архив: https://github.com/Komortes/TrackPeek/releases/download/v1.1/TrackPeek-1.1.zip
 
 ## Начальный анализ — 2026-10-11
 
