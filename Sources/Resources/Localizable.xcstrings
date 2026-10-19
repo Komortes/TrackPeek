@@ -1391,6 +1391,28 @@
         }
       }
     },
+    "App Language": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Language"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Язык приложения"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Мова програми"
+          }
+        }
+      }
+    },
     "Appearance": {
       "localizations": {
         "en": {
@@ -2359,6 +2381,28 @@
         }
       }
     },
+    "Choose TrackPeek's language independently of macOS.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose TrackPeek's language independently of macOS."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выберите язык TrackPeek независимо от языка macOS."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Виберіть мову TrackPeek незалежно від мови macOS."
+          }
+        }
+      }
+    },
     "Click a field and press a shortcut with ⌘ Command or ⌃ Control.": {
       "localizations": {
         "en": {
@@ -3063,6 +3107,28 @@
         }
       }
     },
+    "Couldn't restart TrackPeek. Quit and reopen the app to apply the language.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't restart TrackPeek. Quit and reopen the app to apply the language."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось перезапустить TrackPeek. Закройте и снова откройте приложение, чтобы применить язык."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не вдалося перезапустити TrackPeek. Закрийте та знову відкрийте програму, щоб застосувати мову."
+          }
+        }
+      }
+    },
     "Current Line": {
       "localizations": {
         "en": {
@@ -3763,6 +3829,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "«Фокус» приховує обкладинку, еквалайзер, тексти й ефекти. Параметри повного плеєра збережено."
+          }
+        }
+      }
+    },
+    "Follow macOS": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Follow macOS"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Как в macOS"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Як у macOS"
           }
         }
       }
@@ -4489,6 +4577,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Клавіатурні скорочення"
+          }
+        }
+      }
+    },
+    "Language": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Language"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Язык"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Мова"
           }
         }
       }
@@ -7397,6 +7507,50 @@
         }
       }
     },
+    "Restart Now": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restart Now"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перезапустить сейчас"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перезапустити зараз"
+          }
+        }
+      }
+    },
+    "Restart Required": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restart Required"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нужен перезапуск"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Потрібен перезапуск"
+          }
+        }
+      }
+    },
     "Restore Default Settings": {
       "localizations": {
         "en": {
@@ -8691,6 +8845,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Смуга меню доступна завжди, навіть коли екранну панель вимкнено."
+          }
+        }
+      }
+    },
+    "The new language will be used after TrackPeek restarts.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The new language will be used after TrackPeek restarts."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Новый язык применится после перезапуска TrackPeek."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нова мова застосовується після перезапуску TrackPeek."
           }
         }
       }

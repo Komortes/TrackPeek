@@ -213,6 +213,7 @@ struct SettingsView: View {
         case .general:
             SettingsPage(title: String(localized: "General"), subtitle: String(localized: "Music source, on-screen panel and app startup.")) {
                 playbackSection
+                LanguageSettingsView()
                 launchSection
                 presetsSection
             }

@@ -2,6 +2,11 @@
 
 Changes are grouped by release.
 
+## Unreleased
+
+- Choose English, Ukrainian, Russian, or Follow macOS directly in Settings → General → App Language. The choice is saved for TrackPeek and takes effect after restarting the app.
+- A Restart Now button applies the pending language and reopens Settings. If relaunch fails, the current app stays open and its shortcuts are restored.
+
 ## 1.1 — 2026-10-19 (build 4)
 
 - English and Ukrainian localization across settings, onboarding, player menus, tooltips, accessibility, status messages and diagnostics, with Russian retained.

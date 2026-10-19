@@ -6,6 +6,8 @@ import SwiftUI
 /// `MenuBarControlsController`, not here.
 struct MenuBarLabelView: View {
     let controller: MenuBarControlsController
+    @Environment(\.openSettings) private var openSettings
+    @State private var openedSettingsAfterRelaunch = false
 
     @AppStorage(MenuBarPreferences.controlsEnabledKey)
     private var controlsEnabled = MenuBarPreferences.controlsEnabledFallback
@@ -55,5 +57,11 @@ struct MenuBarLabelView: View {
         // popover, since it looks/behaves like live interactive content.
         .allowsHitTesting(false)
         .accessibilityLabel("TrackPeek")
+        .task {
+            guard !openedSettingsAfterRelaunch,
+                  ProcessInfo.processInfo.arguments.contains(ApplicationRelauncher.settingsArgument) else { return }
+            openedSettingsAfterRelaunch = true
+            SettingsWindowPresentation.present(openSettings: openSettings.callAsFunction)
+        }
     }
 }

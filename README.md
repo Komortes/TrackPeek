@@ -32,6 +32,8 @@ Requires **macOS 14 or later**. The live equalizer needs **macOS 14.2 or later**
 
 Build 4 includes **English, Ukrainian and Russian**. TrackPeek follows macOS language preferences; choose its language in System Settings → General → Language & Region, then quit and reopen the app.
 
+The development version also has an in-app selector in **Settings → General → App Language**: English, Українська, Русский, or Follow macOS. Use **Restart Now** to apply the choice. This selector is not included in the published build 4 yet.
+
 Releases use **Apple Development signing and are not notarized**. If macOS blocks first launch, follow [Apple's instructions](https://support.apple.com/en-asia/guide/mac-help/mh40616/mac) for a download you trust. See [release preparation](docs/RELEASING.md) for the distribution details.
 
 ## A place on your desktop

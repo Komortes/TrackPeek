@@ -4,6 +4,8 @@ Detailed behavior for TrackPeek 1.1 (build 4), including the updated Settings wi
 
 The app includes English, Ukrainian and Russian for Settings, onboarding, player menus, help, accessibility, diagnostics and permission explanations. It follows macOS language preferences. Choose TrackPeek’s language in System Settings → General → Language & Region, then quit and reopen TrackPeek. English is the fallback for unsupported languages. Song metadata and lyrics keep their original language.
 
+In the development version, open **Settings → General → App Language** to select **English**, **Українська**, **Русский**, or **Follow macOS**. Your choice is saved for TrackPeek independently of the system language. Click **Restart Now** to apply it and reopen Settings, or quit and reopen later. Choosing the original option before restarting cancels the pending change. Resetting appearance and player settings preserves the language choice. The in-app selector will be available in the next release; published 1.1 build 4 uses the macOS controls described above.
+
 ## Displays and placement
 
 - **Named monitor:** stays selected across reconnections. If disconnected, the panel temporarily uses the primary display and returns when the selected monitor reconnects.
