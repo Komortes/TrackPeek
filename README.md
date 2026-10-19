@@ -1,30 +1,30 @@
 <div align="center">
-  <img src="Sources/Assets.xcassets/AppIcon.appiconset/icon_256x256.png" width="128" alt="TrackPeek icon">
-
-  # TrackPeek
-
-  **Spotify and Apple Music controls for your menu bar, notch, and desktop.**
-  See what's playing without leaving your current app.
-
-  ![macOS 14+](https://img.shields.io/badge/macOS-14%2B-black?logo=apple)
-  ![Swift 6](https://img.shields.io/badge/Swift-6-F05138?logo=swift&logoColor=white)
-  [![Latest release](https://img.shields.io/github/v/release/Komortes/TrackPeek)](https://github.com/Komortes/TrackPeek/releases/latest)
+  <img src="Sources/Assets.xcassets/AppIcon.appiconset/icon_256x256.png" width="88" height="88" alt="TrackPeek icon">
+  <h1>TrackPeek</h1>
+  <p><strong>Your music, within reach.</strong></p>
+  <p>Spotify and Apple Music controls for your menu bar, notch, and desktop.</p>
+  <p>
+    <a href="https://github.com/Komortes/TrackPeek/releases/latest"><img src="https://img.shields.io/github/v/release/Komortes/TrackPeek?style=flat-square&amp;color=8b5cf6" alt="Latest release"></a>
+    <img src="https://img.shields.io/badge/macOS-14%2B-18181b?style=flat-square&amp;logo=apple&amp;logoColor=white" alt="macOS 14 or later">
+  </p>
+  <p>
+    <a href="https://github.com/Komortes/TrackPeek/releases/download/v1.1/TrackPeek-1.1.zip"><strong>Download 1.1 for macOS</strong></a>
+    &nbsp;·&nbsp; <a href="docs/releases/1.1.md">Release notes</a>
+    &nbsp;·&nbsp; <a href="docs/USAGE.md">Usage guide</a>
+  </p>
 </div>
 
-TrackPeek is a native macOS companion for the Spotify and Apple Music desktop apps. Control playback from the menu bar, expand a notch player, or keep a widget on your chosen monitor. Read synchronized lyrics, use keyboard controls, and choose a resource mode that fits your Mac. A physical notch is optional for menu bar and desktop widgets.
-
-**Version 1.1 (build 3)** includes the compact Settings window, clearer widget options, and corrected lyrics and waveform behavior. [Download 1.1](https://github.com/Komortes/TrackPeek/releases/download/v1.1/TrackPeek-1.1.zip) · [Release notes](docs/releases/1.1.md) · [Changelog](CHANGELOG.md).
+<p align="center">
+  <img src="docs/images/notch-player.jpg" width="451" alt="Expanded TrackPeek player with album artwork, playback controls, progress and a colorful equalizer">
+  <br><sub>The expanded player in TrackPeek 1.1.</sub>
+</p>
 
 ## What you can do
 
-- **Choose a surface:** menu bar, full or Focus notch, or ten desktop widgets—Pill, Mini Bar, Edge, horizontal/vertical cards, Artwork Square, Lyrics, Lyric Strip, Karaoke, and Equalizer. The popover offers Standard, Compact, Artwork, and Lyrics layouts.
-- **Control playback:** play/pause, previous/next, seeking, and source-supported shuffle, repeat, and volume. Choose Spotify, Apple Music, or Automatic from Settings or the player menu.
-- **Read lyrics:** synchronized lines, karaoke, or a full-song reader with line seeking, manual scrolling, retries, and timing adjustment. Lyrics come from LRCLIB when available.
-- **Use your keyboard:** configurable global playback/visibility shortcuts, local five-second seeking, and one-percent volume steps. Controls expose focus and VoiceOver labels.
-- **Place your player:** choose a named monitor, automatic placement, or all displays. A selected monitor is remembered across reconnections.
-- **Manage resources:** Automatic follows Low Power Mode; Economical stops live audio analysis and decorative loops, slows polling, and retains appearance choices. Hidden expanded-notch clocks pause while collapsed.
-- **Recover from interruptions:** bounded retries, stale-state feedback, diagnostics, and an isolated playback helper handle temporary errors and stalled scripts.
-- **Personalize the app:** artwork accents, equalizer sensitivity, appearance presets, launch at login, and Sparkle update checks.
+- **Choose your place.** A menu bar player, full or Focus notch, and ten desktop widget templates. A physical notch is optional for menu bar and desktop widgets.
+- **Stay in your flow.** Play, pause, skip and seek without switching apps. Use global shortcuts, keyboard controls, and source-supported shuffle, repeat and volume.
+- **Follow the words.** Synchronized lyrics, Karaoke, and a full-song reader with line seeking, manual reading, retries and timing adjustment.
+- **Make it yours.** Pick a monitor, position and artwork palette. Choose Automatic or Economical resource usage, with connection diagnostics when you need them.
 
 ## Install
 
@@ -37,23 +37,31 @@ Requires **macOS 14 or later**. The live equalizer needs **macOS 14.2 or later**
 
 Releases use **Apple Development signing and are not notarized**. If macOS blocks first launch, follow [Apple's instructions](https://support.apple.com/en-asia/guide/mac-help/mh40616/mac) for a download you trust. See [release preparation](docs/RELEASING.md) for the distribution details.
 
-## Controls and settings
+## A place on your desktop
 
-Right-click the player or use its **…** menu for source selection, lyrics, copying metadata, appearance, hiding, refresh, and settings. **Source** (`Источник`) shares the saved preference with Settings; changing it refreshes the displayed source without starting playback.
+Choose a monitor and a preset position, or enable free movement. Appearance controls adapt to the selected widget template; your choices stay saved when you switch layouts.
 
-Click progress to focus the control, then press **Left/Right** to seek five seconds. **Tab** moves between progress and volume where present; volume arrows change one percent. Global shortcuts are configured under **Settings → Shortcuts** (`Клавиши`) and are unassigned by default. Lyric Strip supports Space for play/pause and arrows for track changes while focused.
+<p align="center">
+  <img src="docs/images/widget-settings.jpg" width="820" alt="TrackPeek widget placement settings with monitor selection, six positions, free movement and window behavior">
+  <br><sub>Widget placement in 1.1. Screenshots captured on macOS 26.2; the interface currently uses Russian labels.</sub>
+</p>
 
-Settings groups General, Notch, Widget, Menu Bar, Shortcuts, Resources, and About. Placement, appearance, diagnostics, and login feedback are explained in the [usage guide](docs/USAGE.md).
+Right-click the player or use its **…** menu for source selection, lyrics, appearance and quick actions. For keyboard controls, all templates, resource modes and troubleshooting, see the [usage guide](docs/USAGE.md).
 
 ## Privacy
 
-Playback state and commands use local Apple Events through a bundled helper. No separate Spotify or Apple Music web login is required, and TrackPeek does not keep a listening-history database.
+Playback uses local Apple Events. No separate Spotify or Apple Music web login is required, and TrackPeek does not keep a listening-history database.
 
-Lyrics requests send song metadata to LRCLIB. Remote artwork comes from the URL supplied by the player; Apple Music artwork uses a temporary local file. Sparkle reads the configured GitHub feed and downloads updates. Artwork and lyrics use bounded in-memory caches. Diagnostic reports are copied only on request and omit song metadata, user paths, and raw errors. See [network and permission behavior](docs/USAGE.md#privacy-and-network-use).
+Lyrics requests send song metadata to LRCLIB. Remote artwork uses player-provided URLs; Apple Music artwork uses a temporary local file. Sparkle checks GitHub for updates. Diagnostic reports exclude song metadata and personal paths. See [network and permission behavior](docs/USAGE.md#privacy-and-network-use).
 
-## Build from source
+## Development
 
-Use Xcode with **Swift 6** support and [XcodeGen](https://github.com/yonaskolb/XcodeGen). The current toolchain is Xcode 26.6.
+Built with **Swift 6, SwiftUI and AppKit**. Use the Xcode project; the root `Package.swift` does not configure the complete app. Setup, tests and conventions are in [CONTRIBUTING.md](CONTRIBUTING.md).
+
+<details>
+<summary>Build and run locally</summary>
+
+Use Xcode with Swift 6 support and [XcodeGen](https://github.com/yonaskolb/XcodeGen). The current toolchain is Xcode 26.6.
 
 ```sh
 brew install xcodegen
@@ -70,17 +78,12 @@ xcodegen generate
 
 The helper builds Debug for arm64, stops the running TrackPeek process, and launches `.build/xcode/Build/Products/Debug/TrackPeek.app`. Use Xcode directly for another destination. Regenerate the project after adding files or changing configuration.
 
-Run app-hosted tests with:
+See [contributing](CONTRIBUTING.md#verification) for app-hosted tests, release-script checks and review conventions.
 
-```sh
-xcodebuild -project TrackPeek.xcodeproj -scheme TrackPeek \
-  -configuration Debug -destination 'platform=macOS,arch=arm64' \
-  -derivedDataPath .build/xcode test
-```
+</details>
 
-The root `Package.swift` does not configure the complete app, Objective-C++ bridge, Sparkle dependency, or test target. Use the Xcode project. See [contributing](CONTRIBUTING.md) for release-script tests and review conventions.
-
-## Repository guide
+<details>
+<summary>Project structure</summary>
 
 | Path | Contents |
 | --- | --- |
@@ -91,5 +94,7 @@ The root `Package.swift` does not configure the complete app, Objective-C++ brid
 | `script/` | Build/run, validated release preparation, and script tests |
 | `project.yml`, `TrackPeek.xcodeproj` | XcodeGen definition and generated Xcode project |
 | `docs/` | Usage, product plans, verification records, and release notes |
+
+</details>
 
 [Usage guide](docs/USAGE.md) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [Releasing](docs/RELEASING.md) · [Product roadmap](docs/product/ROADMAP.md)
