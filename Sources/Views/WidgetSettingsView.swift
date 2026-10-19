@@ -111,17 +111,18 @@ struct WidgetSettingsView: View {
 
     var body: some View {
         SettingsPage(title: "Виджет", subtitle: "Плавающий плеер на рабочем столе.") {
-            Picker("Настройки виджета", selection: $selectedPage) {
-                ForEach(Page.allCases) { page in
-                    Text(page.rawValue).tag(page)
+            VStack(alignment: .leading, spacing: 12) {
+                Picker("Настройки виджета", selection: $selectedPage) {
+                    ForEach(Page.allCases) { page in
+                        Text(page.rawValue).tag(page)
+                    }
                 }
-            }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .fixedSize()
-            .frame(maxWidth: .infinity, alignment: .leading)
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .fixedSize()
 
-            activationCard
+                activationStatus
+            }
 
             switch selectedPage {
             case .template:
@@ -140,21 +141,26 @@ struct WidgetSettingsView: View {
 
     // MARK: Активация
 
-    private var activationCard: some View {
-        SettingsGroup {
-            SettingsRow(
-                title: selectedMode == .floatingWidget ? "Виджет включён" : "Виджет выключен",
-                subtitle: "Текущий шаблон: \(selectedLayout.title)"
-            ) {
-                if selectedMode != .floatingWidget {
-                    Button("Включить виджет") {
-                        selectedModeRawValue = OverlayMode.floatingWidget.rawValue
-                    }
-                } else {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
-                        .accessibilityHidden(true)
+    private var activationStatus: some View {
+        HStack(spacing: 8) {
+            Label(
+                selectedMode == .floatingWidget ? "Виджет включён" : "Виджет выключен",
+                systemImage: selectedMode == .floatingWidget ? "checkmark.circle.fill" : "rectangle.on.rectangle"
+            )
+            .foregroundStyle(.secondary)
+            .font(.callout)
+
+            Text("· \(selectedLayout.title)")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+
+            Spacer()
+
+            if selectedMode != .floatingWidget {
+                Button("Включить виджет") {
+                    selectedModeRawValue = OverlayMode.floatingWidget.rawValue
                 }
+                .controlSize(.small)
             }
         }
     }
@@ -162,18 +168,14 @@ struct WidgetSettingsView: View {
     // MARK: Шаблон
 
     private var layoutSection: some View {
-        SettingsSection(title: "Форма плеера") {
-            HStack {
-                Text("Категория")
-                    .font(.system(size: 13, weight: .medium))
-                Spacer()
-                Picker("Категория шаблонов", selection: layoutFamily) {
-                    ForEach(NotchWidgetLayoutFamily.allCases) { family in
-                        Text(family.title).tag(family)
-                    }
+        SettingsSection(title: "Шаблоны", subtitle: "Просмотр категории не меняет выбранный шаблон.") {
+            Picker("Категория шаблонов", selection: layoutFamily) {
+                ForEach(NotchWidgetLayoutFamily.allCases) { family in
+                    Text(family.title).tag(family)
                 }
-                .settingsMenuControl()
             }
+            .pickerStyle(.segmented)
+            .labelsHidden()
 
             LazyVGrid(
                 columns: [GridItem(.adaptive(minimum: 170, maximum: 220), spacing: 12)],
@@ -185,17 +187,6 @@ struct WidgetSettingsView: View {
                 }
             }
 
-            if selectedLayout != .edge && selectedLayout.family != .lyrics {
-                SettingsGroup {
-                    SettingsRow(
-                        title: "Текст песни в плеере",
-                        subtitle: "Заменяет полосу прогресса синхронизированным текстом."
-                    ) {
-                        Toggle("Текст песни", isOn: $lyricsEnabled)
-                            .labelsHidden()
-                    }
-                }
-            }
         }
     }
 
@@ -257,26 +248,30 @@ struct WidgetSettingsView: View {
             subtitle: "Где держать виджет и можно ли его перетаскивать.",
             symbolName: "arrow.up.and.down.and.arrow.left.and.right"
         ) {
-            if selectedLayout == .edge {
-                Picker("Край экрана", selection: $edgeOnRight) {
-                    Text("Слева").tag(false)
-                    Text("Справа").tag(true)
-                }
-                .pickerStyle(.segmented)
-                .frame(width: 240)
-                Text("72 × 224 pt · по центру выбранного края, с учётом Dock.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            } else {
-                positionSchematic
-            }
-
             SettingsGroup {
                 SettingsRow(
-                    title: "Показывать на",
-                    subtitle: "Экран, на котором живёт виджет."
+                    title: "Монитор",
+                    subtitle: "Где показывать виджет."
                 ) {
                     DisplayTargetPicker(selection: $displayTargetRawValue)
+                }
+
+                if selectedLayout == .edge {
+                    SettingsRowDivider()
+                    SettingsRow(title: "Край экрана", subtitle: "По центру выбранного края, с учётом Dock.") {
+                        Picker("Край экрана", selection: $edgeOnRight) {
+                            Text("Слева").tag(false)
+                            Text("Справа").tag(true)
+                        }
+                        .pickerStyle(.segmented)
+                        .labelsHidden()
+                        .frame(width: 220)
+                    }
+                } else if !freeMoveEnabled {
+                    SettingsRowDivider()
+                    SettingsRow(title: "Позиция", subtitle: selectedPosition.title) {
+                        positionSchematic
+                    }
                 }
 
                 if selectedLayout != .edge {
@@ -290,30 +285,32 @@ struct WidgetSettingsView: View {
                             .labelsHidden()
                     }
 
-                    SettingsRowDivider()
+                    if freeMoveEnabled {
+                        SettingsRowDivider()
 
-                    SettingsRow(
-                        title: "Зафиксировать позицию",
-                        subtitle: "Защита от случайного перетаскивания."
-                    ) {
-                        Toggle("Зафиксировать позицию", isOn: $positionLocked)
-                            .labelsHidden()
-                    }
+                        SettingsRow(
+                            title: "Зафиксировать позицию",
+                            subtitle: "Защита от случайного перетаскивания."
+                        ) {
+                            Toggle("Зафиксировать позицию", isOn: $positionLocked)
+                                .labelsHidden()
+                        }
 
-                    SettingsRowDivider()
+                        SettingsRowDivider()
 
-                    SettingsRow(
-                        title: "Сбросить позицию",
-                        subtitle: "Вернуть виджет к выбранной точке у края экрана."
-                    ) {
-                        Button("Сбросить") {
-                            UserDefaults.standard.removeObject(
-                                forKey: WidgetPreferences.originXKey
-                            )
-                            UserDefaults.standard.removeObject(
-                                forKey: WidgetPreferences.originTopYKey
-                            )
-                            WidgetPlacementStore.removeAll(layout: selectedLayout)
+                        SettingsRow(
+                            title: "Сбросить позицию",
+                            subtitle: "Вернуть к точке «\(selectedPosition.title)»."
+                        ) {
+                            Button("Сбросить") {
+                                UserDefaults.standard.removeObject(
+                                    forKey: WidgetPreferences.originXKey
+                                )
+                                UserDefaults.standard.removeObject(
+                                    forKey: WidgetPreferences.originTopYKey
+                                )
+                                WidgetPlacementStore.removeAll(layout: selectedLayout)
+                            }
                         }
                     }
                 }
@@ -323,58 +320,21 @@ struct WidgetSettingsView: View {
 
     /// Мини-экран: кликабельные точки в шести позициях.
     private var positionSchematic: some View {
-        VStack(spacing: 8) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(Color.primary.opacity(0.05))
+        ZStack {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(Color.primary.opacity(0.05))
 
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .stroke(Color.primary.opacity(0.14), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(Color.primary.opacity(0.14), lineWidth: 1)
 
-                // строка меню
-                VStack {
-                    Rectangle()
-                        .fill(Color.primary.opacity(0.10))
-                        .frame(height: 8)
-                        .clipShape(
-                            UnevenRoundedRectangle(
-                                topLeadingRadius: 10,
-                                bottomLeadingRadius: 0,
-                                bottomTrailingRadius: 0,
-                                topTrailingRadius: 10
-                            )
-                        )
-                    Spacer()
-                }
-
-                VStack {
-                    positionRow(top: true)
-                    Spacer()
-                    positionRow(top: false)
-                }
-                .padding(.top, 12)
-                .padding(.bottom, 8)
-                .padding(.horizontal, 10)
+            VStack {
+                positionRow(top: true)
+                Spacer(minLength: 8)
+                positionRow(top: false)
             }
-            .frame(width: 240, height: 140)
-            .opacity(freeMoveEnabled ? 0.4 : 1)
-
-            Text(
-                freeMoveEnabled
-                    ? "Свободное перемещение включено — позиция задаётся перетаскиванием."
-                    : "Нажмите на место, где держать виджет."
-            )
-            .font(.caption2)
-            .foregroundStyle(.secondary)
+            .padding(8)
         }
-        .frame(maxWidth: .infinity)
-        .padding(12)
-        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 13, style: .continuous)
-                .stroke(.primary.opacity(0.08), lineWidth: 1)
-        }
-        .allowsHitTesting(!freeMoveEnabled)
+        .frame(width: 220, height: 76)
     }
 
     private func positionRow(top: Bool) -> some View {
@@ -401,7 +361,7 @@ struct WidgetSettingsView: View {
         } label: {
             Capsule()
                 .fill(isSelected ? Color.accentColor : Color.primary.opacity(0.22))
-                .frame(width: 34, height: 12)
+                .frame(width: 34, height: 10)
                 .overlay {
                     Capsule()
                         .stroke(
@@ -409,7 +369,8 @@ struct WidgetSettingsView: View {
                             lineWidth: 1
                         )
                 }
-                .contentShape(Capsule().scale(1.6))
+                .padding(.vertical, 6)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .help(position.title)
@@ -463,6 +424,20 @@ struct WidgetSettingsView: View {
 
     private var appearanceSection: some View {
         VStack(alignment: .leading, spacing: 20) {
+            if selectedLayout.supportsOptionalLyrics {
+                SettingsSection(title: "Содержимое") {
+                    SettingsGroup {
+                        SettingsRow(
+                            title: "Текст песни вместо прогресса",
+                            subtitle: "Для текущего шаблона «\(selectedLayout.title)»."
+                        ) {
+                            Toggle("Текст песни", isOn: $lyricsEnabled)
+                                .labelsHidden()
+                        }
+                    }
+                }
+            }
+
             if selectedLayout == .lyricStrip {
                 SettingsSection(title: "Размер") {
                     SettingsGroup {
@@ -506,31 +481,43 @@ struct WidgetSettingsView: View {
                         }
                         SettingsRowDivider()
                         colorSourceRow
-                        SettingsRowDivider()
-                        SettingsRow(title: "Цветной прогресс", subtitle: "Акцент на полосе воспроизведения и тексте.") {
-                            Toggle("Цветной прогресс", isOn: $coloredProgress).labelsHidden()
+                        if selectedLayout.usesProgressColor {
+                            SettingsRowDivider()
+                            SettingsRow(title: "Цветной прогресс", subtitle: "Акцент на полосе воспроизведения и тексте.") {
+                                Toggle("Цветной прогресс", isOn: $coloredProgress).labelsHidden()
+                            }
                         }
-                        SettingsRowDivider()
-                        SettingsRow(title: "Стекло из обложки", subtitle: "Размытая обложка вместо чёрного фона карточек.") {
-                            Toggle("Стекло из обложки", isOn: $glassBackground).labelsHidden()
+                        if selectedLayout != .artworkSquare {
+                            SettingsRowDivider()
+                            SettingsRow(title: "Стекло из обложки", subtitle: "Размытая обложка вместо чёрного фона карточек.") {
+                                Toggle("Стекло из обложки", isOn: $glassBackground).labelsHidden()
+                            }
+                            if !selectedLayout.hasEqualizer {
+                                SettingsRowDivider()
+                                SettingsRow(title: "Цветной фон", subtitle: "Мягкий градиент из выбранной палитры.") {
+                                    Toggle("Цветной фон", isOn: $coloredWaveform).labelsHidden()
+                                }
+                            }
                         }
                     }
                 }
 
-                SettingsSection(title: "Эквалайзер") {
-                    SettingsGroup {
-                        SettingsRow(title: "Цветная волна", subtitle: "Использовать выбранную палитру.") {
-                            Toggle("Цветная волна", isOn: $coloredWaveform).labelsHidden()
-                        }
-                        SettingsRowDivider()
-                        SettingsRow(title: "Чувствительность", subtitle: "Насколько активно волна реагирует на звук.") {
-                            SettingsValueSlider(
-                                value: widgetSensitivity,
-                                range: NotchPreferences.equalizerSensitivityRange,
-                                step: NotchPreferences.equalizerSensitivityStep,
-                                text: String(format: "%.1f×", NotchPreferences.clampedEqualizerSensitivity(equalizerSensitivity))
-                            )
-                            .accessibilityLabel("Чувствительность эквалайзера")
+                if selectedLayout.hasEqualizer {
+                    SettingsSection(title: "Эквалайзер") {
+                        SettingsGroup {
+                            SettingsRow(title: "Цветная волна", subtitle: "Использовать выбранную палитру.") {
+                                Toggle("Цветная волна", isOn: $coloredWaveform).labelsHidden()
+                            }
+                            SettingsRowDivider()
+                            SettingsRow(title: "Чувствительность", subtitle: "Насколько активно волна реагирует на звук.") {
+                                SettingsValueSlider(
+                                    value: widgetSensitivity,
+                                    range: NotchPreferences.equalizerSensitivityRange,
+                                    step: NotchPreferences.equalizerSensitivityStep,
+                                    text: String(format: "%.1f×", NotchPreferences.clampedEqualizerSensitivity(equalizerSensitivity))
+                                )
+                                .accessibilityLabel("Чувствительность эквалайзера")
+                            }
                         }
                     }
                 }

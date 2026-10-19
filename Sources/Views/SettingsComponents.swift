@@ -1,5 +1,27 @@
 import SwiftUI
 
+/// Settings scenes can keep the tall preference-panel toolbar even when the
+/// scene requests a compact style. Configure only this view's owning window.
+struct SettingsWindowToolbar: NSViewRepresentable {
+    func makeNSView(context: Context) -> ToolbarView { ToolbarView() }
+
+    func updateNSView(_ view: ToolbarView, context: Context) {
+        view.configureWindow()
+    }
+
+    final class ToolbarView: NSView {
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            configureWindow()
+        }
+
+        func configureWindow() {
+            guard let window, window.toolbarStyle != .unifiedCompact else { return }
+            window.toolbarStyle = .unifiedCompact
+        }
+    }
+}
+
 /// Shared building blocks for the Settings window, kept in one place so every
 /// page renders with the same spacing and materials.
 
@@ -10,15 +32,14 @@ struct SettingsPage<Content: View>: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
+            VStack(alignment: .leading, spacing: 16) {
                 SettingsSectionHeader(title: title, subtitle: subtitle, titleFont: .title2.weight(.semibold))
-                content()
+                VStack(alignment: .leading, spacing: 24) {
+                    content()
+                }
             }
-            // Leave room for the native scrollbar so sections keep the same
-            // width when switching between short and scrollable pages.
-            .frame(maxWidth: 640, alignment: .leading)
-            .padding(24)
             .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(24)
         }
     }
 }

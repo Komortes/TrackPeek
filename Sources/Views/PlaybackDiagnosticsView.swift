@@ -28,35 +28,24 @@ struct PlaybackDiagnosticsView: View {
         SettingsSection(title: "Диагностика", subtitle: "Текущее подключение и работа аудиоанализа.") {
             SettingsGroup {
                 SettingsRow(title: "Плеер", subtitle: diagnostics.connection) {
-                    Text(diagnostics.source?.displayName ?? "Не определён")
-                        .foregroundStyle(.secondary)
+                    HStack(spacing: 8) {
+                        if coordinator.model.isRefreshing {
+                            ProgressView()
+                                .controlSize(.small)
+                                .accessibilityLabel("Проверка подключения")
+                        }
+                        Text(diagnostics.source?.displayName ?? "Не определён")
+                            .foregroundStyle(.secondary)
+                    }
                 }
                 SettingsRowDivider()
-                SettingsRow(title: "Automation", subtitle: diagnostics.permission) {
+                SettingsRow(title: "Доступ к плееру", subtitle: diagnostics.permission) {
                     if diagnostics.availability == .automationDenied {
                         Button("Открыть разрешения") {
                             if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation") {
                                 NSWorkspace.shared.open(url)
                             }
                         }
-                    }
-                }
-                SettingsRowDivider()
-                SettingsRow(title: "Последняя успешная проверка", subtitle: "Последний ответ плеера, включая состояние без трека.") {
-                    if let date = diagnostics.lastSuccessfulRefresh {
-                        Text(date, format: .dateTime.day().month().hour().minute().second())
-                            .font(.caption.monospacedDigit())
-                    } else {
-                        Text("Ещё не было").foregroundStyle(.secondary)
-                    }
-                }
-                SettingsRowDivider()
-                SettingsRow(title: "Следующая проверка", subtitle: diagnostics.retryStatus) {
-                    if coordinator.model.isRefreshing {
-                        ProgressView().controlSize(.small)
-                    } else if let date = diagnostics.nextRefreshDate {
-                        Text(date, format: .dateTime.hour().minute().second())
-                            .font(.caption.monospacedDigit())
                     }
                 }
                 SettingsRowDivider()
@@ -82,6 +71,28 @@ struct PlaybackDiagnosticsView: View {
             Text("Отчёт содержит только техническое состояние, без названий песен и истории прослушивания.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+
+            SettingsDisclosure(title: "Подробности подключения", subtitle: "Последний ответ и расписание проверок.") {
+                SettingsGroup {
+                    SettingsRow(title: "Последняя успешная проверка", subtitle: "Последний ответ плеера, включая состояние без трека.") {
+                        if let date = diagnostics.lastSuccessfulRefresh {
+                            Text(date, format: .dateTime.day().month().hour().minute().second())
+                                .font(.caption.monospacedDigit())
+                        } else {
+                            Text("Ещё не было").foregroundStyle(.secondary)
+                        }
+                    }
+                    SettingsRowDivider()
+                    SettingsRow(title: "Следующая проверка", subtitle: diagnostics.retryStatus) {
+                        if coordinator.model.isRefreshing {
+                            ProgressView().controlSize(.small)
+                        } else if let date = diagnostics.nextRefreshDate {
+                            Text(date, format: .dateTime.hour().minute().second())
+                                .font(.caption.monospacedDigit())
+                        }
+                    }
+                }
+            }
         }
     }
 }

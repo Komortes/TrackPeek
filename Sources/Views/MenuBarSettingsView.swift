@@ -2,7 +2,7 @@ import SwiftUI
 
 struct MenuBarSettingsView: View {
     private enum Page: String, CaseIterable {
-        case menuBar = "Строка меню"
+        case menuBar = "Индикаторы и кнопки"
         case player = "Окно плеера"
     }
 

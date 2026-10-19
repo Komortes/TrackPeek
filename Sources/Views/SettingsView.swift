@@ -199,6 +199,7 @@ struct SettingsView: View {
         .toolbar(removing: .sidebarToggle)
         .navigationTitle("Настройки TrackPeek")
         .frame(width: 940, height: 680)
+        .background(SettingsWindowToolbar())
     }
 
     private func navigationRow(_ tab: SettingsTab) -> some View {
@@ -210,9 +211,9 @@ struct SettingsView: View {
     @ViewBuilder private var selectedPage: some View {
         switch selectedTab {
         case .general:
-            SettingsPage(title: "Основные", subtitle: "Где показывать плеер и откуда брать музыку.") {
-                displayModeSection
-                systemSection
+            SettingsPage(title: "Основные", subtitle: "Источник музыки, экранная панель и запуск приложения.") {
+                playbackSection
+                launchSection
                 presetsSection
             }
         case .notch:
@@ -235,23 +236,42 @@ struct SettingsView: View {
         }
     }
 
-    private var displayModeSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            SettingsSectionHeader(
-                title: "Экранный плеер",
-                subtitle: "Строка меню доступна в любом режиме."
-            )
-
-            HStack(alignment: .top, spacing: 12) {
-                ForEach(OverlayMode.allCases) { mode in
-                    displayModeCard(mode)
-                }
-            }
-
+    private var playbackSection: some View {
+        SettingsSection(title: "Музыка и управление") {
             SettingsGroup {
                 SettingsRow(
-                    title: "Показывать панель",
-                    subtitle: "Общая политика видимости для чёлки и виджета."
+                    title: "Источник музыки",
+                    subtitle: mediaSource.wrappedValue.summary
+                ) {
+                    Picker("Источник музыки", selection: mediaSource) {
+                        ForEach(MediaSourcePreference.allCases) { source in
+                            Text(source.title).tag(source)
+                        }
+                    }
+                    .settingsMenuControl()
+                }
+
+                SettingsRowDivider()
+
+                SettingsRow(title: "Панель на экране", subtitle: selectedMode.summary) {
+                    Picker("Панель на экране", selection: Binding(
+                        get: { selectedMode },
+                        set: { selectedModeRawValue = $0.rawValue }
+                    )) {
+                        ForEach(OverlayMode.allCases) { mode in
+                            Text(mode == .off ? "Выключена" : mode.title).tag(mode)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    .frame(width: 290)
+                }
+
+                SettingsRowDivider()
+
+                SettingsRow(
+                    title: "Когда показывать панель",
+                    subtitle: "Для чёлки и виджета."
                 ) {
                     Picker("Показывать панель", selection: Binding(
                         get: {
@@ -267,6 +287,9 @@ struct SettingsView: View {
                 }
             }
 
+            Text("Строка меню доступна всегда, даже когда экранная панель выключена.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
     }
 
@@ -318,7 +341,9 @@ struct SettingsView: View {
                 SettingsRowDivider()
                 SettingsRow(
                     title: PlaybackCoordinator.shared.isSavingResources ? "Экономия активна" : "Обычная работа",
-                    subtitle: "В экономном режиме эквалайзер статичен, пульсация и переливы выключены. Прогресс обновляется раз в секунду, опрос плеера — реже."
+                    subtitle: PlaybackCoordinator.shared.isSavingResources
+                        ? "Аудиозахват и декоративные анимации выключены. Прогресс обновляется раз в секунду."
+                        : "Обычная частота обновлений. Эффекты зависят от оформления и воспроизведения."
                 ) {
                     Image(systemName: PlaybackCoordinator.shared.isSavingResources ? "leaf.fill" : "leaf")
                         .foregroundStyle(.secondary)
@@ -327,31 +352,12 @@ struct SettingsView: View {
         }
     }
 
-    private var systemSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            SettingsSectionHeader(
-                title: "Воспроизведение и запуск"
-            )
-
+    private var launchSection: some View {
+        SettingsSection(title: "Запуск") {
             SettingsGroup {
                 LaunchAtLoginToggle()
-                    .padding(14)
-
-                SettingsRowDivider()
-
-                SettingsRow(
-                    title: "Источник трека",
-                    subtitle: MediaSourcePreference(rawValue: mediaSourceRawValue)?.summary
-                        ?? MediaSourcePreference.fallback.summary
-                ) {
-                    Picker("Источник трека", selection: mediaSource) {
-                        ForEach(MediaSourcePreference.allCases) { source in
-                            Text(source.title).tag(source)
-                        }
-                    }
-                    .settingsMenuControl()
-                }
-
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
             }
         }
     }
@@ -402,51 +408,5 @@ struct SettingsView: View {
         for key in Self.resettableKeys {
             defaults.removeObject(forKey: key)
         }
-    }
-
-    private func displayModeCard(_ mode: OverlayMode) -> some View {
-        Button {
-            selectedModeRawValue = mode.rawValue
-        } label: {
-            VStack(alignment: .leading, spacing: 9) {
-                Image(systemName: mode.symbolName)
-                    .font(.system(size: 20, weight: .medium))
-                    .frame(height: 28)
-                    .foregroundStyle(Color.accentColor)
-
-                HStack {
-                    Text(mode.title)
-                        .font(.headline)
-
-                    Spacer()
-
-                    if selectedMode == mode {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundStyle(.tint)
-                    }
-                }
-
-                Text(mode.summary)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(3, reservesSpace: true)
-
-                Text(selectedMode == mode ? "Активен" : "Доступен")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(selectedMode == mode ? Color.green : Color.secondary)
-            }
-            .frame(maxWidth: .infinity, minHeight: 108, alignment: .topLeading)
-            .padding(12)
-            .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(
-                        selectedMode == mode ? Color.accentColor : Color.primary.opacity(0.07),
-                        lineWidth: selectedMode == mode ? 2 : 1
-                    )
-            }
-        }
-        .buttonStyle(.plain)
-        .help("Выбрать \(mode.title)")
     }
 }

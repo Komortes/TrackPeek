@@ -3,7 +3,7 @@ import SwiftUI
 
 struct NotchSettingsView: View {
     private enum Page: String, CaseIterable {
-        case appearance = "Вид"
+        case appearance = "Оформление"
         case behavior = "Поведение"
     }
 
@@ -132,17 +132,18 @@ struct NotchSettingsView: View {
 
     var body: some View {
         SettingsPage(title: "Чёлка", subtitle: "Плеер у верхнего края экрана.") {
-            Picker("Настройки чёлки", selection: $selectedPage) {
-                ForEach(Page.allCases, id: \.self) { page in
-                    Text(page.rawValue).tag(page)
+            VStack(alignment: .leading, spacing: 12) {
+                Picker("Настройки чёлки", selection: $selectedPage) {
+                    ForEach(Page.allCases, id: \.self) { page in
+                        Text(page.rawValue).tag(page)
+                    }
                 }
-            }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .fixedSize()
-            .frame(maxWidth: .infinity, alignment: .leading)
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .fixedSize()
 
-            activationStatus
+                activationStatus
+            }
 
             switch selectedPage {
             case .appearance:
