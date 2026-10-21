@@ -54,6 +54,12 @@ These GitHub settings are separate from files committed to the repository. Confi
 
 Dependabot checks GitHub Actions weekly and groups their version updates into one PR. Review the upstream changes and CI results before merging; updates do not merge automatically. Keep Actions pinned to reviewed commit SHAs, with version comments that Dependabot can maintain.
 
+The workflow also pins the Xcode runner baseline and validation-tool archives.
+Update those versions and SHA-256 digests together after verifying the official
+release, then run the same checks in a PR. XcodeGen's version must agree with
+the committed generated project; regeneration is checked without rewriting
+the working tree.
+
 Sparkle is declared in `project.yml` and resolved by the Xcode project. Update that declaration and the resolved lockfile together, then regenerate and verify the app. The root `Package.swift` is not the complete application definition, so Dependabot is not configured to treat it as the app dependency manifest.
 
 ## Releases and recovery
