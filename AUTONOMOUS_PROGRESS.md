@@ -508,6 +508,10 @@ traceback вместо понятной ошибки для malformed JSON/UTF8/
 Реальный первый CI выявил shallow checkout: история глубины 1 представляла PR
 merge как root commit, и whitespace-check захватывал старый SPEC.md. Исправлены
 fetch-depth 2 и сравнение с первым parent (базовой веткой PR). На локальной
+проверке Xcode 26.6 код проходит, а первоначальный CI Xcode 16.4 / Swift 6.1
+отклонил уже существующую Swift concurrency семантику приложения. Runner
+согласован с проверенным toolchain: macos-26-intel и Xcode 26.6 (17F113),
+Swift 6.3.3. Минимальный macOS deployment target 14 не менялся. На локальной
 чистой сборке исправлен порядок аргументов lipo; итоговая universal проверка
 пройдена. Одновременные локальные xcodebuild столкнулись в общем SwiftPM cache;
 последовательный `ci.sh build` → `ci.sh test` прошёл. GitHub jobs изолированы
