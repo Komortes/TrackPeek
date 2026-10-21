@@ -64,7 +64,13 @@ checks() {
   shellcheck --version
   xcodegen --version
   git diff --check
-  git show --format= --check HEAD
+  if git rev-parse --verify HEAD^ >/dev/null 2>&1; then
+    # For PR merge commits, the first parent is the target branch. A shallow
+    # root-looking checkout would otherwise check every historical file.
+    git diff --check HEAD^ HEAD
+  else
+    git show --format= --check HEAD
+  fi
   actionlint
   for shell_script in "$ROOT_DIR"/script/*.sh; do
     bash -n "$shell_script"
