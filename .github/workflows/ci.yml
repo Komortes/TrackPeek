@@ -1,0 +1,118 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # Available on this supported image; avoid silently following Xcode updates.
+  DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  checks:
+    name: Quality checks
+    runs-on: macos-15-intel
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install validation tools
+        run: |
+          tool_dir="$RUNNER_TEMP/trackpeek-ci-tools"
+          mkdir -p "$tool_dir/bin"
+          # Official release archives, pinned independently of Homebrew updates.
+          curl --fail --location --silent --show-error --retry 3 \
+            https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_darwin_amd64.tar.gz \
+            -o "$tool_dir/actionlint.tar.gz"
+          printf '%s  %s\n' \
+            5b44c3bc2255115c9b69e30efc0fecdf498fdb63c5d58e17084fd5f16324c644 "$tool_dir/actionlint.tar.gz" \
+            | shasum -a 256 -c -
+          tar -xzf "$tool_dir/actionlint.tar.gz" -C "$tool_dir/bin" actionlint
+          curl --fail --location --silent --show-error --retry 3 \
+            https://github.com/koalaman/shellcheck/releases/download/v0.11.0/shellcheck-v0.11.0.darwin.x86_64.tar.gz \
+            -o "$tool_dir/shellcheck.tar.gz"
+          printf '%s  %s\n' \
+            c2c15e08df0e8fbc374c335b230a7ee958c313fa5714817a59aa59f1aa594f51 "$tool_dir/shellcheck.tar.gz" \
+            | shasum -a 256 -c -
+          tar -xzf "$tool_dir/shellcheck.tar.gz" -C "$tool_dir"
+          cp "$tool_dir/shellcheck-v0.11.0/shellcheck" "$tool_dir/bin/shellcheck"
+          curl --fail --location --silent --show-error --retry 3 \
+            https://github.com/yonaskolb/XcodeGen/releases/download/2.45.4/xcodegen.zip \
+            -o "$tool_dir/xcodegen.zip"
+          printf '%s  %s\n' \
+            090ec29491aad50aec10631bf6e62253fed733c50f3aab0f5ffc86bc170bdbef "$tool_dir/xcodegen.zip" \
+            | shasum -a 256 -c -
+          ditto -x -k "$tool_dir/xcodegen.zip" "$tool_dir"
+          echo "$tool_dir/bin" >> "$GITHUB_PATH"
+          echo "$tool_dir/xcodegen/bin" >> "$GITHUB_PATH"
+      - name: Validate project, scripts, translations and update signatures
+        run: ./script/ci.sh checks
+      - name: Upload quality reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ci-quality-reports-${{ github.run_attempt }}
+          path: .build/ci/checks/
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 7
+
+  test:
+    name: macOS tests
+    needs: checks
+    runs-on: macos-15-intel
+    timeout-minutes: 30
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Run app-hosted tests with coverage
+        run: ./script/ci.sh test
+      - name: Upload test results and coverage
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ci-test-results-${{ github.run_attempt }}
+          path: .build/ci/test/
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 7
+
+  build:
+    name: Universal Release build
+    needs: checks
+    runs-on: macos-15-intel
+    timeout-minutes: 25
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build and verify Apple Silicon and Intel executables
+        run: ./script/ci.sh build
+      - name: Upload build reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ci-build-reports-${{ github.run_attempt }}
+          path: .build/ci/build/
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 7
