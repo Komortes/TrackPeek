@@ -485,6 +485,49 @@ Follow macOS и раздел Widget восстановлены. Итоговые
 installer flow не запускался. Ошибка запуска и handoff shortcuts проверены
 unit-тестами; реальные playback-команды и permission/login settings не менялись.
 
+## Тесты, GitHub Actions и порядок работы с Git — 2026-10-21
+
+По запросу пользователя добавлен CI workflow для PR в main, push в main и ручного
+запуска. Стабильные проверки: Quality checks, macOS tests, Universal Release
+build. Общий локальный/CI entry point `script/ci.sh` проверяет переводы, скрипты,
+workflow/shell syntax, соответствие XcodeGen и generated project, app-hosted
+тесты с coverage и universal main/helper. Проверочные сборки используют ad-hoc
+подпись, не требуют личного сертификата/секретов и не публикуют релизы.
+Actions закреплены полными SHA, validation tools — версиями и SHA256, Xcode —
+проверенным runner baseline. Логи, xcresult и coverage сохраняются при сбоях.
+
+Добавлены 18 CLI regression tests валидатора локализаций и 6 тестов exit/logging
+семантики CI. Найдены и исправлены пропуск printf width/precision arguments и
+traceback вместо понятной ошибки для malformed JSON/UTF8/catalog shapes.
+Итого 33 Python tests и 8 public-key signature checks проходят; 467 Localizable
++ 2 InfoPlist entries полны в en/uk/ru. Локально в ad-hoc CI-режиме прошли
+274 функции / 334 выполнения app tests, universal arm64/x86_64 Release и подписи.
+Покрытие сохраняется отдельно для app/helper, без смешения с покрытием тестового
+кода. Рецензент проверил исходники CI/tests/Git workflow без блокирующих замечаний.
+
+Реальный первый CI выявил shallow checkout: история глубины 1 представляла PR
+merge как root commit, и whitespace-check захватывал старый SPEC.md. Исправлены
+fetch-depth 2 и сравнение с первым parent (базовой веткой PR). На локальной
+проверке Xcode 26.6 код проходит, а первоначальный CI Xcode 16.4 / Swift 6.1
+отклонил уже существующую Swift concurrency семантику приложения. Runner
+согласован с проверенным toolchain: macos-26-intel и Xcode 26.6 (17F113),
+Swift 6.3.3. Минимальный macOS deployment target 14 не менялся. На локальной
+чистой сборке исправлен порядок аргументов lipo; итоговая universal проверка
+пройдена. Одновременные локальные xcodebuild столкнулись в общем SwiftPM cache;
+последовательный `ci.sh build` → `ci.sh test` прошёл. GitHub jobs изолированы
+по виртуальным машинам, а `ci.sh all` последователен.
+
+Добавлены компактные PR/issue templates, weekly grouped Actions Dependabot,
+LF/binary attributes и `docs/GIT_WORKFLOW.md` с порядком коротких веток, ревью,
+linear merge, dependency updates и неизменяемых релизов. Изменения проходят
+через [PR #5](https://github.com/Komortes/TrackPeek/pull/5); реальные результаты
+проверок доступны в PR и [CI](https://github.com/Komortes/TrackPeek/actions/workflows/ci.yml).
+Правила main включаются после зелёного прогона: все три проверки на актуальной
+базе, PR, linear history, resolved discussions, запрет force-push/delete,
+без обязательного второго участника для solo-maintainer. Настройки GitHub
+сохраняются отдельно от файлов репозитория; локальный отчёт и backup находятся
+в `.build/git-workflow-2026-10-21/`. Установленный app и публичный релиз не менялись.
+
 ## Начальный анализ — 2026-10-11
 
 Современный UI уже содержит настройки по разделам, десять виджетов, четыре popover-раскладки, восстановление соединения, синхронные тексты и экономию ресурсов. Отдельная переделка дизайна не обоснована.

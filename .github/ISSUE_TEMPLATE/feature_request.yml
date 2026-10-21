@@ -1,0 +1,26 @@
+name: Feature request
+description: Suggest a focused improvement to TrackPeek.
+title: "[Feature] "
+body:
+  - type: markdown
+    attributes:
+      value: Check existing issues first. Requests may be written in English, Ukrainian, or Russian.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What would this help you do?
+      description: Describe the situation and the difficulty you encounter today.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Suggested behavior
+      description: Describe the result you want and where it belongs in the app.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives or context (optional)
+      description: Mention workarounds or related issues. Remove personal information from any examples.

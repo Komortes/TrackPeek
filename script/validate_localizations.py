@@ -16,8 +16,10 @@ PLURAL_FORMS = {
 }
 ROOT = Path(__file__).resolve().parents[1]
 FORMAT = re.compile(
-    r"%%|%(?:(\d+)\$)?[-+# 0]*(?:\d+)?(?:\.\d+)?"
-    r"(hh|ll|h|l|q|z|t|j)?([@diuoxXfFeEgGaAcCsSp])"
+    r"%%|%(?:(?P<position>\d+)\$)?[-+# 0]*"
+    r"(?P<width>\d+|\*(?:\d+\$)?)?"
+    r"(?:\.(?P<precision>\d*|\*(?:\d+\$)?))?"
+    r"(?P<length>hh|ll|h|l|q|z|t|j)?(?P<type>[@diuoxXfFeEgGaAcCsSp])"
 )
 
 
@@ -27,33 +29,71 @@ def arguments(value):
     for match in FORMAT.finditer(value):
         if match[0] == "%%":
             continue
-        position = int(match[1]) if match[1] else next_position
-        result[(position, (match[2] or "") + match[3])] += 1
-        if not match[1]:
+        # A star consumes an integer argument before the formatted value.
+        # Positional stars allow translators to reorder the same arguments.
+        for field in ("width", "precision"):
+            amount = match[field] or ""
+            if amount.startswith("*"):
+                position = int(amount[1:-1]) if amount.endswith("$") else next_position
+                result[(position, "d")] += 1
+                if not amount.endswith("$"):
+                    next_position += 1
+        position = int(match["position"]) if match["position"] else next_position
+        result[(position, (match["length"] or "") + match["type"])] += 1
+        if not match["position"]:
             next_position += 1
     return result
 
 
 def validate(path):
-    catalog = json.loads(path.read_text())
+    try:
+        catalog = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as error:
+        return 0, [f"invalid JSON at line {error.lineno}, column {error.colno}: {error.msg}"]
+    except (OSError, UnicodeError) as error:
+        return 0, [f"cannot read catalog: {error}"]
+    if not isinstance(catalog, dict):
+        return 0, ["catalog must be a JSON object"]
     problems = []
     if catalog.get("sourceLanguage") != "en":
         problems.append("the development language must be English")
     entries = catalog.get("strings", {})
+    if not isinstance(entries, dict):
+        return 0, problems + ["strings must be a JSON object"]
     if not entries:
         problems.append("the catalog is empty")
     for key, entry in entries.items():
+        if not isinstance(entry, dict):
+            problems.append(f"{key!r}: invalid entry, expected a JSON object")
+            continue
+        localizations = entry.get("localizations", {})
+        if not isinstance(localizations, dict):
+            problems.append(f"{key!r}: invalid localizations, expected a JSON object")
+            continue
         values = {}
         for language in LANGUAGES:
-            localization = entry.get("localizations", {}).get(language, {})
+            localization = localizations.get(language, {})
+            if not isinstance(localization, dict):
+                problems.append(f"{key!r}: missing completed {language} translation")
+                continue
             if "variations" in localization:
-                plurals = localization["variations"].get("plural", {})
-                units = [form.get("stringUnit", {}) for form in plurals.values()]
+                variations = localization["variations"]
+                plurals = variations.get("plural", {}) if isinstance(variations, dict) else None
+                if not isinstance(plurals, dict):
+                    problems.append(f"{key!r}: invalid {language} plural forms, expected a JSON object")
+                    continue
+                units = [form.get("stringUnit", {}) if isinstance(form, dict) else None for form in plurals.values()]
                 if not PLURAL_FORMS[language].issubset(plurals):
                     problems.append(f"{key!r}: {language} is missing plural forms")
             else:
                 units = [localization.get("stringUnit", {})]
-            if not units or any(unit.get("state") != "translated" or not unit.get("value") for unit in units):
+            if not units or any(
+                not isinstance(unit, dict)
+                or unit.get("state") != "translated"
+                or not isinstance(unit.get("value"), str)
+                or not unit["value"]
+                for unit in units
+            ):
                 problems.append(f"{key!r}: missing completed {language} translation")
             else:
                 values[language] = [unit["value"] for unit in units]

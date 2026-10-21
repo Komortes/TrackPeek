@@ -48,7 +48,11 @@ Lyrics requests send song metadata to LRCLIB. Remote artwork uses player-provide
 
 ## Development
 
+![CI](https://github.com/Komortes/TrackPeek/actions/workflows/ci.yml/badge.svg)
+
 Built with **Swift 6, SwiftUI and AppKit**. Use the Xcode project; the root `Package.swift` does not configure the complete app. Setup, tests and conventions are in [CONTRIBUTING.md](CONTRIBUTING.md).
+
+Pull requests run script and localization checks, app tests with coverage, and a universal Release build. See [CI runs](https://github.com/Komortes/TrackPeek/actions/workflows/ci.yml) and the [Git workflow](docs/GIT_WORKFLOW.md) for contribution and merge rules.
 
 See [localization](docs/LOCALIZATION.md) for language resources, translation conventions and validation.
 

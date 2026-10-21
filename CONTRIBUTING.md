@@ -15,6 +15,25 @@ The build script stops the running TrackPeek process. Do not replace an installe
 
 ## Verification
 
+The same entry point runs locally and in GitHub Actions. Install XcodeGen,
+Actionlint and ShellCheck (`brew install xcodegen actionlint shellcheck`), then:
+
+```sh
+./script/ci.sh checks  # Translation/script tests, workflow/shell lint, project consistency
+./script/ci.sh test    # App-hosted tests and coverage, with temporary ad-hoc signing
+./script/ci.sh build   # Universal Release build for Apple silicon and Intel
+./script/ci.sh         # All stages
+```
+
+CI does not require your Apple certificate, signing keys, or release secrets.
+It keeps logs and test results under `.build/ci/`; GitHub also uploads reports
+as workflow artifacts. These ad-hoc builds are verification artifacts, not
+distributable releases. The workflow does not install the app, start personal
+playback services, or publish a release. Required check names are documented in
+[Git and pull requests](docs/GIT_WORKFLOW.md).
+
+For targeted app debugging with your existing signing configuration:
+
 ```sh
 xcodebuild \
   -project TrackPeek.xcodeproj \
@@ -49,6 +68,6 @@ Report the OS, Xcode version, checks run, and scenarios that need hardware or pe
 - Use cancellation and source/track identity to discard obsolete work. Keep timers and audio capture tied to their visible consumers.
 - Prefer native controls with meaningful accessibility labels. Respect Reduce Motion and resource modes.
 - Treat project.yml as the project definition and commit its regenerated Xcode project together with source changes. Keep build output, signing keys, and local credentials out of Git.
-- Keep commits focused and describe the resulting behavior and verification in a pull request. Do not rewrite shared history or force-push.
+- Keep commits focused and describe the resulting behavior and verification in a pull request. Follow the [Git workflow](docs/GIT_WORKFLOW.md) for branches, required checks, merging, dependency updates and recovery. Do not rewrite shared history or force-push.
 
 See [release preparation](docs/RELEASING.md) for maintainer-only packaging and publication. Public publication is a separate action from building local artifacts.
