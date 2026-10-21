@@ -1,0 +1,11 @@
+# Normalize source and configuration files without changing binary assets.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.icns binary
+*.pdf binary
+*.zip binary
+*.dmg binary

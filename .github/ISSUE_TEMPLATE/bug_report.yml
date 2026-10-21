@@ -1,0 +1,57 @@
+name: Bug report
+description: Report a reproducible problem in TrackPeek.
+title: "[Bug] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check existing issues first. Reports may be written in English, Ukrainian, or Russian.
+        Share only the minimum information needed to reproduce the issue. Remove song metadata, personal paths, account details, and tokens from logs or images.
+  - type: input
+    id: version
+    attributes:
+      label: TrackPeek version and build
+      description: Include the archive name or build number when available, especially for releases sharing the same display version.
+      placeholder: "1.1, build 5 (TrackPeek-1.1-build5.zip)"
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: macOS and Mac
+      description: Include macOS version and Apple silicon or Intel. Include display setup only if relevant.
+      placeholder: "macOS 26.2, Apple silicon, built-in display and one external monitor"
+    validations:
+      required: true
+  - type: dropdown
+    id: source
+    attributes:
+      label: Player involved
+      multiple: true
+      options:
+        - Spotify
+        - Apple Music
+        - No player involved
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Include the affected surface or Settings section, app language, and relevant options.
+      placeholder: |
+        1. Open ...
+        2. Select ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Expected and actual behavior
+      description: Explain what should happen and what happens instead. Note whether it occurs every time.
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics or other context (optional)
+      description: For connection or audio issues, copy the report from Settings → Resources → Diagnostics. Review it before posting. Add only relevant, redacted logs or images.
