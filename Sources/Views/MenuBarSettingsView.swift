@@ -316,7 +316,7 @@ struct PopoverSettingsSection: View {
         Button {
             playerLayoutRawValue = layout.rawValue
         } label: {
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 7) {
                 PlayerLayoutPreview(layout: layout)
 
                 HStack {
@@ -334,22 +334,27 @@ struct PopoverSettingsSection: View {
                 Text(layout.summary)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .lineLimit(3, reservesSpace: true)
+                    .lineLimit(2, reservesSpace: true)
             }
             .frame(maxWidth: .infinity, alignment: .topLeading)
-            .padding(12)
-            .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .padding(10)
+            .background(
+                playerLayout == layout ? Color.primary.opacity(0.04) : .clear,
+                in: RoundedRectangle(cornerRadius: 10, style: .continuous)
+            )
             .overlay {
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(
-                        playerLayout == layout ? Color.accentColor : Color.primary.opacity(0.07),
-                        lineWidth: playerLayout == layout ? 2 : 1
+                RoundedRectangle(cornerRadius: 10)
+                    .strokeBorder(
+                        playerLayout == layout ? Color.accentColor : .clear,
+                        lineWidth: 1.5
                     )
             }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(layout.title)
+        .accessibilityValue(layout.summary)
+        .help(layout.summary)
         .accessibilityAddTraits(playerLayout == layout ? .isSelected : [])
     }
 }
