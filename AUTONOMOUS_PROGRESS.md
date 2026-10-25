@@ -757,3 +757,13 @@ Widget и Menu Bar передают её вместе с тем же форма�
 Native Increment Width дал 360, Decrement вернул 355; actions и точность
 binding не изменены. Debug build/run и diff-check прошли. Внешние дублирующие
 labels у Equalizer убраны, новых строк переводов не потребовалось.
+
+### UI 6 — Спокойнее кнопки плеера
+
+У Previous/Next убраны постоянные круги/обводки. Фон появляется при hover/press;
+Play/Pause сохраняет основной акцент. Размеры 32/40 pt, contentShape, callbacks,
+фокус и reduced-motion ветви сохранены. Debug build/run и diff-check прошли;
+изменение видно в настоящем TrackPeek через галерею реальных player views.
+Сохранён снимок Equalizer с новыми controls. Интерактивный отдельный probe
+не проверен: CUA разрешён для TrackPeek, но не для test bundle; probe закрыт.
+Реальное воспроизведение для визуальной проверки не переключалось.
