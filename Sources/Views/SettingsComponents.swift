@@ -178,6 +178,7 @@ extension View {
 }
 
 struct SettingsValueSlider: View {
+    let label: String
     let value: Binding<Double>
     let range: ClosedRange<Double>
     let step: Double
@@ -186,6 +187,8 @@ struct SettingsValueSlider: View {
     var body: some View {
         HStack(spacing: 10) {
             Slider(value: value, in: range, step: step)
+                .accessibilityLabel(label)
+                .accessibilityValue(text)
                 .frame(width: 170)
 
             Text(text)

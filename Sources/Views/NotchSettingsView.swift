@@ -289,6 +289,7 @@ struct NotchSettingsView: View {
                         subtitle: String(localized: "Delay before expanding.")
                     ) {
                         SettingsValueSlider(
+                            label: String(localized: "Hover Delay"),
                             value: notchHoverDelay,
                             range: NotchPreferences.hoverDelayRange,
                             step: NotchPreferences.hoverDelayStep,
@@ -335,6 +336,7 @@ struct NotchSettingsView: View {
                         title: String(localized: "Duration")
                     ) {
                         SettingsValueSlider(
+                            label: String(localized: "Duration"),
                             value: notchNotificationDuration,
                             range: NotchPreferences.notificationDurationRange,
                             step: NotchPreferences.notificationDurationStep,
@@ -360,6 +362,7 @@ struct NotchSettingsView: View {
                     subtitle: String(localized: "When collapsed.")
                 ) {
                     SettingsValueSlider(
+                        label: String(localized: "Width"),
                         value: notchWidth,
                         range: NotchPreferences.widthRange,
                         step: NotchPreferences.widthStep,
@@ -374,6 +377,7 @@ struct NotchSettingsView: View {
                     subtitle: String(localized: "Adjust the fit at the top of the screen.")
                 ) {
                     SettingsValueSlider(
+                        label: String(localized: "Height Adjustment"),
                         value: notchHeightAdjustment,
                         range: NotchPreferences.heightAdjustmentRange,
                         step: NotchPreferences.heightAdjustmentStep,
@@ -390,6 +394,7 @@ struct NotchSettingsView: View {
 
                     SettingsRow(title: String(localized: "Corner Radius")) {
                         SettingsValueSlider(
+                            label: String(localized: "Corner Radius"),
                             value: notchCornerRadius,
                             range: NotchPreferences.cornerRadiusRange,
                             step: NotchPreferences.cornerRadiusStep,
@@ -450,6 +455,7 @@ struct NotchSettingsView: View {
 
                 SettingsRow(title: String(localized: "Sensitivity"), subtitle: String(localized: "How strongly the waveform responds to sound.")) {
                     SettingsValueSlider(
+                        label: String(localized: "Equalizer Sensitivity"),
                         value: notchEqualizerSensitivity,
                         range: NotchPreferences.equalizerSensitivityRange,
                         step: NotchPreferences.equalizerSensitivityStep,
@@ -459,7 +465,6 @@ struct NotchSettingsView: View {
                             NotchPreferences.clampedEqualizerSensitivity(equalizerSensitivity)
                         )
                     )
-                    .accessibilityLabel(String(localized: "Equalizer Sensitivity"))
                 }
             }
         }
@@ -483,6 +488,7 @@ struct NotchSettingsView: View {
                         title: String(localized: "Outline Width")
                     ) {
                         SettingsValueSlider(
+                            label: String(localized: "Outline Width"),
                             value: notchOutlineWidth,
                             range: NotchPreferences.outlineWidthRange,
                             step: NotchPreferences.outlineWidthStep,

@@ -747,3 +747,13 @@ Full Player, скрытие/возврат дополнительных sections
 355/+6/12 значений; Behavior и его controls доступны. В конце восстановлен
 Full Player. Debug build/run и diff-check прошли. Изменения только в Settings;
 состояние и callbacks плеера прежние.
+
+### UI 5 — Именованные слайдеры и единицы для доступности
+
+У SettingsValueSlider обязательна локализованная подпись. Все слайдеры Notch,
+Widget и Menu Bar передают её вместе с тем же форматированным значением,
+которое видно справа. CUA подтверждает Description «Width», «Height Adjustment»,
+«Hover Delay», «Equalizer Sensitivity» и Details 355 px/+6 px/0,10 s/1,8×.
+Native Increment Width дал 360, Decrement вернул 355; actions и точность
+binding не изменены. Debug build/run и diff-check прошли. Внешние дублирующие
+labels у Equalizer убраны, новых строк переводов не потребовалось.

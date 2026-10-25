@@ -161,6 +161,7 @@ struct MenuBarSettingsView: View {
                         subtitle: String(localized: "Long titles are truncated.")
                     ) {
                         SettingsValueSlider(
+                            label: String(localized: "Title Width"),
                             value: menuBarTitleWidth,
                             range: MenuBarPreferences.titleWidthRange,
                             step: MenuBarPreferences.titleWidthStep,
@@ -188,6 +189,7 @@ struct MenuBarSettingsView: View {
                         subtitle: String(localized: "Between the animation and title.")
                     ) {
                         SettingsValueSlider(
+                            label: String(localized: "Spacing"),
                             value: menuBarSpacing,
                             range: MenuBarPreferences.spacingRange,
                             step: MenuBarPreferences.spacingStep,
@@ -269,6 +271,7 @@ struct PopoverSettingsSection: View {
 
                     SettingsRow(title: String(localized: "Artwork Size")) {
                         SettingsValueSlider(
+                            label: String(localized: "Artwork Size"),
                             value: artworkSize,
                             range: ArtworkSizePreference.range,
                             step: ArtworkSizePreference.step,

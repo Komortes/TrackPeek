@@ -446,6 +446,7 @@ struct WidgetSettingsView: View {
                     SettingsGroup {
                         SettingsRow(title: String(localized: "Strip Width"), subtitle: String(localized: "Stays 56 pt tall, including on hover.")) {
                             SettingsValueSlider(
+                                label: String(localized: "Strip Width"),
                                 value: Binding(get: { NotchPreferences.clampedWidth(width) + 80 },
                                                set: { width = NotchPreferences.clampedWidth($0 - 80) }),
                                 range: 320...500, step: 5,
@@ -476,6 +477,7 @@ struct WidgetSettingsView: View {
                             subtitle: String(localized: "Base pill width. Card sizes adjust to match.")
                         ) {
                             SettingsValueSlider(
+                                label: String(localized: "Width"),
                                 value: widgetWidth,
                                 range: NotchPreferences.widthRange,
                                 step: NotchPreferences.widthStep,
@@ -514,12 +516,12 @@ struct WidgetSettingsView: View {
                             SettingsRowDivider()
                             SettingsRow(title: String(localized: "Sensitivity"), subtitle: String(localized: "How strongly the waveform responds to sound.")) {
                                 SettingsValueSlider(
+                                    label: String(localized: "Equalizer Sensitivity"),
                                     value: widgetSensitivity,
                                     range: NotchPreferences.equalizerSensitivityRange,
                                     step: NotchPreferences.equalizerSensitivityStep,
                                     text: String(format: String(localized: "%.1f×"), locale: Locale.current, NotchPreferences.clampedEqualizerSensitivity(equalizerSensitivity))
                                 )
-                                .accessibilityLabel(String(localized: "Equalizer Sensitivity"))
                             }
                         }
                     }
@@ -534,6 +536,7 @@ struct WidgetSettingsView: View {
                             SettingsRowDivider()
                             SettingsRow(title: String(localized: "Outline Width")) {
                                 SettingsValueSlider(
+                                    label: String(localized: "Outline Width"),
                                     value: widgetOutlineWidth,
                                     range: NotchPreferences.outlineWidthRange,
                                     step: NotchPreferences.outlineWidthStep,
