@@ -31,15 +31,25 @@ struct SettingsPage<Content: View>: View {
     @ViewBuilder var content: () -> Content
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                SettingsSectionHeader(title: title, subtitle: subtitle, titleFont: .title2.weight(.semibold))
+        VStack(spacing: 0) {
+            SettingsSectionHeader(title: title, subtitle: subtitle, titleFont: .system(size: 24, weight: .semibold))
+                .accessibilityElement(children: .combine)
+                .accessibilityAddTraits(.isHeader)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 24)
+                .padding(.top, 20)
+                .padding(.bottom, 18)
+
+            Divider()
+
+            ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     content()
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(24)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(24)
+            .scrollBounceBehavior(.basedOnSize)
         }
     }
 }
