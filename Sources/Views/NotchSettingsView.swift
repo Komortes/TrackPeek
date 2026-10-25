@@ -137,8 +137,11 @@ struct NotchSettingsView: View {
     }
 
     var body: some View {
-        SettingsPage(title: String(localized: "Notch"), subtitle: String(localized: "A player at the top of the screen.")) {
-            VStack(alignment: .leading, spacing: 12) {
+        SettingsPage(
+            title: String(localized: "Notch"),
+            subtitle: String(localized: "A player at the top of the screen."),
+            scrollIdentity: selectedPage.rawValue,
+            navigation: {
                 Picker(String(localized: "Notch Settings"), selection: $selectedPage) {
                     ForEach(Page.allCases, id: \.self) { page in
                         Text(page.title).tag(page)
@@ -147,9 +150,9 @@ struct NotchSettingsView: View {
                 .pickerStyle(.segmented)
                 .labelsHidden()
                 .fixedSize()
-
-                activationStatus
             }
+        ) {
+            activationStatus
 
             switch selectedPage {
             case .appearance:

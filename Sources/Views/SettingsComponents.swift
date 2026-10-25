@@ -25,20 +25,25 @@ struct SettingsWindowToolbar: NSViewRepresentable {
 /// Shared building blocks for the Settings window, kept in one place so every
 /// page renders with the same spacing and materials.
 
-struct SettingsPage<Content: View>: View {
+struct SettingsPage<Navigation: View, Content: View>: View {
     let title: String
     var subtitle: String = ""
+    var scrollIdentity: String = ""
+    @ViewBuilder var navigation: () -> Navigation
     @ViewBuilder var content: () -> Content
 
     var body: some View {
         VStack(spacing: 0) {
-            SettingsSectionHeader(title: title, subtitle: subtitle, titleFont: .system(size: 24, weight: .semibold))
-                .accessibilityElement(children: .combine)
-                .accessibilityAddTraits(.isHeader)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 24)
-                .padding(.top, 20)
-                .padding(.bottom, 18)
+            VStack(alignment: .leading, spacing: 16) {
+                SettingsSectionHeader(title: title, subtitle: subtitle, titleFont: .system(size: 24, weight: .semibold))
+                    .accessibilityElement(children: .combine)
+                    .accessibilityAddTraits(.isHeader)
+                navigation()
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 24)
+            .padding(.top, 20)
+            .padding(.bottom, 18)
 
             Divider()
 
@@ -50,7 +55,17 @@ struct SettingsPage<Content: View>: View {
                 .padding(24)
             }
             .scrollBounceBehavior(.basedOnSize)
+            .id(scrollIdentity)
         }
+    }
+}
+
+extension SettingsPage where Navigation == EmptyView {
+    init(title: String, subtitle: String = "", @ViewBuilder content: @escaping () -> Content) {
+        self.title = title
+        self.subtitle = subtitle
+        self.navigation = { EmptyView() }
+        self.content = content
     }
 }
 

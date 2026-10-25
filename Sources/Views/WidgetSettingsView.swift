@@ -116,8 +116,11 @@ struct WidgetSettingsView: View {
     }
 
     var body: some View {
-        SettingsPage(title: String(localized: "Widget"), subtitle: String(localized: "A floating player on your desktop.")) {
-            VStack(alignment: .leading, spacing: 12) {
+        SettingsPage(
+            title: String(localized: "Widget"),
+            subtitle: String(localized: "A floating player on your desktop."),
+            scrollIdentity: selectedPage.rawValue,
+            navigation: {
                 Picker(String(localized: "Widget Settings"), selection: $selectedPage) {
                     ForEach(Page.allCases) { page in
                         Text(page.title).tag(page)
@@ -126,9 +129,9 @@ struct WidgetSettingsView: View {
                 .pickerStyle(.segmented)
                 .labelsHidden()
                 .fixedSize()
-
-                activationStatus
             }
+        ) {
+            activationStatus
 
             switch selectedPage {
             case .template:

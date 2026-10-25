@@ -40,16 +40,22 @@ struct MenuBarSettingsView: View {
     }
 
     var body: some View {
-        SettingsPage(title: String(localized: "Menu Bar"), subtitle: String(localized: "Indicators and the player window in the menu bar.")) {
-            Picker(String(localized: "Menu Bar Settings"), selection: $selectedPage) {
-                ForEach(Page.allCases, id: \.self) { page in
-                    Text(page.title).tag(page)
+        SettingsPage(
+            title: String(localized: "Menu Bar"),
+            subtitle: String(localized: "Indicators and the player window in the menu bar."),
+            scrollIdentity: selectedPage.rawValue,
+            navigation: {
+                Picker(String(localized: "Menu Bar Settings"), selection: $selectedPage) {
+                    ForEach(Page.allCases, id: \.self) { page in
+                        Text(page.title).tag(page)
+                    }
                 }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .fixedSize()
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .fixedSize()
-            .frame(maxWidth: .infinity, alignment: .leading)
+        ) {
 
             switch selectedPage {
             case .menuBar:
