@@ -17,6 +17,8 @@ struct WidgetSurfaceContent: View {
     /// «Обложка сбоку» — это тот же раскрытый плеер чёлки в постоянном
     /// размере; переиспользуем NotchSurfaceContent вместо дублирования тела.
     let onCollapse: () -> Void
+    /// Settings stills omit native volume controls, which ImageRenderer cannot draw.
+    var showsSecondaryControls = true
 
     private var context: WidgetCardContext {
         WidgetCardContext(
@@ -26,7 +28,8 @@ struct WidgetSurfaceContent: View {
             palette: palette,
             coloredProgress: appearance.coloredProgress,
             coloredWaveform: appearance.coloredWaveform,
-            equalizerSensitivity: appearance.equalizerSensitivityOverride ?? NotchPreferences.equalizerSensitivityFallback
+            equalizerSensitivity: appearance.equalizerSensitivityOverride ?? NotchPreferences.equalizerSensitivityFallback,
+            showsSecondaryControls: showsSecondaryControls
         )
     }
 
@@ -45,7 +48,7 @@ struct WidgetSurfaceContent: View {
                 clickEnabled: false,
                 onTogglePin: {},
                 onCollapse: onCollapse,
-                showsSecondaryControls: true
+                showsSecondaryControls: showsSecondaryControls
             )
         } else if let track = model.track {
             switch layout {

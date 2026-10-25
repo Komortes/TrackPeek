@@ -137,8 +137,11 @@ struct NotchSettingsView: View {
     }
 
     var body: some View {
-        SettingsPage(title: String(localized: "Notch"), subtitle: String(localized: "A player at the top of the screen.")) {
-            VStack(alignment: .leading, spacing: 12) {
+        SettingsPage(
+            title: String(localized: "Notch"),
+            subtitle: String(localized: "A player at the top of the screen."),
+            scrollIdentity: selectedPage.rawValue,
+            navigation: {
                 Picker(String(localized: "Notch Settings"), selection: $selectedPage) {
                     ForEach(Page.allCases, id: \.self) { page in
                         Text(page.title).tag(page)
@@ -147,9 +150,9 @@ struct NotchSettingsView: View {
                 .pickerStyle(.segmented)
                 .labelsHidden()
                 .fixedSize()
-
-                activationStatus
             }
+        ) {
+            activationStatus
 
             switch selectedPage {
             case .appearance:
@@ -174,14 +177,9 @@ struct NotchSettingsView: View {
 
     private var layoutSection: some View {
         SettingsSection(title: String(localized: "Content")) {
-            SettingsGroup {
-                SettingsRow(title: String(localized: "Layout"), subtitle: (NotchContentLayout(rawValue: contentLayoutRaw) ?? .fallback).summary) {
-                    Picker(String(localized: "Notch Layout"), selection: $contentLayoutRaw) {
-                        ForEach(NotchContentLayout.allCases) { layout in
-                            Text(layout.title).tag(layout.rawValue)
-                        }
-                    }
-                    .settingsMenuControl()
+            HStack(alignment: .top, spacing: 12) {
+                ForEach(NotchContentLayout.allCases) { layout in
+                    layoutChoice(layout)
                 }
             }
 
@@ -191,6 +189,44 @@ struct NotchSettingsView: View {
                     .foregroundStyle(.secondary)
             }
         }
+    }
+
+    private func layoutChoice(_ layout: NotchContentLayout) -> some View {
+        let isSelected = (NotchContentLayout(rawValue: contentLayoutRaw) ?? .fallback) == layout
+        return Button {
+            contentLayoutRaw = layout.rawValue
+        } label: {
+            VStack(alignment: .leading, spacing: 10) {
+                SettingsPlayerPreview(surface: .notch(layout))
+                    .frame(height: 132)
+                HStack {
+                    Text(layout.title).font(.headline)
+                    Spacer()
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.tint)
+                        .opacity(isSelected ? 1 : 0)
+                }
+                Text(layout.summary)
+                    .font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, minHeight: 32, alignment: .topLeading)
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(.primary.opacity(isSelected ? 0.05 : 0.02),
+                in: RoundedRectangle(cornerRadius: 10))
+            .overlay {
+                RoundedRectangle(cornerRadius: 10)
+                    .strokeBorder(isSelected ? Color.accentColor : Color.primary.opacity(0.08),
+                        lineWidth: isSelected ? 1.5 : 1)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(layout.title)
+        .accessibilityValue(layout.summary)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .help(layout.summary)
     }
 
     private var isPanelModeActive: Bool {
@@ -256,6 +292,7 @@ struct NotchSettingsView: View {
                         subtitle: String(localized: "Delay before expanding.")
                     ) {
                         SettingsValueSlider(
+                            label: String(localized: "Hover Delay"),
                             value: notchHoverDelay,
                             range: NotchPreferences.hoverDelayRange,
                             step: NotchPreferences.hoverDelayStep,
@@ -302,6 +339,7 @@ struct NotchSettingsView: View {
                         title: String(localized: "Duration")
                     ) {
                         SettingsValueSlider(
+                            label: String(localized: "Duration"),
                             value: notchNotificationDuration,
                             range: NotchPreferences.notificationDurationRange,
                             step: NotchPreferences.notificationDurationStep,
@@ -319,9 +357,7 @@ struct NotchSettingsView: View {
 
     private var sizeSection: some View {
         SettingsSection(title: String(localized: "Size and Shape")) {
-            if !isFocusLayout {
-                notchSizePreview
-            }
+            notchSizePreview
 
             SettingsGroup {
                 SettingsRow(
@@ -329,6 +365,7 @@ struct NotchSettingsView: View {
                     subtitle: String(localized: "When collapsed.")
                 ) {
                     SettingsValueSlider(
+                        label: String(localized: "Width"),
                         value: notchWidth,
                         range: NotchPreferences.widthRange,
                         step: NotchPreferences.widthStep,
@@ -343,6 +380,7 @@ struct NotchSettingsView: View {
                     subtitle: String(localized: "Adjust the fit at the top of the screen.")
                 ) {
                     SettingsValueSlider(
+                        label: String(localized: "Height Adjustment"),
                         value: notchHeightAdjustment,
                         range: NotchPreferences.heightAdjustmentRange,
                         step: NotchPreferences.heightAdjustmentStep,
@@ -359,6 +397,7 @@ struct NotchSettingsView: View {
 
                     SettingsRow(title: String(localized: "Corner Radius")) {
                         SettingsValueSlider(
+                            label: String(localized: "Corner Radius"),
                             value: notchCornerRadius,
                             range: NotchPreferences.cornerRadiusRange,
                             step: NotchPreferences.cornerRadiusStep,
@@ -419,6 +458,7 @@ struct NotchSettingsView: View {
 
                 SettingsRow(title: String(localized: "Sensitivity"), subtitle: String(localized: "How strongly the waveform responds to sound.")) {
                     SettingsValueSlider(
+                        label: String(localized: "Equalizer Sensitivity"),
                         value: notchEqualizerSensitivity,
                         range: NotchPreferences.equalizerSensitivityRange,
                         step: NotchPreferences.equalizerSensitivityStep,
@@ -428,7 +468,6 @@ struct NotchSettingsView: View {
                             NotchPreferences.clampedEqualizerSensitivity(equalizerSensitivity)
                         )
                     )
-                    .accessibilityLabel(String(localized: "Equalizer Sensitivity"))
                 }
             }
         }
@@ -452,6 +491,7 @@ struct NotchSettingsView: View {
                         title: String(localized: "Outline Width")
                     ) {
                         SettingsValueSlider(
+                            label: String(localized: "Outline Width"),
                             value: notchOutlineWidth,
                             range: NotchPreferences.outlineWidthRange,
                             step: NotchPreferences.outlineWidthStep,
