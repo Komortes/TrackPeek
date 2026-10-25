@@ -174,14 +174,9 @@ struct NotchSettingsView: View {
 
     private var layoutSection: some View {
         SettingsSection(title: String(localized: "Content")) {
-            SettingsGroup {
-                SettingsRow(title: String(localized: "Layout"), subtitle: (NotchContentLayout(rawValue: contentLayoutRaw) ?? .fallback).summary) {
-                    Picker(String(localized: "Notch Layout"), selection: $contentLayoutRaw) {
-                        ForEach(NotchContentLayout.allCases) { layout in
-                            Text(layout.title).tag(layout.rawValue)
-                        }
-                    }
-                    .settingsMenuControl()
+            HStack(alignment: .top, spacing: 12) {
+                ForEach(NotchContentLayout.allCases) { layout in
+                    layoutChoice(layout)
                 }
             }
 
@@ -191,6 +186,44 @@ struct NotchSettingsView: View {
                     .foregroundStyle(.secondary)
             }
         }
+    }
+
+    private func layoutChoice(_ layout: NotchContentLayout) -> some View {
+        let isSelected = (NotchContentLayout(rawValue: contentLayoutRaw) ?? .fallback) == layout
+        return Button {
+            contentLayoutRaw = layout.rawValue
+        } label: {
+            VStack(alignment: .leading, spacing: 10) {
+                SettingsPlayerPreview(surface: .notch(layout))
+                    .frame(height: 132)
+                HStack {
+                    Text(layout.title).font(.headline)
+                    Spacer()
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.tint)
+                        .opacity(isSelected ? 1 : 0)
+                }
+                Text(layout.summary)
+                    .font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, minHeight: 32, alignment: .topLeading)
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(.primary.opacity(isSelected ? 0.05 : 0.02),
+                in: RoundedRectangle(cornerRadius: 10))
+            .overlay {
+                RoundedRectangle(cornerRadius: 10)
+                    .strokeBorder(isSelected ? Color.accentColor : Color.primary.opacity(0.08),
+                        lineWidth: isSelected ? 1.5 : 1)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(layout.title)
+        .accessibilityValue(layout.summary)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .help(layout.summary)
     }
 
     private var isPanelModeActive: Bool {
@@ -319,9 +352,7 @@ struct NotchSettingsView: View {
 
     private var sizeSection: some View {
         SettingsSection(title: String(localized: "Size and Shape")) {
-            if !isFocusLayout {
-                notchSizePreview
-            }
+            notchSizePreview
 
             SettingsGroup {
                 SettingsRow(

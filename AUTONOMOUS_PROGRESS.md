@@ -737,3 +737,13 @@ CUA: controls on/off, title/animation off, title width 60/100 и spacing 5/14.
 Изначальные значения 100/5, title/animation on, controls off восстановлены.
 Debug build/run, полный набор тестов UI 2 и diff-check прошли; в этот прогон
 входил и готовый MenuBarSettingsView. Логика рабочего playback не менялась.
+
+### UI 4 — Видимая разница Full Player и Focus
+
+Notch Layout вынесен из выпадающего меню в две доступные кнопки с настоящими
+статичными превью, существующими описаниями и явным выбранным состоянием.
+Размер collapsed-panel теперь виден и в Focus. CUA: Full Player → Focus →
+Full Player, скрытие/возврат дополнительных sections и сохранение прежних
+355/+6/12 значений; Behavior и его controls доступны. В конце восстановлен
+Full Player. Debug build/run и diff-check прошли. Изменения только в Settings;
+состояние и callbacks плеера прежние.
