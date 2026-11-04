@@ -116,8 +116,11 @@ struct WidgetSettingsView: View {
     }
 
     var body: some View {
-        SettingsPage(title: String(localized: "Widget"), subtitle: String(localized: "A floating player on your desktop.")) {
-            VStack(alignment: .leading, spacing: 12) {
+        SettingsPage(
+            title: String(localized: "Widget"),
+            subtitle: String(localized: "A floating player on your desktop."),
+            scrollIdentity: selectedPage.rawValue,
+            navigation: {
                 Picker(String(localized: "Widget Settings"), selection: $selectedPage) {
                     ForEach(Page.allCases) { page in
                         Text(page.title).tag(page)
@@ -126,9 +129,9 @@ struct WidgetSettingsView: View {
                 .pickerStyle(.segmented)
                 .labelsHidden()
                 .fixedSize()
-
-                activationStatus
             }
+        ) {
+            activationStatus
 
             switch selectedPage {
             case .template:
@@ -183,66 +186,63 @@ struct WidgetSettingsView: View {
             .pickerStyle(.segmented)
             .labelsHidden()
 
-            LazyVGrid(
-                columns: [GridItem(.adaptive(minimum: 170, maximum: 220), spacing: 12)],
-                alignment: .leading,
-                spacing: 12
-            ) {
-                ForEach((browsedFamily ?? selectedLayout.family).layouts) { layout in
-                    layoutCard(layout)
+            HStack(alignment: .top, spacing: 24) {
+                VStack(spacing: 4) {
+                    ForEach((browsedFamily ?? selectedLayout.family).layouts) { layout in
+                        layoutChoice(layout)
+                    }
                 }
-            }
+                .frame(width: 200)
 
+                VStack(alignment: .leading, spacing: 12) {
+                    SettingsPlayerPreview(surface: .widget(selectedLayout))
+                        .frame(height: 252)
+                        .frame(maxWidth: .infinity)
+                        .background(.primary.opacity(0.025), in: RoundedRectangle(cornerRadius: 12))
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(selectedLayout.title).font(.headline)
+                        Text(selectedLayout.summary)
+                            .font(.callout).foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .accessibilityElement(children: .combine)
+
+                    Text(String(localized: "Preview"))
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
         }
     }
 
-    private func layoutCard(_ layout: NotchWidgetLayout) -> some View {
+    private func layoutChoice(_ layout: NotchWidgetLayout) -> some View {
         let isSelected = selectedLayout == layout
-
         return Button {
             widgetLayoutRawValue = layout.rawValue
         } label: {
-            VStack(spacing: 7) {
-                WidgetLayoutPreview(layout: layout)
-                    .frame(height: 64)
-                    .frame(maxWidth: .infinity)
-
-                VStack(spacing: 1) {
-                    HStack(spacing: 5) {
-                        Text(layout.title)
-                            .font(.system(size: 12, weight: .semibold))
-                        if isSelected {
-                            Image(systemName: "checkmark.circle.fill")
-                                .font(.system(size: 11))
-                                .foregroundStyle(.tint)
-                        }
-                    }
-
+            HStack(alignment: .top, spacing: 10) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(layout.title).font(.system(size: 13, weight: .semibold))
                     Text(layout.summary)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .lineLimit(2, reservesSpace: true)
+                        .font(.caption).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                Image(systemName: "checkmark")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.tint)
+                    .opacity(isSelected ? 1 : 0)
             }
-            .padding(10)
-            .frame(maxWidth: .infinity)
-            .background(
-                isSelected ? AnyShapeStyle(Color.accentColor.opacity(0.12)) : AnyShapeStyle(.thinMaterial),
-                in: RoundedRectangle(cornerRadius: 11, style: .continuous)
-            )
-            .overlay {
-                RoundedRectangle(cornerRadius: 11, style: .continuous)
-                    .stroke(
-                        isSelected ? Color.accentColor : Color.primary.opacity(0.08),
-                        lineWidth: isSelected ? 1.5 : 1
-                    )
-            }
+            .padding(12)
+            .background(isSelected ? Color.primary.opacity(0.065) : .clear,
+                in: RoundedRectangle(cornerRadius: 8))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .help(layout.summary)
         .accessibilityLabel(layout.title)
+        .accessibilityValue(layout.summary)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
@@ -449,6 +449,7 @@ struct WidgetSettingsView: View {
                     SettingsGroup {
                         SettingsRow(title: String(localized: "Strip Width"), subtitle: String(localized: "Stays 56 pt tall, including on hover.")) {
                             SettingsValueSlider(
+                                label: String(localized: "Strip Width"),
                                 value: Binding(get: { NotchPreferences.clampedWidth(width) + 80 },
                                                set: { width = NotchPreferences.clampedWidth($0 - 80) }),
                                 range: 320...500, step: 5,
@@ -479,6 +480,7 @@ struct WidgetSettingsView: View {
                             subtitle: String(localized: "Base pill width. Card sizes adjust to match.")
                         ) {
                             SettingsValueSlider(
+                                label: String(localized: "Width"),
                                 value: widgetWidth,
                                 range: NotchPreferences.widthRange,
                                 step: NotchPreferences.widthStep,
@@ -517,12 +519,12 @@ struct WidgetSettingsView: View {
                             SettingsRowDivider()
                             SettingsRow(title: String(localized: "Sensitivity"), subtitle: String(localized: "How strongly the waveform responds to sound.")) {
                                 SettingsValueSlider(
+                                    label: String(localized: "Equalizer Sensitivity"),
                                     value: widgetSensitivity,
                                     range: NotchPreferences.equalizerSensitivityRange,
                                     step: NotchPreferences.equalizerSensitivityStep,
                                     text: String(format: String(localized: "%.1f×"), locale: Locale.current, NotchPreferences.clampedEqualizerSensitivity(equalizerSensitivity))
                                 )
-                                .accessibilityLabel(String(localized: "Equalizer Sensitivity"))
                             }
                         }
                     }
@@ -537,6 +539,7 @@ struct WidgetSettingsView: View {
                             SettingsRowDivider()
                             SettingsRow(title: String(localized: "Outline Width")) {
                                 SettingsValueSlider(
+                                    label: String(localized: "Outline Width"),
                                     value: widgetOutlineWidth,
                                     range: NotchPreferences.outlineWidthRange,
                                     step: NotchPreferences.outlineWidthStep,
@@ -570,187 +573,4 @@ struct WidgetSettingsView: View {
         }
     }
 
-}
-
-/// Схематичное мини-превью раскладки для карточек выбора.
-struct WidgetLayoutPreview: View {
-    let layout: NotchWidgetLayout
-
-    private let accent = Color.accentColor
-
-    var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color.primary.opacity(0.05))
-
-            preview
-                .padding(8)
-        }
-    }
-
-    @ViewBuilder
-    private var preview: some View {
-        switch layout {
-        case .pill:
-            Capsule()
-                .fill(Color.black)
-                .frame(width: 84, height: 16)
-                .overlay {
-                    HStack(spacing: 3) {
-                        miniSquare(6)
-                        Capsule().fill(.white.opacity(0.35)).frame(width: 30, height: 3)
-                        miniBars
-                    }
-                }
-        case .edge:
-            card(width: 24, height: 70) {
-                VStack(spacing: 5) {
-                    miniSquare(16)
-                    Image(systemName: "backward.fill")
-                    Image(systemName: "play.circle.fill")
-                    Image(systemName: "forward.fill")
-                }
-                .font(.system(size: 6, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.85))
-            }
-        case .miniBar:
-            Capsule()
-                .fill(Color.black)
-                .frame(width: 110, height: 18)
-                .overlay {
-                    HStack(spacing: 4) {
-                        miniSquare(8)
-                        Capsule().fill(.white.opacity(0.35)).frame(width: 34, height: 3)
-                        controlsDots
-                    }
-                }
-        case .cardHorizontal:
-            card(width: 110, height: 52) {
-                HStack(spacing: 6) {
-                    miniSquare(24)
-                    VStack(alignment: .leading, spacing: 4) {
-                        Capsule().fill(.white.opacity(0.5)).frame(width: 40, height: 4)
-                        Capsule().fill(accent).frame(width: 52, height: 3)
-                        controlsDots
-                    }
-                }
-            }
-        case .cardVertical:
-            card(width: 56, height: 60) {
-                VStack(spacing: 4) {
-                    miniSquare(22)
-                    Capsule().fill(.white.opacity(0.5)).frame(width: 28, height: 3)
-                    controlsDots
-                }
-            }
-        case .artworkSquare:
-            card(width: 52, height: 52) {
-                VStack(spacing: 0) {
-                    Spacer()
-                    Rectangle()
-                        .fill(.white.opacity(0.22))
-                        .frame(height: 14)
-                        .overlay { controlsDots }
-                }
-            }
-            .background {
-                RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [accent.opacity(0.7), .purple.opacity(0.6)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: 52, height: 52)
-            }
-        case .lyricStrip:
-            card(width: 118, height: 25) {
-                HStack(spacing: 5) {
-                    Image(systemName: "quote.opening").font(.system(size: 7)).foregroundStyle(.white.opacity(0.4))
-                    Capsule().fill(.white.opacity(0.85)).frame(width: 75, height: 4)
-                }
-            }
-        case .lyricsCard:
-            card(width: 110, height: 34) {
-                HStack(spacing: 5) {
-                    miniSquare(16)
-                    VStack(alignment: .leading, spacing: 3) {
-                        Capsule().fill(accent).frame(width: 46, height: 4)
-                        Capsule().fill(.white.opacity(0.3)).frame(width: 34, height: 3)
-                    }
-                    controlsDots
-                }
-            }
-        case .karaokeCard:
-            card(width: 96, height: 58) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Capsule().fill(.white.opacity(0.25)).frame(width: 40, height: 3)
-                    Capsule().fill(accent).frame(width: 64, height: 5)
-                    Capsule().fill(.white.opacity(0.4)).frame(width: 50, height: 3)
-                    Capsule().fill(.white.opacity(0.25)).frame(width: 44, height: 3)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-        case .equalizerCard:
-            card(width: 96, height: 46) {
-                VStack(spacing: 4) {
-                    HStack(alignment: .bottom, spacing: 3) {
-                        ForEach(0..<9, id: \.self) { index in
-                            Capsule()
-                                .fill(accent.opacity(0.85))
-                                .frame(width: 4, height: [10, 16, 22, 14, 18, 24, 12, 18, 10][index])
-                        }
-                    }
-                    Capsule().fill(.white.opacity(0.35)).frame(width: 48, height: 3)
-                }
-            }
-        }
-    }
-
-    private func card(
-        width: CGFloat,
-        height: CGFloat,
-        @ViewBuilder content: () -> some View
-    ) -> some View {
-        RoundedRectangle(cornerRadius: 7, style: .continuous)
-            .fill(Color.black)
-            .frame(width: width, height: height)
-            .overlay {
-                content()
-                    .padding(5)
-            }
-    }
-
-    private func miniSquare(_ side: CGFloat) -> some View {
-        RoundedRectangle(cornerRadius: max(2, side * 0.2), style: .continuous)
-            .fill(
-                LinearGradient(
-                    colors: [accent.opacity(0.8), .purple.opacity(0.7)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
-            .frame(width: side, height: side)
-    }
-
-    private var miniBars: some View {
-        HStack(alignment: .center, spacing: 1.5) {
-            ForEach(0..<3, id: \.self) { index in
-                Capsule()
-                    .fill(accent)
-                    .frame(width: 2, height: [5, 8, 6][index])
-            }
-        }
-    }
-
-    private var controlsDots: some View {
-        HStack(spacing: 3) {
-            ForEach(0..<3, id: \.self) { _ in
-                Circle()
-                    .fill(.white.opacity(0.55))
-                    .frame(width: 4, height: 4)
-            }
-        }
-    }
 }
