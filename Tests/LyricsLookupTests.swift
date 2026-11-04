@@ -97,6 +97,40 @@ struct LyricsLookupTests {
         #expect(await gate.calls == 1)
     }
 
+    @Test("lyrics transport does not retain cacheable exact or fallback HTTP responses", arguments: [false, true])
+    func transportDoesNotCacheResponses(fallback: Bool) async throws {
+        // The control proves that bypassing cache reads still permits writes.
+        // Both sessions are isolated from the app's real cache and network.
+        for control in [true, false] {
+            let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            let cache = URLCache(memoryCapacity: 1_000_000, diskCapacity: 4_000_000, directory: directory)
+            defer {
+                cache.removeAllCachedResponses()
+                try? FileManager.default.removeItem(at: directory)
+            }
+            let configuration = control ? URLSessionConfiguration.default : LRCLibLyricsClient.defaultSession.configuration
+            if configuration.urlCache != nil {
+                // Preserve whether caching is enabled while redirecting any writes
+                // to this test's disposable cache, including in a failing regression.
+                configuration.urlCache = cache
+            }
+            configuration.httpCookieStorage = nil
+            configuration.urlCredentialStorage = nil
+            configuration.protocolClasses = [CacheableLyricsProtocol.self]
+            let session = URLSession(configuration: configuration)
+            defer { session.invalidateAndCancel() }
+
+            let request = LyricsRequest(title: fallback ? "Fallback Fixture" : "Exact Fixture",
+                                        artist: "Synthetic Artist", album: "Synthetic Album", duration: 180)
+            let result = try await LRCLibLyricsClient(session: session).fetchLyrics(for: request)
+            #expect(result?.plainText == "Synthetic lyrics")
+            #expect((cache.currentMemoryUsage > 0) == control)
+            if !control {
+                #expect(session.configuration.urlCache == nil)
+            }
+        }
+    }
+
     private func record(title: String = "Song", artist: String = "Artist", album: String = "Album",
                         duration: Double = 180, text: String = "Words", instrumental: Bool = false) -> Data {
         try! JSONSerialization.data(withJSONObject: ["trackName": title, "artistName": artist,
@@ -106,6 +140,34 @@ struct LyricsLookupTests {
     private func array(_ records: [Data]) -> Data {
         Data(("[" + records.map { String(decoding: $0, as: UTF8.self) }.joined(separator: ",") + "]").utf8)
     }
+}
+
+private final class CacheableLyricsProtocol: URLProtocol, @unchecked Sendable {
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+
+    override func startLoading() {
+        guard let url = request.url,
+              let title = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?
+                .first(where: { $0.name == "track_name" })?.value else {
+            client?.urlProtocol(self, didFailWithError: URLError(.badURL))
+            return
+        }
+        let isSearch = url.path == "/api/search"
+        let isMiss = !isSearch && title == "Fallback Fixture"
+        let record: [String: Any] = ["trackName": title, "artistName": "Synthetic Artist",
+            "albumName": "Synthetic Album", "duration": 180, "plainLyrics": "Synthetic lyrics"]
+        let body = isMiss ? Data() : try! JSONSerialization.data(withJSONObject: isSearch ? [record] : record)
+        let response = HTTPURLResponse(url: url, statusCode: isMiss ? 404 : 200, httpVersion: "HTTP/1.1",
+                                       headerFields: ["Cache-Control": "public, max-age=3600",
+                                                      "Content-Type": "application/json",
+                                                      "Content-Length": String(body.count)])!
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .allowed)
+        client?.urlProtocol(self, didLoad: body)
+        client?.urlProtocolDidFinishLoading(self)
+    }
+
+    override func stopLoading() { }
 }
 
 private actor LyricsHTTPFixture {

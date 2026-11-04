@@ -92,9 +92,16 @@ protocol LyricsProviding: Sendable {
 /// Клиент LRCLIB (lrclib.net) — открытый каталог синхронизированных текстов,
 /// без ключей и авторизации.
 struct LRCLibLyricsClient: LyricsProviding {
+    static let defaultSession: URLSession = {
+        let configuration = URLSessionConfiguration.ephemeral
+        // Query URLs contain song metadata. LyricsStore owns the bounded
+        // in-memory cache; HTTP responses must not create a persistent cache.
+        configuration.urlCache = nil
+        return URLSession(configuration: configuration)
+    }()
     private let load: @Sendable (URLRequest) async throws -> (Data, URLResponse)
 
-    init(session: URLSession = .shared) {
+    init(session: URLSession = defaultSession) {
         load = { try await session.data(for: $0) }
     }
 
