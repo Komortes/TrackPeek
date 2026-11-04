@@ -5,10 +5,11 @@ import Observation
 @MainActor
 final class SpotifySpikeModel {
     private let provider: any SpotifyPlaybackProviding
+    private let currentDate: () -> Date
 
     private(set) var track: SpotifyTrack?
     private(set) var statusText = String(localized: "Refreshing…")
-    private(set) var snapshotDate = Date()
+    private(set) var snapshotDate: Date
     private(set) var availability: PlaybackAvailability = .loading
     /// Реально резолвнутый источник — не гадаем по сохранённой preference,
     /// потому что в режиме «Автоматически» она не говорит, что играет сейчас.
@@ -44,8 +45,11 @@ final class SpotifySpikeModel {
         commandTask?.cancel()
     }
 
-    init(provider: any SpotifyPlaybackProviding = PlaybackSourceRouter()) {
+    init(provider: any SpotifyPlaybackProviding = PlaybackSourceRouter(),
+         currentDate: @escaping () -> Date = Date.init) {
         self.provider = provider
+        self.currentDate = currentDate
+        snapshotDate = currentDate()
     }
 
     var activeSourceDisplayName: String {
@@ -127,7 +131,8 @@ final class SpotifySpikeModel {
             guard generation == refreshGeneration, !Task.isCancelled else { return }
             if let source = fetched.source, source != activeSource { cancelCommand() }
             activeSource = fetched.source ?? activeSource
-            lastSuccessfulRefresh = Date()
+            let now = currentDate()
+            lastSuccessfulRefresh = now
             consecutiveFailures = 0
 
             guard !fetched.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
@@ -138,7 +143,6 @@ final class SpotifySpikeModel {
                 return
             }
 
-            let now = Date()
             track = reconciled(fetched, now: now)
             snapshotDate = now
             availability = .ready
@@ -171,7 +175,7 @@ final class SpotifySpikeModel {
 
     private func freezeSnapshot() {
         guard let current = track else { return }
-        let now = Date()
+        let now = currentDate()
         let position = PlaybackPositionResolver.livePosition(
             snapshotPosition: current.position, snapshotDate: snapshotDate,
             now: now, duration: current.duration, isPlaying: current.isPlaying
@@ -262,8 +266,9 @@ final class SpotifySpikeModel {
                    track.title == originalTrack?.title, track.artist == originalTrack?.artist,
                    track.album == originalTrack?.album, track.source == originalTrack?.source {
                     self.track = track.withPosition(seekPosition)
-                    self.snapshotDate = Date()
-                    self.seekSettlingDeadline = Date().addingTimeInterval(2)
+                    let now = self.currentDate()
+                    self.snapshotDate = now
+                    self.seekSettlingDeadline = now.addingTimeInterval(2)
                 } else {
                     await self.refreshAfterCommand(id: id)
                 }
@@ -290,12 +295,20 @@ final class SpotifySpikeModel {
             current.source == fetched.source,
             current.title == fetched.title,
             current.artist == fetched.artist,
-            abs(current.duration - fetched.duration) < 1,
-            current.isPlaying,
-            fetched.isPlaying
+            current.album == fetched.album,
+            abs(current.duration - fetched.duration) < 1
         else {
             seekSettlingDeadline = nil
             return fetched
+        }
+
+        let isPlaying = current.isPlaying && fetched.isPlaying
+        let isSeekSettling = seekSettlingDeadline.map { now < $0 } ?? false
+        if !isSeekSettling {
+            seekSettlingDeadline = nil
+            // Paused snapshots must accept external seeks, including small ones.
+            // Ordinary drift smoothing is only useful while playback advances.
+            guard isPlaying else { return fetched }
         }
 
         let predicted = PlaybackPositionResolver.livePosition(
@@ -303,13 +316,8 @@ final class SpotifySpikeModel {
             snapshotDate: snapshotDate,
             now: now,
             duration: current.duration,
-            isPlaying: true
+            isPlaying: isPlaying
         )
-        let isSeekSettling = seekSettlingDeadline.map { now < $0 } ?? false
-        if !isSeekSettling {
-            seekSettlingDeadline = nil
-        }
-
         let position = PlaybackPositionResolver.reconciledPosition(
             fetched: fetched.position,
             predicted: predicted,

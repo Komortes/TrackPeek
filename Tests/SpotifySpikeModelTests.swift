@@ -3,7 +3,7 @@ import Testing
 @testable import TrackPeek
 
 @MainActor
-@Suite("Spotify spike model")
+@Suite("Spotify spike model", .timeLimit(.minutes(1)))
 struct SpotifySpikeModelTests {
     @Test("starts in the loading state")
     func startsLoading() {
@@ -516,6 +516,220 @@ private func waitForFirstFetch(_ provider: DelayedSpotifyProvider) async throws 
         try await Task.sleep(for: .milliseconds(1))
     }
     try #require(await provider.isWaiting, "Provider did not start within two seconds")
+}
+
+extension SpotifySpikeModelTests {
+    @Test("a delayed pre-seek read cannot roll back a paused seek")
+    func pausedSeekRejectsDelayedPosition() async throws {
+        var initial = SpotifyTrack(title: "Song", artist: "Artist", album: "Album", duration: 180,
+                                   position: 20, isPlaying: false, source: .spotify)
+        initial.secondary = PlaybackSecondaryState(isShuffling: true, repeatMode: .all, volume: 42)
+        let provider = SeekSnapshotProvider(initial)
+        let clock = SeekTestClock()
+        let model = SpotifySpikeModel(provider: provider, currentDate: { clock.now })
+        await model.refresh()
+        await provider.holdNextRead()
+        let pendingRead = Task { await model.refresh() }
+        await provider.waitForHeldRead()
+
+        await model.seek(to: 80)
+        #expect(model.track?.position == 80)
+        clock.advance(0.5)
+        await provider.finishHeldRead()
+        await pendingRead.value
+
+        #expect(model.track?.position == 80)
+        #expect(model.track?.isPlaying == false)
+        #expect(model.track?.secondary == initial.secondary)
+        #expect(model.track?.source == .spotify)
+        #expect(await provider.seekPositions == [80])
+        #expect(model.nextRefreshDelay == 4)
+        await provider.setTrack(initial.withPosition(80))
+        await model.refresh()
+        #expect(model.track?.position == 80)
+    }
+
+    @Test("paused settlement expires exactly after two seconds and accepts small external seeks")
+    func pausedSeekExpiry() async {
+        let initial = SpotifyTrack(title: "Song", artist: "Artist", duration: 180,
+                                   position: 20, isPlaying: false, source: .spotify)
+        let provider = SeekSnapshotProvider(initial)
+        let clock = SeekTestClock()
+        let model = SpotifySpikeModel(provider: provider, currentDate: { clock.now })
+        await model.refresh()
+        await model.seek(to: 80)
+        let seekDate = clock.now
+
+        clock.now = seekDate.addingTimeInterval(1.999)
+        await model.refresh()
+        #expect(model.track?.position == 80)
+        clock.now = seekDate.addingTimeInterval(2)
+        await provider.setTrack(initial.withPosition(79.5))
+        await model.refresh()
+        #expect(model.track?.position == 79.5)
+        await provider.setTrack(initial.withPosition(79.25))
+        await model.refresh()
+        #expect(model.track?.position == 79.25)
+        #expect(await provider.seekPositions == [80])
+    }
+
+    @Test("a paused snapshot without a seek accepts even a small external position change")
+    func pausedPositionWithoutSeek() async {
+        let initial = SpotifyTrack(title: "Song", artist: "Artist", duration: 180,
+                                   position: 80, isPlaying: false, source: .spotify)
+        let provider = SeekSnapshotProvider(initial)
+        let clock = SeekTestClock()
+        let model = SpotifySpikeModel(provider: provider, currentDate: { clock.now })
+        await model.refresh()
+        clock.advance(30)
+        await provider.setTrack(initial.withPosition(79.5))
+        await model.refresh()
+        #expect(model.track?.position == 79.5)
+        #expect(await provider.seekPositions.isEmpty)
+    }
+
+    @Test("seek settlement does not cross a source or recording change",
+          arguments: [false, true], ["source", "title", "artist", "album", "duration"])
+    func seekIdentityBoundary(playing: Bool, changed: String) async {
+        let initial = SpotifyTrack(title: "Song", artist: "Artist", album: "Album", duration: 180,
+                                   position: 20, isPlaying: playing, source: .spotify)
+        let provider = SeekSnapshotProvider(initial)
+        let clock = SeekTestClock()
+        let model = SpotifySpikeModel(provider: provider, currentDate: { clock.now })
+        await model.refresh()
+        await model.seek(to: 80)
+        var next = SpotifyTrack(title: changed == "title" ? "Another Song" : "Song",
+                                artist: changed == "artist" ? "Another Artist" : "Artist",
+                                album: changed == "album" ? "Another Album" : "Album",
+                                duration: changed == "duration" ? 200 : 180, position: 50,
+                                isPlaying: playing, source: changed == "source" ? .appleMusic : .spotify)
+        next.secondary = PlaybackSecondaryState(isShuffling: false, repeatMode: .one, volume: 17)
+        await provider.setTrack(next)
+        clock.advance(0.5)
+        await model.refresh()
+        #expect(model.track == next)
+        #expect(model.activeSource == next.source)
+        // The old window is cleared, including for later snapshots of the new recording.
+        await provider.setTrack(next.withPosition(10))
+        clock.advance(0.25)
+        await model.refresh()
+        #expect(model.track?.position == 10)
+    }
+
+    @Test("seek settlement preserves playback-state changes without advancing a paused position",
+          arguments: [false, true])
+    func seekPlaybackTransition(initiallyPlaying: Bool) async {
+        let initial = SpotifyTrack(title: "Song", artist: "Artist", duration: 180,
+                                   position: 20, isPlaying: initiallyPlaying, source: .spotify)
+        let provider = SeekSnapshotProvider(initial)
+        let clock = SeekTestClock()
+        let model = SpotifySpikeModel(provider: provider, currentDate: { clock.now })
+        await model.refresh()
+        await model.seek(to: 80)
+        let changed = SpotifyTrack(title: "Song", artist: "Artist", duration: 180,
+                                   position: 20, isPlaying: !initiallyPlaying, source: .spotify)
+        await provider.setTrack(changed)
+        clock.advance(0.5)
+        await model.refresh()
+        #expect(model.track?.position == 80)
+        #expect(model.track?.isPlaying == !initiallyPlaying)
+        clock.advance(0.5)
+        await model.refresh()
+        #expect(model.track?.position == (initiallyPlaying ? 80 : 80.5))
+        #expect(await provider.seekPositions == [80])
+    }
+
+    @Test("playing settlement and ordinary small-drift smoothing remain intact")
+    func playingSeekAndDrift() async {
+        let initial = SpotifyTrack(title: "Song", artist: "Artist", duration: 180,
+                                   position: 20, isPlaying: true, source: .spotify)
+        let provider = SeekSnapshotProvider(initial)
+        let clock = SeekTestClock()
+        let model = SpotifySpikeModel(provider: provider, currentDate: { clock.now })
+        await model.refresh()
+        await model.seek(to: 80)
+        clock.advance(0.5)
+        await model.refresh()
+        #expect(model.track?.position == 80.5)
+        clock.advance(1.5)
+        await provider.setTrack(initial.withPosition(81.5))
+        await model.refresh()
+        #expect(model.track?.position == 82)
+        clock.advance(0.5)
+        await provider.setTrack(initial.withPosition(30))
+        await model.refresh()
+        #expect(model.track?.position == 30)
+    }
+
+    @Test("a failed or canceled seek does not start optimistic settlement", arguments: [false, true])
+    func unsuccessfulSeekHasNoSettlement(cancelled: Bool) async {
+        let initial = SpotifyTrack(title: "Song", artist: "Artist", duration: 180,
+                                   position: 20, isPlaying: false, source: .spotify)
+        let provider = SeekSnapshotProvider(initial)
+        await provider.setSeekError(cancelled ? CancellationError() : URLError(.timedOut))
+        let clock = SeekTestClock()
+        let model = SpotifySpikeModel(provider: provider, currentDate: { clock.now })
+        await model.refresh()
+        await model.seek(to: 80)
+        #expect(model.track?.position == 20)
+        clock.advance(0.5)
+        await provider.setTrack(initial.withPosition(19.5))
+        await model.refresh()
+        #expect(model.track?.position == 19.5)
+        #expect(await provider.seekPositions == [80])
+    }
+}
+
+@MainActor
+private final class SeekTestClock {
+    var now = Date(timeIntervalSince1970: 1_000)
+    func advance(_ interval: TimeInterval) { now.addTimeInterval(interval) }
+}
+
+private actor SeekSnapshotProvider: SpotifyPlaybackProviding {
+    private var track: SpotifyTrack
+    private var shouldHoldRead = false
+    private var heldRead: CheckedContinuation<SpotifyTrack, Never>?
+    private var heldTrack: SpotifyTrack?
+    private var readObserver: CheckedContinuation<Void, Never>?
+    private var seekError: (any Error)?
+    private(set) var seekPositions: [TimeInterval] = []
+
+    init(_ track: SpotifyTrack) { self.track = track }
+    func setTrack(_ track: SpotifyTrack) { self.track = track }
+    func setSeekError(_ error: any Error) { seekError = error }
+    func holdNextRead() { shouldHoldRead = true }
+    func waitForHeldRead() async {
+        if heldRead != nil { return }
+        await withCheckedContinuation { readObserver = $0 }
+    }
+    func finishHeldRead() {
+        guard let heldTrack else { return }
+        self.heldTrack = nil
+        heldRead?.resume(returning: heldTrack)
+        heldRead = nil
+    }
+    func fetchCurrentTrack() async throws -> SpotifyTrack {
+        guard shouldHoldRead else { return track }
+        shouldHoldRead = false
+        heldTrack = track
+        return await withCheckedContinuation {
+            heldRead = $0
+            readObserver?.resume()
+            readObserver = nil
+        }
+    }
+    func activeSource() -> PlaybackSource { track.source ?? .spotify }
+    func seek(to position: TimeInterval) throws {
+        seekPositions.append(position)
+        if let seekError { throw seekError }
+    }
+    func playPause() throws { }
+    func nextTrack() throws { }
+    func previousTrack() throws { }
+    func setShuffle(_ enabled: Bool) throws { }
+    func setRepeat(_ mode: RepeatMode) throws { }
+    func setVolume(_ volume: Int) throws { }
 }
 
 @Test("Automation denial is classified by error number independently of message language")
