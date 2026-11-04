@@ -33,6 +33,72 @@ struct OverlayModeTests {
 
         defaults.removePersistentDomain(forName: "overlay-mode-tests")
     }
+
+    @MainActor
+    @Test("Reset stays off on the next startup for migrated and already updated profiles",
+          arguments: [OverlayMode.notch, .floatingWidget], [false, true])
+    func resetDoesNotRestoreLegacyOverlay(legacyMode: OverlayMode, hasCurrentChoice: Bool) throws {
+        let suiteName = "overlay-reset.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        defaults.set(legacyMode.rawValue, forKey: OverlayMode.legacyStorageKey)
+        if hasCurrentChoice {
+            defaults.set(OverlayMode.off.rawValue, forKey: OverlayMode.storageKey)
+        }
+        OverlayMode.migrateIfNeeded(in: defaults)
+        #expect(defaults.string(forKey: OverlayMode.storageKey)
+                == (hasCurrentChoice ? OverlayMode.off : legacyMode).rawValue)
+
+        SettingsView.resetAllSettings(in: defaults)
+        let stored = defaults.persistentDomain(forName: suiteName) ?? [:]
+        #expect(stored[OverlayMode.storageKey] == nil)
+        #expect(stored[OverlayMode.legacyStorageKey] == nil)
+
+        let nextStartup = try #require(UserDefaults(suiteName: suiteName))
+        OverlayMode.migrateIfNeeded(in: nextStartup)
+        let mode = nextStartup.string(forKey: OverlayMode.storageKey).flatMap(OverlayMode.init(rawValue:))
+            ?? .fallback
+        #expect(mode == .off)
+    }
+
+    @MainActor
+    @Test("Reset preserves unrelated settings, migration history and other preference domains")
+    func resetPreservesUnrelatedPreferences() throws {
+        let suiteName = "settings-reset.\(UUID().uuidString)"
+        let otherSuiteName = "settings-reset-other.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        let otherDefaults = try #require(UserDefaults(suiteName: otherSuiteName))
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+            otherDefaults.removePersistentDomain(forName: otherSuiteName)
+        }
+        WidgetPreferences.migrateDefaultsIfNeeded(in: defaults)
+        // Check persisted history directly: registered widget width can otherwise
+        // make a repeat migration appear to be skipped even without its marker.
+        let migrationVersionKey = "widgetPreferencesMigrationVersion"
+        let migrationVersion = try #require(
+            defaults.persistentDomain(forName: suiteName)?[migrationVersionKey] as? Int
+        )
+        AppLanguage.ukrainian.save(in: defaults)
+        defaults.set(true, forKey: OnboardingWindowController.completedKey)
+        defaults.set("keep", forKey: "fixtureNonResettable")
+        defaults.set(ResourceUsageMode.economical.rawValue, forKey: ResourceUsageMode.storageKey)
+        defaults.set(340.0, forKey: WidgetPreferences.widthKey)
+        otherDefaults.set(OverlayMode.notch.rawValue, forKey: OverlayMode.storageKey)
+        otherDefaults.set("floatingWidget", forKey: OverlayMode.legacyStorageKey)
+
+        SettingsView.resetAllSettings(in: defaults)
+
+        let stored = try #require(defaults.persistentDomain(forName: suiteName))
+        #expect(stored[ResourceUsageMode.storageKey] == nil)
+        #expect(stored[WidgetPreferences.widthKey] == nil)
+        #expect(stored[migrationVersionKey] as? Int == migrationVersion)
+        #expect(AppLanguage.selection(in: defaults, domainName: suiteName) == .ukrainian)
+        #expect(defaults.bool(forKey: OnboardingWindowController.completedKey))
+        #expect(defaults.string(forKey: "fixtureNonResettable") == "keep")
+        #expect(otherDefaults.string(forKey: OverlayMode.storageKey) == "notch")
+        #expect(otherDefaults.string(forKey: OverlayMode.legacyStorageKey) == "floatingWidget")
+    }
 }
 
 @Suite("Player app selection")
