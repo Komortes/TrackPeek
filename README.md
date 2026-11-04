@@ -56,6 +56,11 @@ Pull requests run script and localization checks, app tests with coverage, and a
 
 See [localization](docs/LOCALIZATION.md) for language resources, translation conventions and validation.
 
+For iterative work with coding agents, start with [AGENTS.md](AGENTS.md) and the
+[agent workspace guide](docs/agents/README.md): current context, code map,
+[bounded agent loop](docs/agents/LOOP.md), private board access, handoff templates,
+and `./script/agent.sh context` / `doctor` / `next` helpers.
+
 <details>
 <summary>Build and run locally</summary>
 

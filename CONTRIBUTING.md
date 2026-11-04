@@ -2,6 +2,14 @@
 
 TrackPeek is a native macOS app built with Swift 6, SwiftUI, and narrow AppKit integration. Use the Xcode project for app builds and tests; the root Package.swift does not configure the complete app.
 
+For agent-assisted iterations, read [AGENTS.md](AGENTS.md) and the
+[iteration guide](docs/agents/README.md). Run `./script/agent.sh context` for a
+bounded checkout summary, `./script/agent.sh doctor` to inspect prerequisites,
+and `./script/agent.sh new-task short-description` to prepare a private local card.
+The [agent loop](docs/agents/LOOP.md) uses a [private board](docs/agents/BOARD.md);
+`./script/agent.sh next` exports one Ready task without claiming or executing it.
+Private drafts and evidence stay out of this public repository and CI artifacts.
+
 ## Local setup
 
 Install Xcode with Swift 6 support and XcodeGen. In project.yml, configure DEVELOPMENT_TEAM and signing for the app, helper, and tests to match your own local certificate. Regenerate the project after source or configuration changes:
