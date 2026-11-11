@@ -6,22 +6,94 @@ import Testing
 
 @Suite("Widget preferences")
 struct WidgetPreferencesTests {
-    @Test("repeated migration does not clobber a value the user already changed")
-    func repeatedMigrationDoesNotClobberExistingValue() {
-        // Тест-хост запускает настоящий TrackPeekAppDelegate перед тестами, и тот
-        // уже вызвал WidgetPreferences.registerDefaults() на .standard. Регистрация
-        // UserDefaults общая на процесс (не на конкретный suite), поэтому
-        // изолированный suite не может воспроизвести «ключ ещё не существует» —
-        // отсюда здесь проверяется только идемпотентность повторного вызова.
-        let suiteName = "widget-preferences-tests"
-        let defaults = UserDefaults(suiteName: suiteName)!
-        defaults.removePersistentDomain(forName: suiteName)
+    @Test("legacy notch appearance is copied on the first migration")
+    func migratesLegacyAppearance() {
+        let defaults = WidgetMigrationDefaults()
+        defer { defaults.removePersistentDomain(forName: defaults.domainName) }
+        defaults.set(340.0, forKey: NotchPreferences.widthKey)
+        defaults.set("fixture-display", forKey: NotchPreferences.displayTargetKey)
+        defaults.set(false, forKey: NotchPreferences.coloredProgressKey)
+        defaults.set(true, forKey: NotchPreferences.coloredWaveformKey)
+        defaults.set(NotchColorSource.systemAccent.rawValue, forKey: NotchPreferences.colorSourceKey)
+        defaults.set(1.7, forKey: NotchPreferences.equalizerSensitivityKey)
+        defaults.set(false, forKey: NotchPreferences.lyricsEnabledKey)
 
-        defaults.set(340.0, forKey: WidgetPreferences.widthKey)
         WidgetPreferences.migrateDefaultsIfNeeded(in: defaults)
         #expect(defaults.double(forKey: WidgetPreferences.widthKey) == 340.0)
+        #expect(defaults.string(forKey: WidgetPreferences.displayTargetKey) == "fixture-display")
+        #expect(defaults.object(forKey: WidgetPreferences.coloredProgressKey) as? Bool == false)
+        #expect(defaults.object(forKey: WidgetPreferences.coloredWaveformKey) as? Bool == true)
+        #expect(defaults.string(forKey: WidgetPreferences.colorSourceKey) == NotchColorSource.systemAccent.rawValue)
+        #expect(defaults.double(forKey: WidgetPreferences.equalizerSensitivityKey) == 1.7)
+        #expect(defaults.object(forKey: WidgetPreferences.lyricsEnabledKey) as? Bool == false)
+    }
 
-        defaults.removePersistentDomain(forName: suiteName)
+    @Test("migration without a saved width preserves later widget choices across startups")
+    func migrationWithoutWidthPreservesLaterChoices() {
+        let defaults = WidgetMigrationDefaults()
+        defer { defaults.removePersistentDomain(forName: defaults.domainName) }
+        defaults.set(false, forKey: NotchPreferences.coloredProgressKey)
+        defaults.set(false, forKey: NotchPreferences.lyricsEnabledKey)
+        defaults.set("legacy-display", forKey: NotchPreferences.displayTargetKey)
+
+        WidgetPreferences.migrateDefaultsIfNeeded(in: defaults)
+        #expect(defaults.object(forKey: WidgetPreferences.widthKey) == nil)
+        #expect(defaults.object(forKey: WidgetPreferences.coloredProgressKey) as? Bool == false)
+        defaults.set(true, forKey: WidgetPreferences.coloredProgressKey)
+        defaults.set(true, forKey: WidgetPreferences.lyricsEnabledKey)
+        defaults.set("widget-display", forKey: WidgetPreferences.displayTargetKey)
+
+        let nextStartup = WidgetMigrationDefaults(domainName: defaults.domainName)
+        WidgetPreferences.migrateDefaultsIfNeeded(in: nextStartup)
+        #expect(nextStartup.object(forKey: WidgetPreferences.coloredProgressKey) as? Bool == true)
+        #expect(nextStartup.object(forKey: WidgetPreferences.lyricsEnabledKey) as? Bool == true)
+        #expect(nextStartup.string(forKey: WidgetPreferences.displayTargetKey) == "widget-display")
+    }
+
+    @Test("first migration fills missing preferences without replacing existing false or zero values")
+    func migrationPreservesExistingDestinations() {
+        let defaults = WidgetMigrationDefaults()
+        defer { defaults.removePersistentDomain(forName: defaults.domainName) }
+        defaults.set(true, forKey: NotchPreferences.lyricsEnabledKey)
+        defaults.set(1.7, forKey: NotchPreferences.equalizerSensitivityKey)
+        defaults.set("legacy-display", forKey: NotchPreferences.displayTargetKey)
+        defaults.set(false, forKey: WidgetPreferences.lyricsEnabledKey)
+        defaults.set(0.0, forKey: WidgetPreferences.equalizerSensitivityKey)
+
+        WidgetPreferences.migrateDefaultsIfNeeded(in: defaults)
+        #expect(defaults.object(forKey: WidgetPreferences.lyricsEnabledKey) as? Bool == false)
+        #expect(defaults.double(forKey: WidgetPreferences.equalizerSensitivityKey) == 0)
+        #expect(defaults.string(forKey: WidgetPreferences.displayTargetKey) == "legacy-display")
+    }
+
+    @Test("a fresh installation does not import notch changes from a later startup")
+    func migrationCompletesWithoutLegacyValues() {
+        let defaults = WidgetMigrationDefaults()
+        defer { defaults.removePersistentDomain(forName: defaults.domainName) }
+        WidgetPreferences.migrateDefaultsIfNeeded(in: defaults)
+        defaults.set(380.0, forKey: NotchPreferences.widthKey)
+        defaults.set(false, forKey: NotchPreferences.lyricsEnabledKey)
+
+        let nextStartup = WidgetMigrationDefaults(domainName: defaults.domainName)
+        WidgetPreferences.migrateDefaultsIfNeeded(in: nextStartup)
+        #expect(nextStartup.object(forKey: WidgetPreferences.widthKey) == nil)
+        #expect(nextStartup.object(forKey: WidgetPreferences.lyricsEnabledKey) == nil)
+    }
+
+    @Test("an old completed migration stays completed after the widget width is cleared")
+    func legacyCompletionSurvivesClearedWidth() {
+        let defaults = WidgetMigrationDefaults()
+        defer { defaults.removePersistentDomain(forName: defaults.domainName) }
+        defaults.set(340.0, forKey: WidgetPreferences.widthKey)
+        defaults.set(false, forKey: NotchPreferences.lyricsEnabledKey)
+        WidgetPreferences.migrateDefaultsIfNeeded(in: defaults)
+        #expect(defaults.double(forKey: WidgetPreferences.widthKey) == 340.0)
+        #expect(defaults.object(forKey: WidgetPreferences.lyricsEnabledKey) == nil)
+
+        defaults.removeObject(forKey: WidgetPreferences.widthKey)
+        let nextStartup = WidgetMigrationDefaults(domainName: defaults.domainName)
+        WidgetPreferences.migrateDefaultsIfNeeded(in: nextStartup)
+        #expect(nextStartup.object(forKey: WidgetPreferences.lyricsEnabledKey) == nil)
     }
 
     @Test("card size for the pill layout matches the compact notch size")
@@ -47,6 +119,22 @@ struct WidgetPreferencesTests {
         #expect(!defaults.bool(forKey: WidgetPreferences.hideInFullscreenKey))
         #expect(!defaults.bool(forKey: WidgetPreferences.positionLockedKey))
         defaults.removePersistentDomain(forName: suiteName)
+    }
+}
+
+/// Models startup before registerDefaults without clearing the process-wide
+/// registration domain used by other hosted tests. Writes still use a real,
+/// unique persistent suite, which can be reopened for the next startup.
+private final class WidgetMigrationDefaults: UserDefaults {
+    let domainName: String
+
+    init(domainName: String = "widget-migration.\(UUID().uuidString)") {
+        self.domainName = domainName
+        super.init(suiteName: domainName)!
+    }
+
+    override func object(forKey defaultName: String) -> Any? {
+        persistentDomain(forName: domainName)?[defaultName]
     }
 }
 

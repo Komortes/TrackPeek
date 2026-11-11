@@ -32,6 +32,7 @@
 		28BF8DB0AA66ABEC422FE60D /* LyricsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F48E0BADBBB0304541226351 /* LyricsStore.swift */; };
 		28FBC80F2A985CCCB355DE02 /* LyricsPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1169D285564F78949C2E26AC /* LyricsPlayerView.swift */; };
 		295446788434F4E896A30941 /* MenuBarControlsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2FADF750A8534B373D2ECEE /* MenuBarControlsController.swift */; };
+		2C0827FA712425049584BDFE /* MusicArtworkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3E3C2463FD09757164E2D6E /* MusicArtworkTests.swift */; };
 		2EA490867571EB69D9C69E14 /* WidgetPlacementStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EAA0471028D3533CCE83215 /* WidgetPlacementStore.swift */; };
 		303525109FD5E22CB1650754 /* DisplayModeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AEE2828C90080275021F97D /* DisplayModeTests.swift */; };
 		30DD6CBF28357848B744B71A /* MenuBarLabelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CF2DB8522B0BC13CDEC25B7 /* MenuBarLabelView.swift */; };
@@ -288,6 +289,7 @@
 		BF740ACCCB7BE885CA3F84E8 /* AudioCaptureHealthTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioCaptureHealthTests.swift; sourceTree = "<group>"; };
 		C0A75A05FD490E508D177F8E /* MediaSourcePreference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaSourcePreference.swift; sourceTree = "<group>"; };
 		C153009612F687B497898808 /* AppleScriptExecutorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleScriptExecutorTests.swift; sourceTree = "<group>"; };
+		C3E3C2463FD09757164E2D6E /* MusicArtworkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicArtworkTests.swift; sourceTree = "<group>"; };
 		C45F9175EDE10BD5ED8B8243 /* ArtworkDataLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtworkDataLoader.swift; sourceTree = "<group>"; };
 		CBAD0491100B9EBD20E7A80F /* ApplicationRelauncher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationRelauncher.swift; sourceTree = "<group>"; };
 		CC396C427E1B53997BE0D305 /* OverlayChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayChrome.swift; sourceTree = "<group>"; };
@@ -436,6 +438,7 @@
 				14E027665FE58359779322E3 /* LyricsScrollInteractionTests.swift */,
 				1EAE7DE91BAFD5AAF0FA3A4C /* LyricsServiceTests.swift */,
 				F0CB4CDBFE052A53294BA931 /* LyricStripTests.swift */,
+				C3E3C2463FD09757164E2D6E /* MusicArtworkTests.swift */,
 				00835C9149248F59E71391B0 /* NotchConfigurationTests.swift */,
 				4E33FE2C5A5870372844AC55 /* NotchInteractionStateTests.swift */,
 				DEF7DB6DFEF61B2D11E3BBDE /* NotchMotionTests.swift */,
@@ -740,6 +743,7 @@
 				FE32C399E14A65F4CB187C51 /* LyricsReaderNavigationTests.swift in Sources */,
 				A934E95FA4AB86FF324538D6 /* LyricsScrollInteractionTests.swift in Sources */,
 				A554E6559908AA5C6AC96C82 /* LyricsServiceTests.swift in Sources */,
+				2C0827FA712425049584BDFE /* MusicArtworkTests.swift in Sources */,
 				92F16DF92496377E8BB451EF /* NotchConfigurationTests.swift in Sources */,
 				E0185B1D3461B6862517AED7 /* NotchInteractionStateTests.swift in Sources */,
 				C1816B74BBA5267533F877AC /* NotchMotionTests.swift in Sources */,

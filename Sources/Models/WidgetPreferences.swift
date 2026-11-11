@@ -23,6 +23,9 @@ enum WidgetPreferences {
     static let equalizerSensitivityKey = "widgetEqualizerSensitivity"
     static let lyricsEnabledKey = "widgetLyricsEnabled"
 
+    // Migration history survives Reset Settings; it is not a user preference.
+    private static let migrationVersionKey = "widgetPreferencesMigrationVersion"
+
     /// Поведение NSPanel виджета (§20.4): раньше было зашито в коде.
     static let alwaysOnTopKey = "widgetAlwaysOnTop"
     static let allSpacesKey = "widgetAllSpaces"
@@ -34,8 +37,12 @@ enum WidgetPreferences {
     static let edgeMargin = 12.0
 
     /// Одноразовый перенос: раньше виджет использовал настройки чёлки —
-    /// существующие пользователи сохраняют текущий вид.
+    /// существующие пользователи сохраняют текущий вид. Вызывать до registerDefaults.
     static func migrateDefaultsIfNeeded(in defaults: UserDefaults = .standard) {
+        guard defaults.integer(forKey: migrationVersionKey) < 1 else { return }
+        defer { defaults.set(1, forKey: migrationVersionKey) }
+
+        // Older versions used a saved width to mark a completed migration.
         guard defaults.object(forKey: widthKey) == nil else { return }
 
         let pairs: [(source: String, destination: String)] = [
@@ -48,7 +55,8 @@ enum WidgetPreferences {
             (NotchPreferences.lyricsEnabledKey, lyricsEnabledKey),
         ]
         for pair in pairs {
-            if let value = defaults.object(forKey: pair.source) {
+            if defaults.object(forKey: pair.destination) == nil,
+               let value = defaults.object(forKey: pair.source) {
                 defaults.set(value, forKey: pair.destination)
             }
         }
