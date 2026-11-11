@@ -68,6 +68,13 @@ class ReleasePreflightTests(unittest.TestCase):
 
         for command in ("xcodegen", "xcodebuild", "xcrun", "codesign", "lipo"):
             stub(self.root / "bin" / command, '#!/bin/sh\nprintf invoked >> "$RELEASE_TEST_ROOT/invoked"\n')
+        stub(self.root / "bin/lipo", '''#!/bin/sh
+if [ "$#" != 3 ] || [ "$2" != -verify_arch ]; then
+  echo 'fixture requires one architecture per verification' >&2
+  exit 1
+fi
+case "$3" in arm64|x86_64) exit 0 ;; *) exit 1 ;; esac
+''')
         stub(self.root / "bin/ditto", '#!/bin/sh\nfor destination do :; done\nprintf "fixture archive" > "$destination"\n')
         stub(self.root / "bin/PlistBuddy", '''#!/bin/sh
 case "$2" in

@@ -23,23 +23,45 @@ for argument do
   case "$previous" in
     -resultBundlePath) mkdir -p "$argument" ;;
     -derivedDataPath) derived_data="$argument" ;;
+    -configuration) configuration="$argument" ;;
   esac
   previous="$argument"
 done
 if [ "${CI_FIXTURE_HELPER:-0}" = 1 ]; then
-  helper="$derived_data/Build/Products/Debug/TrackPeek.app/Contents/Helpers/TrackPeekScriptHelper"
-  mkdir -p "$(dirname "$helper")"
-  printf '#!/bin/sh\\nexit 0\\n' > "$helper"
-  chmod +x "$helper"
+  bundle="$derived_data/Build/Products/$configuration/TrackPeek.app"
+  for executable in "$bundle/Contents/MacOS/TrackPeek" "$bundle/Contents/Helpers/TrackPeekScriptHelper"; do
+    mkdir -p "$(dirname "$executable")"
+    printf '#!/bin/sh\\nexit 0\\n' > "$executable"
+    chmod +x "$executable"
+  done
 fi
 echo 'fixture test output'
 echo 'fixture test diagnostics' >&2
 exit "$CI_FIXTURE_TEST_STATUS"
 ''')
         self.stub("xcrun", '''if [ "$1" = swiftc ]; then echo 'fixture Swift'; exit 0; fi
+if [ "$1" = lipo ]; then
+  shift
+  executable="$1"
+  if [ "$1" = -archs ]; then executable="$2"; fi
+  case "$executable" in
+    */TrackPeekScriptHelper) architectures="$CI_FIXTURE_HELPER_ARCHS" ;;
+    *) architectures="$CI_FIXTURE_APP_ARCHS" ;;
+  esac
+  if [ "$1" = -archs ]; then echo "$architectures"; exit 0; fi
+  if [ "$#" != 3 ] || [ "$2" != -verify_arch ]; then
+    echo 'fixture requires one architecture per verification' >&2
+    exit 1
+  fi
+  case " $architectures " in
+    *" $3 "*) exit 0 ;;
+    *) echo "fixture missing architecture $3" >&2; exit 1 ;;
+  esac
+fi
 echo 'fixture exported report'
 exit "$CI_FIXTURE_REPORT_STATUS"
 ''')
+        self.stub("codesign", "exit 0\n")
         self.report = self.root / ".build/ci/test"
 
     def stub(self, name, body):
@@ -47,10 +69,12 @@ exit "$CI_FIXTURE_REPORT_STATUS"
         path.write_text('#!/bin/sh\nprintf "%s\\n" "$0 $*" >> "$CI_FIXTURE_ROOT/invoked"\n' + body)
         path.chmod(0o755)
 
-    def run_ci(self, *arguments, test_status=65, report_status=0, helper=False):
+    def run_ci(self, *arguments, test_status=65, report_status=0, helper=False,
+               app_archs="arm64 x86_64", helper_archs="arm64 x86_64"):
         environment = dict(os.environ, PATH=f"{self.root / 'bin'}:{os.environ['PATH']}",
                            CI_FIXTURE_ROOT=str(self.root), CI_FIXTURE_TEST_STATUS=str(test_status),
-                           CI_FIXTURE_REPORT_STATUS=str(report_status), CI_FIXTURE_HELPER=str(int(helper)))
+                           CI_FIXTURE_REPORT_STATUS=str(report_status), CI_FIXTURE_HELPER=str(int(helper)),
+                           CI_FIXTURE_APP_ARCHS=app_archs, CI_FIXTURE_HELPER_ARCHS=helper_archs)
         return subprocess.run(["bash", str(self.root / "script/ci.sh"), *arguments],
                               env=environment, capture_output=True, text=True)
 
@@ -95,6 +119,23 @@ exit "$CI_FIXTURE_REPORT_STATUS"
         result = self.run_ci("test", test_status=0, report_status=73, helper=True)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("Test command exit status: 0", (self.report / "run.log").read_text())
+
+    def test_universal_build_passes_single_architecture_verification_for_app_and_helper(self):
+        result = self.run_ci("build", test_status=0, helper=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("Universal Release app and embedded helper verified", result.stdout)
+
+    def test_build_rejects_app_without_arm64_before_signature_verification(self):
+        result = self.run_ci("build", test_status=0, helper=True, app_archs="x86_64")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("missing architecture arm64", result.stdout + result.stderr)
+        self.assertNotIn("/codesign ", (self.root / "invoked").read_text())
+
+    def test_build_rejects_helper_without_x86_64_before_signature_verification(self):
+        result = self.run_ci("build", test_status=0, helper=True, helper_archs="arm64")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("missing architecture x86_64", result.stdout + result.stderr)
+        self.assertNotIn("/codesign ", (self.root / "invoked").read_text())
 
 
 if __name__ == "__main__":

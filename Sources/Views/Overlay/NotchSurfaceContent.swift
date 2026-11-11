@@ -22,41 +22,49 @@ struct NotchSurfaceContent: View {
     /// содержимое переиспользуется под карточную раскладку виджета
     /// (`cardHorizontal`), не в самой чёлке.
     var showsSecondaryControls = false
+    var presentation: NotchContentPresentation? = nil
+    var contentSizes: NotchContentSizes? = nil
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var isExpanded: Bool { panelState == .expanded }
+    private var compactOpacity: Double {
+        presentation?.opacity(for: .collapsed) ?? (panelState == .notification ? 0 : max(0, 1 - revealProgress * 1.35))
+    }
+    private var expandedOpacity: Double { presentation?.opacity(for: .expanded) ?? revealProgress }
+    private var notificationOpacity: Double { presentation?.opacity(for: .notification) ?? (panelState == .notification ? 1 : 0) }
+    private var expandedLayoutSize: CGSize { contentSizes?.expanded ?? containerSize }
 
     var body: some View {
         ZStack(alignment: .top) {
             compactContent
                 .frame(
-                    maxWidth: .infinity,
-                    minHeight: min(containerSize.height, 44),
-                    maxHeight: min(containerSize.height, 44)
+                    width: contentSizes?.compact.width ?? containerSize.width,
+                    height: min(contentSizes?.compact.height ?? containerSize.height, 44)
                 )
-                .opacity(
-                    panelState == .notification
-                        ? 0
-                        : max(0, 1 - revealProgress * 1.35)
-                )
-                .scaleEffect(1 - revealProgress * 0.015, anchor: .top)
-                .allowsHitTesting(panelState == .collapsed)
-                .accessibilityHidden(panelState != .collapsed)
+                .opacity(compactOpacity)
+                .scaleEffect(0.985 + compactOpacity * 0.015, anchor: .top)
+                .allowsHitTesting(panelState == .collapsed && compactOpacity > 0.8)
+                .accessibilityHidden(panelState != .collapsed || compactOpacity <= 0.8)
 
-            if panelState == .notification {
+            if panelState == .notification || notificationOpacity > 0 {
                 notificationContent
-                    .transition(
-                        .opacity.combined(with: .scale(scale: 0.97, anchor: .top))
+                    .frame(
+                        width: contentSizes?.notification.width ?? containerSize.width,
+                        height: contentSizes?.notification.height ?? containerSize.height
                     )
+                    .opacity(notificationOpacity)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(panelState != .notification)
             }
 
             expandedContent
-                .opacity(revealProgress)
-                .scaleEffect(0.985 + revealProgress * 0.015, anchor: .top)
-                .allowsHitTesting(isExpanded && revealProgress > 0.8)
-                .disabled(!isExpanded || revealProgress <= 0.8)
-                .accessibilityHidden(!isExpanded || revealProgress <= 0.8)
+                .frame(width: expandedLayoutSize.width, height: expandedLayoutSize.height, alignment: .top)
+                .opacity(expandedOpacity)
+                .scaleEffect(0.985 + expandedOpacity * 0.015, anchor: .top)
+                .allowsHitTesting(isExpanded && expandedOpacity > 0.8)
+                .disabled(!isExpanded || expandedOpacity <= 0.8)
+                .accessibilityHidden(!isExpanded || expandedOpacity <= 0.8)
         }
         .frame(width: containerSize.width, height: containerSize.height, alignment: .top)
     }
@@ -88,7 +96,7 @@ struct NotchSurfaceContent: View {
                 ArtworkEqualizerView(
                     audioMonitor: audioMonitor,
                     isPlaying: track.isPlaying,
-                    isVisible: panelState == .notification,
+                    isVisible: panelState == .notification && notificationOpacity > 0.01,
                     isColored: appearance.coloredWaveform,
                     palette: palette,
                     sensitivityOverride: appearance.equalizerSensitivityOverride
@@ -132,7 +140,7 @@ struct NotchSurfaceContent: View {
                 ArtworkEqualizerView(
                     audioMonitor: audioMonitor,
                     isPlaying: track.isPlaying,
-                    isVisible: !isExpanded,
+                    isVisible: panelState == .collapsed && compactOpacity > 0.01,
                     isColored: appearance.coloredWaveform,
                     palette: palette
                 )
@@ -194,8 +202,8 @@ struct NotchSurfaceContent: View {
     @ViewBuilder
     private var expandedContentBody: some View {
         if let track = model.track {
-            let isNarrow = containerSize.width < 390
-            let artworkSize = NotchResponsiveLayout.artworkSize(in: containerSize)
+            let isNarrow = expandedLayoutSize.width < 390
+            let artworkSize = NotchResponsiveLayout.artworkSize(in: expandedLayoutSize)
 
             HStack(alignment: .center, spacing: isNarrow ? 12 : 15) {
                 VStack(spacing: 7) {
@@ -308,7 +316,7 @@ struct NotchSurfaceContent: View {
                                 : .white,
                             lyricOffset: lyricsStore.offset(for: track),
                             onRetry: { lyricsStore.retry(for: track) },
-                            updatesEnabled: isExpanded
+                            updatesEnabled: isExpanded && expandedOpacity > 0.01
                         )
                     } else {
                         PlaybackProgressView(
@@ -320,7 +328,7 @@ struct NotchSurfaceContent: View {
                             tint: appearance.coloredProgress
                                 ? palette.primary.onDarkSurface.swiftUIColor
                                 : .white,
-                            updatesEnabled: isExpanded
+                            updatesEnabled: isExpanded && expandedOpacity > 0.01
                         )
                     }
 
@@ -341,7 +349,7 @@ struct NotchSurfaceContent: View {
                         ArtworkEqualizerView(
                             audioMonitor: audioMonitor,
                             isPlaying: track.isPlaying,
-                            isVisible: isExpanded,
+                            isVisible: isExpanded && expandedOpacity > 0.01,
                             isColored: appearance.coloredWaveform,
                             palette: palette,
                             sensitivityOverride: appearance.equalizerSensitivityOverride

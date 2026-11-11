@@ -103,6 +103,7 @@
 		A9C959DDE49C29200A38C496 /* PlaybackControlButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B276A7EB0CE68ABCCEE091A /* PlaybackControlButtonStyle.swift */; };
 		AD4AAC220B0BDD54E9EA7832 /* ArtworkPaletteTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70E7BE8E732C82A286DEA68B /* ArtworkPaletteTests.swift */; };
 		AE82F2BA496F3C0805CA1B36 /* LaunchAtLogin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32F3580E490DEE11BAFD62F7 /* LaunchAtLogin.swift */; };
+		B187B6869B442867653CC1C6 /* NotchContentPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80182C1DF9B4C6733C1E8F2D /* NotchContentPresentation.swift */; };
 		B2CD7A3AE6430A1625894E33 /* PlaybackCapabilitiesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A700BA6073CF52A05322B3B /* PlaybackCapabilitiesTests.swift */; };
 		B4B422FFBE345F11ABE23D7C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D10E4071CF3A7C81E1DB0EA1 /* Assets.xcassets */; };
 		B800B74870FEBBF08094F0D2 /* ArtworkImageLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81B1EDF50DBD281C8A1EEEA0 /* ArtworkImageLoader.swift */; };
@@ -112,6 +113,7 @@
 		BEB8DE63E5EB4BF34CBB1E1B /* LyricStripPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = B51583E2AF8501E9EBA66825 /* LyricStripPresentation.swift */; };
 		C0A378802DD85A5FCF5A96EC /* ArtworkEqualizerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DBB5FD7BFE39B87B01A3F92 /* ArtworkEqualizerView.swift */; };
 		C15740D60F8C5E45D3B6FAED /* NotchInteractionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F0BB51759CC4B298E6F604B /* NotchInteractionState.swift */; };
+		C1816B74BBA5267533F877AC /* NotchMotionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEF7DB6DFEF61B2D11E3BBDE /* NotchMotionTests.swift */; };
 		C1DBBE83F4A1E6C59AF0F8EB /* WidgetLyricStrip.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1D6825C2B1F2724B0445960 /* WidgetLyricStrip.swift */; };
 		C741E44D3DA385A7B817321C /* WidgetCardViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB2AF7C2B506820995D1EE41 /* WidgetCardViews.swift */; };
 		C79A07D0807012F12C54CDE2 /* OverlayChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC396C427E1B53997BE0D305 /* OverlayChrome.swift */; };
@@ -253,6 +255,7 @@
 		7CF2DB8522B0BC13CDEC25B7 /* MenuBarLabelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarLabelView.swift; sourceTree = "<group>"; };
 		7DB311001A26BFC02CBCCECF /* TPAudioLevelAnalyzer.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = TPAudioLevelAnalyzer.mm; sourceTree = "<group>"; };
 		7EF5A723EFD6F834403E060A /* SpotifyTrackParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyTrackParserTests.swift; sourceTree = "<group>"; };
+		80182C1DF9B4C6733C1E8F2D /* NotchContentPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchContentPresentation.swift; sourceTree = "<group>"; };
 		81B1EDF50DBD281C8A1EEEA0 /* ArtworkImageLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtworkImageLoader.swift; sourceTree = "<group>"; };
 		8647E89B2D6CF31E171BE10F /* NotchLyricsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchLyricsView.swift; sourceTree = "<group>"; };
 		89688A253F967111DC7C1EFA /* ArtworkPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtworkPalette.swift; sourceTree = "<group>"; };
@@ -305,6 +308,7 @@
 		DA6231D0880977C3FB9EFB10 /* PlaybackTimeFormatterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackTimeFormatterTests.swift; sourceTree = "<group>"; };
 		DC7753408492977BC8B4377A /* AppleScriptExecutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleScriptExecutor.swift; sourceTree = "<group>"; };
 		DEC64F5EFDF93DB1170ACA56 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		DEF7DB6DFEF61B2D11E3BBDE /* NotchMotionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchMotionTests.swift; sourceTree = "<group>"; };
 		E157AFE527BF02E28488D9CB /* PlayerPresetsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerPresetsTests.swift; sourceTree = "<group>"; };
 		E1D6825C2B1F2724B0445960 /* WidgetLyricStrip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetLyricStrip.swift; sourceTree = "<group>"; };
 		E4F22320C680BFDCA065380C /* WidgetPreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetPreferencesTests.swift; sourceTree = "<group>"; };
@@ -397,6 +401,7 @@
 				A29B03F6B83FB1BE21169D95 /* MenuBarPreferences.swift */,
 				22D20BAD45ADCB7BF41E719F /* NotchConfiguration.swift */,
 				04E36430E039E796D4F65D7B /* NotchContentLayout.swift */,
+				80182C1DF9B4C6733C1E8F2D /* NotchContentPresentation.swift */,
 				A45EBA6368DB020F32E99BF6 /* OverlayDisplayResolver.swift */,
 				9DE3462C9A46C63372026A93 /* OverlayVisibility.swift */,
 				6A48D3F9F6E402F483F062AC /* PlaybackAvailability.swift */,
@@ -436,6 +441,7 @@
 				C3E3C2463FD09757164E2D6E /* MusicArtworkTests.swift */,
 				00835C9149248F59E71391B0 /* NotchConfigurationTests.swift */,
 				4E33FE2C5A5870372844AC55 /* NotchInteractionStateTests.swift */,
+				DEF7DB6DFEF61B2D11E3BBDE /* NotchMotionTests.swift */,
 				75B3CBDBC599254B46FC226A /* NumericPreferenceTests.swift */,
 				2AAB54096C678C9A2A30D361 /* OverlayDisplayResolverTests.swift */,
 				EAE4DE4016A4ABD26E4CA6BE /* OverlayVisibilityTests.swift */,
@@ -740,6 +746,7 @@
 				2C0827FA712425049584BDFE /* MusicArtworkTests.swift in Sources */,
 				92F16DF92496377E8BB451EF /* NotchConfigurationTests.swift in Sources */,
 				E0185B1D3461B6862517AED7 /* NotchInteractionStateTests.swift in Sources */,
+				C1816B74BBA5267533F877AC /* NotchMotionTests.swift in Sources */,
 				862F7A72F9FC9F102AA20986 /* NumericPreferenceTests.swift in Sources */,
 				0324790E2EF4126A01184032 /* OverlayDisplayResolverTests.swift in Sources */,
 				18F485EA8DBFEA7813E59F3A /* OverlayVisibilityTests.swift in Sources */,
@@ -798,6 +805,7 @@
 				CF2018BAF1A6D79F20420B10 /* MusicAppleScriptClient.swift in Sources */,
 				CD8465FC4274BFEC50138FA3 /* NotchConfiguration.swift in Sources */,
 				9422F6DFBA0DB614D8126E05 /* NotchContentLayout.swift in Sources */,
+				B187B6869B442867653CC1C6 /* NotchContentPresentation.swift in Sources */,
 				F86231355D239454EE87B470 /* NotchFocusView.swift in Sources */,
 				C15740D60F8C5E45D3B6FAED /* NotchInteractionState.swift in Sources */,
 				F2AA375A213A6A040FED7BE3 /* NotchLyricsView.swift in Sources */,

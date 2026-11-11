@@ -163,7 +163,8 @@ build() {
     "$app_bundle/Contents/MacOS/TrackPeek" \
     "$app_bundle/Contents/Helpers/TrackPeekScriptHelper"; do
     [[ -x "$executable" ]] || fail "Missing executable: $executable"
-    xcrun lipo "$executable" -verify_arch arm64 x86_64
+    xcrun lipo "$executable" -verify_arch arm64
+    xcrun lipo "$executable" -verify_arch x86_64
     xcrun lipo -archs "$executable"
   done
   codesign --verify --deep --strict --verbose=2 "$app_bundle"
