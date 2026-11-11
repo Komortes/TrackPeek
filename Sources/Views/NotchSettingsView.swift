@@ -150,10 +150,9 @@ struct NotchSettingsView: View {
                 .pickerStyle(.segmented)
                 .labelsHidden()
                 .fixedSize()
-            }
+            },
+            accessory: { activationStatus }
         ) {
-            activationStatus
-
             switch selectedPage {
             case .appearance:
                 layoutSection
@@ -252,13 +251,12 @@ struct NotchSettingsView: View {
             }
             .font(.callout)
 
-            Spacer()
-
             if !isPanelModeActive {
                 Button(String(localized: "Enable Notch")) {
                     selectedModeRawValue = OverlayMode.notch.rawValue
                 }
                 .controlSize(.small)
+                .fixedSize()
             }
         }
     }
