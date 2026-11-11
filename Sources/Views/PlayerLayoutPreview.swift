@@ -9,9 +9,13 @@ struct PlayerLayoutPreview: View {
                 .fill(.quaternary.opacity(0.7))
 
             preview
+                .frame(height: 80)
+                .scaleEffect(0.7)
+                .frame(height: 56)
                 .padding(12)
         }
-        .frame(height: 104)
+        .frame(height: 80)
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .accessibilityHidden(true)
     }
 

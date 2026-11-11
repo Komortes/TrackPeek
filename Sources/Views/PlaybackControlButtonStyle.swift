@@ -22,12 +22,14 @@ struct PlaybackControlButtonStyle: ButtonStyle {
                     .fill(
                         isPrimary
                             ? Color.accentColor.opacity(isHovered ? 1 : 0.9)
-                            : Color.primary.opacity(isHovered ? 0.12 : 0.045)
+                            : Color.primary.opacity(isHovered || configuration.isPressed ? 0.12 : 0)
                     )
             }
             .overlay {
-                Circle()
-                    .stroke(.white.opacity(isPrimary ? 0.16 : 0.08), lineWidth: 1)
+                if isPrimary {
+                    Circle()
+                        .stroke(.white.opacity(0.16), lineWidth: 1)
+                }
             }
             .shadow(
                 color: isPrimary ? .black.opacity(0.14) : .clear,
