@@ -25,19 +25,18 @@ struct SettingsWindowToolbar: NSViewRepresentable {
 /// Shared building blocks for the Settings window, kept in one place so every
 /// page renders with the same spacing and materials.
 
-struct SettingsPage<Navigation: View, Content: View>: View {
+struct SettingsPage<Navigation: View, Accessory: View, Content: View>: View {
     let title: String
     var subtitle: String = ""
     var scrollIdentity: String = ""
     @ViewBuilder var navigation: () -> Navigation
+    @ViewBuilder var accessory: () -> Accessory
     @ViewBuilder var content: () -> Content
 
     var body: some View {
         VStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 16) {
-                SettingsSectionHeader(title: title, subtitle: subtitle, titleFont: .system(size: 24, weight: .semibold))
-                    .accessibilityElement(children: .combine)
-                    .accessibilityAddTraits(.isHeader)
+                pageHeader
                 navigation()
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -58,13 +57,51 @@ struct SettingsPage<Navigation: View, Content: View>: View {
             .id(scrollIdentity)
         }
     }
+
+    private var heading: some View {
+        SettingsSectionHeader(title: title, subtitle: subtitle, titleFont: .system(size: 24, weight: .semibold))
+            .accessibilityElement(children: .combine)
+            .accessibilityAddTraits(.isHeader)
+    }
+
+    @ViewBuilder private var pageHeader: some View {
+        if Accessory.self == EmptyView.self {
+            heading
+        } else {
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .center, spacing: 24) {
+                    heading.fixedSize()
+                    Spacer(minLength: 0)
+                    accessory().fixedSize()
+                }
+                VStack(alignment: .leading, spacing: 12) {
+                    heading
+                    accessory()
+                }
+            }
+        }
+    }
 }
 
-extension SettingsPage where Navigation == EmptyView {
+extension SettingsPage where Accessory == EmptyView {
+    init(title: String, subtitle: String = "", scrollIdentity: String = "",
+         @ViewBuilder navigation: @escaping () -> Navigation,
+         @ViewBuilder content: @escaping () -> Content) {
+        self.title = title
+        self.subtitle = subtitle
+        self.scrollIdentity = scrollIdentity
+        self.navigation = navigation
+        self.accessory = { EmptyView() }
+        self.content = content
+    }
+}
+
+extension SettingsPage where Navigation == EmptyView, Accessory == EmptyView {
     init(title: String, subtitle: String = "", @ViewBuilder content: @escaping () -> Content) {
         self.title = title
         self.subtitle = subtitle
         self.navigation = { EmptyView() }
+        self.accessory = { EmptyView() }
         self.content = content
     }
 }
