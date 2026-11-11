@@ -16,9 +16,51 @@ final class NotchPanelLayoutState {
     var isVisible = false
     var topInset: CGFloat = 0
     var cameraWidth: CGFloat = 0
+    private(set) var targetState: NotchPanelState = .collapsed
+    private var sourcePresentation = NotchContentPresentation(state: .collapsed)
+    private var targetPresentation = NotchContentPresentation(state: .collapsed)
+    private var sourceSize: CGSize
+    private var targetSize: CGSize
+    private var transitionGeneration = 0
 
     init(size: CGSize) {
         self.size = size
+        sourceSize = size
+        targetSize = size
+    }
+
+    /// Sample the visible resize so a reversal starts at the current fade, not at an endpoint.
+    func presentation(at visibleSize: CGSize) -> NotchContentPresentation {
+        let dx = targetSize.width - sourceSize.width
+        let dy = targetSize.height - sourceSize.height
+        let distance = dx * dx + dy * dy
+        guard distance > 0 else { return targetPresentation }
+        let progress = ((visibleSize.width - sourceSize.width) * dx
+            + (visibleSize.height - sourceSize.height) * dy) / distance
+        return sourcePresentation.interpolated(to: targetPresentation, progress: Double(progress))
+    }
+
+    func beginTransition(to state: NotchPanelState, size: CGSize, from visibleSize: CGSize, animated: Bool) -> Int {
+        let current = presentation(at: visibleSize)
+        transitionGeneration += 1
+        targetState = state
+        targetPresentation = NotchContentPresentation(state: state)
+        sourcePresentation = animated ? current : targetPresentation
+        sourceSize = animated ? visibleSize : size
+        targetSize = size
+        return transitionGeneration
+    }
+
+    @discardableResult
+    func finishTransition(_ generation: Int) -> Bool {
+        guard generation == transitionGeneration else { return false }
+        sourcePresentation = targetPresentation
+        sourceSize = targetSize
+        return true
+    }
+
+    func cancelTransition() {
+        transitionGeneration += 1
     }
 
     func updateVisibleSize(_ newSize: CGSize) {
@@ -56,6 +98,12 @@ final class NotchWindowController: NSObject {
             name: NSApplication.didChangeScreenParametersNotification,
             object: nil
         )
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(accessibilityOptionsDidChange),
+            name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification,
+            object: nil
+        )
 
         synchronizePanels()
         observePlayback()
@@ -64,7 +112,15 @@ final class NotchWindowController: NSObject {
     func stop() {
         isStopped = true
         NotificationCenter.default.removeObserver(self)
+        NSWorkspace.shared.notificationCenter.removeObserver(self)
         removeAllPanels()
+    }
+
+    @objc nonisolated private func accessibilityOptionsDidChange(_ notification: Notification) {
+        Task { @MainActor [weak self] in
+            guard let self, !isStopped else { return }
+            synchronizePanels()
+        }
     }
 
     @objc nonisolated private func preferencesDidChange(_ notification: Notification) {
@@ -197,6 +253,7 @@ private final class NotchPanelHost: NSObject {
     private var panelState: NotchPanelState = .collapsed
     /// Отличает программные setFrame от перетаскивания пользователем.
     private var isApplyingLayout = false
+    private var layoutTargetFrame: NSRect?
 
     init(
         screen: NSScreen,
@@ -258,6 +315,9 @@ private final class NotchPanelHost: NSObject {
         dragTask?.cancel()
         dragTask = nil
         layoutState.isVisible = false
+        layoutState.cancelTransition()
+        isApplyingLayout = false
+        NotchWindowMotion.setFrameImmediately(panel.frame, on: panel)
         panel.contentView = nil
         NotificationCenter.default.removeObserver(self)
         panel.orderOut(nil)
@@ -441,10 +501,19 @@ private final class NotchPanelHost: NSObject {
             )
         }
 
+        let reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        // Unrelated preference/playback updates must not snap an in-flight resize to its target.
+        guard frame != layoutTargetFrame || panelState != layoutState.targetState
+            || (isApplyingLayout && reduceMotion) else { return }
+        layoutTargetFrame = frame
+        let shouldAnimate = animated && !reduceMotion && panel.frame != frame
+        let generation = layoutState.beginTransition(
+            to: panelState, size: frame.size, from: panel.frame.size, animated: shouldAnimate
+        )
         isApplyingLayout = true
 
-        guard animated, !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else {
-            panel.setFrame(frame, display: true)
+        guard shouldAnimate else {
+            NotchWindowMotion.setFrameImmediately(frame, on: panel)
             isApplyingLayout = false
             syncPointerState()
             return
@@ -473,8 +542,9 @@ private final class NotchPanelHost: NSObject {
             // enter/exit; после анимации сверяемся с реальным положением мыши,
             // иначе панель может зациклиться в открытии/закрытии.
             MainActor.assumeIsolated { [weak self] in
-                self?.isApplyingLayout = false
-                self?.syncPointerState()
+                guard let self, layoutState.finishTransition(generation) else { return }
+                isApplyingLayout = false
+                syncPointerState()
             }
         }
     }
@@ -483,6 +553,17 @@ private final class NotchPanelHost: NSObject {
         let inside = panel.frame.contains(NSEvent.mouseLocation)
         if pointerState.isInside != inside {
             pointerState.isInside = inside
+        }
+    }
+}
+
+@MainActor
+enum NotchWindowMotion {
+    static func setFrameImmediately(_ frame: NSRect, on window: NSWindow) {
+        // A plain setFrame does not cancel an outstanding animator-proxy resize.
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0
+            window.animator().setFrame(frame, display: true)
         }
     }
 }
