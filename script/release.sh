@@ -45,8 +45,10 @@ HELPER="$APP_BUNDLE/Contents/Helpers/TrackPeekScriptHelper"
 PLIST="$APP_BUNDLE/Contents/Info.plist"
 [[ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$PLIST")" == "$VERSION" ]] || fail "Built app has the wrong version."
 [[ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$PLIST")" == "$BUILD_NUMBER" ]] || fail "Built app has the wrong build number."
-lipo "$APP_BUNDLE/Contents/MacOS/$APP_NAME" -verify_arch arm64 x86_64
-lipo "$HELPER" -verify_arch arm64 x86_64
+lipo "$APP_BUNDLE/Contents/MacOS/$APP_NAME" -verify_arch arm64
+lipo "$APP_BUNDLE/Contents/MacOS/$APP_NAME" -verify_arch x86_64
+lipo "$HELPER" -verify_arch arm64
+lipo "$HELPER" -verify_arch x86_64
 codesign --verify --strict --verbose=2 "$HELPER"
 codesign --verify --deep --strict --verbose=2 "$APP_BUNDLE"
 
