@@ -1,5 +1,10 @@
 # TrackPeek
 
+> **Исторический документ:** исходная спецификация Spotify-only MVP.
+> Текущая реализация уже включает Apple Music, lyrics, widgets и другие функции.
+> Для новой работы начни с [AGENTS.md](AGENTS.md) и
+> [актуального состояния](docs/agents/STATE.md); описание продукта — в [README.md](README.md).
+
 > Рабочее название концепта: **Now Playing+**  
 > Платформа: **macOS**  
 > Язык: **Swift**  

@@ -1,7 +1,22 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-MODE="${1:-run}"
+usage() {
+  echo "usage: $0 [run|--debug|--logs|--telemetry|--verify|--help]"
+}
+
+if [[ $# -gt 1 ]]; then
+  usage >&2
+  exit 2
+fi
+
+MODE="${1-run}"
+case "$MODE" in
+  --help) usage; exit 0 ;;
+  run|--debug|debug|--logs|logs|--telemetry|telemetry|--verify|verify) ;;
+  *) usage >&2; exit 2 ;;
+esac
+
 APP_NAME="TrackPeek"
 BUNDLE_ID="com.trackpeek.TrackPeek"
 
@@ -44,9 +59,5 @@ case "$MODE" in
     open_app
     sleep 2
     pgrep -x "$APP_NAME" >/dev/null
-    ;;
-  *)
-    echo "usage: $0 [run|--debug|--logs|--telemetry|--verify]" >&2
-    exit 2
     ;;
 esac

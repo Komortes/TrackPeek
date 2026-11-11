@@ -70,6 +70,7 @@ struct SettingsView: View {
         GlobalShortcutsController.enabledKey,
         NotchContentLayout.storageKey,
         OverlayMode.storageKey,
+        OverlayMode.legacyStorageKey,
         MediaSourcePreference.storageKey,
         "showAlbumName",
         "showPlaybackStatus",
@@ -397,15 +398,14 @@ struct SettingsView: View {
             isPresented: $showsResetConfirmation,
             titleVisibility: .visible
         ) {
-            Button(String(localized: "Reset"), role: .destructive) { resetAllSettings() }
+            Button(String(localized: "Reset"), role: .destructive) { Self.resetAllSettings() }
             Button(String(localized: "Cancel"), role: .cancel) {}
         } message: {
             Text(String(localized: "Notch, player and display mode settings will return to their defaults."))
         }
     }
 
-    private func resetAllSettings() {
-        let defaults = UserDefaults.standard
+    static func resetAllSettings(in defaults: UserDefaults = .standard) {
         for key in Self.resettableKeys {
             defaults.removeObject(forKey: key)
         }
