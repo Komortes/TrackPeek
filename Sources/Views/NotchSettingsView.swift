@@ -142,8 +142,6 @@ struct NotchSettingsView: View {
             subtitle: String(localized: "A player at the top of the screen."),
             scrollIdentity: selectedPage.rawValue,
             navigation: {
-                activationStatus
-
                 Picker(String(localized: "Notch Settings"), selection: $selectedPage) {
                     ForEach(Page.allCases, id: \.self) { page in
                         Text(page.title).tag(page)
