@@ -40,25 +40,94 @@ struct MenuBarSettingsView: View {
     }
 
     var body: some View {
-        SettingsPage(title: String(localized: "Menu Bar"), subtitle: String(localized: "Indicators and the player window in the menu bar.")) {
-            Picker(String(localized: "Menu Bar Settings"), selection: $selectedPage) {
-                ForEach(Page.allCases, id: \.self) { page in
-                    Text(page.title).tag(page)
+        SettingsPage(
+            title: String(localized: "Menu Bar"),
+            subtitle: String(localized: "Indicators and the player window in the menu bar."),
+            scrollIdentity: selectedPage.rawValue,
+            navigation: {
+                Picker(String(localized: "Menu Bar Settings"), selection: $selectedPage) {
+                    ForEach(Page.allCases, id: \.self) { page in
+                        Text(page.title).tag(page)
+                    }
                 }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .fixedSize()
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .fixedSize()
-            .frame(maxWidth: .infinity, alignment: .leading)
+        ) {
 
             switch selectedPage {
             case .menuBar:
+                indicatorPreview
                 activationSection
                 appearanceSection
             case .player:
                 PopoverSettingsSection()
             }
         }
+    }
+
+    /// A still, full-size sample: changing appearance never starts an audio
+    /// monitor or sends a playback command from the Settings window.
+    private var indicatorPreview: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 0) {
+                Text("TrackPeek")
+                    .font(.system(size: 13, weight: .semibold))
+
+                Spacer(minLength: 20)
+
+                if controlsEnabled {
+                    HStack(spacing: 0) {
+                        ForEach(["backward.fill", "play.fill", "forward.fill"], id: \.self) { symbol in
+                            Image(systemName: symbol)
+                                .frame(width: 24, height: 24)
+                        }
+                    }
+                    .font(.system(size: 12, weight: .medium))
+                    .padding(.trailing, 10)
+
+                    HStack(spacing: MenuBarPreferences.clampedSpacing(spacing)) {
+                        if showsEqualizer {
+                            Image(systemName: "waveform")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 14, height: 12)
+                        }
+
+                        if showsTitle {
+                            Text(String(localized: "Artist and Track"))
+                                .font(.system(size: 13))
+                                .lineLimit(1)
+                                .truncationMode(.tail)
+                                .frame(
+                                    maxWidth: MenuBarPreferences.clampedTitleWidth(titleWidth),
+                                    alignment: .leading
+                                )
+                        }
+                    }
+                } else {
+                    Image(systemName: "music.note")
+                        .font(.system(size: 13))
+                        .frame(width: 24, height: 24)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 6)
+
+            Divider()
+
+            Color.clear.frame(height: 28)
+        }
+        .background(.primary.opacity(0.025), in: RoundedRectangle(cornerRadius: 10))
+        .overlay {
+            RoundedRectangle(cornerRadius: 10)
+                .strokeBorder(.primary.opacity(0.08), lineWidth: 1)
+        }
+        .clipped()
+        .accessibilityHidden(true)
+        .allowsHitTesting(false)
     }
 
     private var activationSection: some View {
@@ -98,6 +167,7 @@ struct MenuBarSettingsView: View {
                         subtitle: String(localized: "Long titles are truncated.")
                     ) {
                         SettingsValueSlider(
+                            label: String(localized: "Title Width"),
                             value: menuBarTitleWidth,
                             range: MenuBarPreferences.titleWidthRange,
                             step: MenuBarPreferences.titleWidthStep,
@@ -125,6 +195,7 @@ struct MenuBarSettingsView: View {
                         subtitle: String(localized: "Between the animation and title.")
                     ) {
                         SettingsValueSlider(
+                            label: String(localized: "Spacing"),
                             value: menuBarSpacing,
                             range: MenuBarPreferences.spacingRange,
                             step: MenuBarPreferences.spacingStep,
@@ -206,6 +277,7 @@ struct PopoverSettingsSection: View {
 
                     SettingsRow(title: String(localized: "Artwork Size")) {
                         SettingsValueSlider(
+                            label: String(localized: "Artwork Size"),
                             value: artworkSize,
                             range: ArtworkSizePreference.range,
                             step: ArtworkSizePreference.step,
@@ -244,7 +316,7 @@ struct PopoverSettingsSection: View {
         Button {
             playerLayoutRawValue = layout.rawValue
         } label: {
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 7) {
                 PlayerLayoutPreview(layout: layout)
 
                 HStack {
@@ -262,22 +334,27 @@ struct PopoverSettingsSection: View {
                 Text(layout.summary)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .lineLimit(3, reservesSpace: true)
+                    .lineLimit(2, reservesSpace: true)
             }
             .frame(maxWidth: .infinity, alignment: .topLeading)
-            .padding(12)
-            .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .padding(10)
+            .background(
+                playerLayout == layout ? Color.primary.opacity(0.04) : .clear,
+                in: RoundedRectangle(cornerRadius: 10, style: .continuous)
+            )
             .overlay {
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(
-                        playerLayout == layout ? Color.accentColor : Color.primary.opacity(0.07),
-                        lineWidth: playerLayout == layout ? 2 : 1
+                RoundedRectangle(cornerRadius: 10)
+                    .strokeBorder(
+                        playerLayout == layout ? Color.accentColor : .clear,
+                        lineWidth: 1.5
                     )
             }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(layout.title)
+        .accessibilityValue(layout.summary)
+        .help(layout.summary)
         .accessibilityAddTraits(playerLayout == layout ? .isSelected : [])
     }
 }

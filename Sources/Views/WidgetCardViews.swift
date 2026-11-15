@@ -9,6 +9,7 @@ struct WidgetCardContext {
     let coloredProgress: Bool
     let coloredWaveform: Bool
     let equalizerSensitivity: Double
+    var showsSecondaryControls = true
 
     var accent: Color {
         palette.primary.onDarkSurface.swiftUIColor
@@ -442,7 +443,7 @@ struct WidgetControls: View {
             )
             .tint(context.accent)
 
-            if showsSecondaryControls,
+            if showsSecondaryControls && context.showsSecondaryControls,
                !context.model.capabilities.isDisjoint(with: [.shuffle, .repeatTrack, .volume]) {
                 SecondaryControlsView(
                     capabilities: context.model.capabilities,

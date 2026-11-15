@@ -203,21 +203,24 @@ struct NotchPlayerView: View {
 
     var body: some View {
         GeometryReader { proxy in
-            let expandedHeight = (isFocusLayout ? NotchContentLayout.focus : .standard).size(
-                for: .expanded, width: effectiveWidth,
+            let contentSizes = NotchContentSizes(
+                layout: isFocusLayout ? .focus : .standard, width: effectiveWidth,
                 heightAdjustment: isPillMode ? 0 : heightAdjustment, topInset: panelLayoutState.topInset
-            ).height
+            )
+            let presentation = panelLayoutState.presentation(at: proxy.size)
             let revealProgress = NotchResponsiveLayout.revealProgress(
                 forHeight: proxy.size.height,
-                expandedHeight: expandedHeight
+                expandedHeight: contentSizes.expanded.height
             )
 
             Group {
                 if isFocusLayout {
-                    NotchFocusView(model: model, state: panelState, size: proxy.size,
-                        topInset: panelLayoutState.topInset, cameraWidth: panelLayoutState.cameraWidth,
-                        isVisible: panelLayoutState.isVisible, clickEnabled: clickEnabled,
-                        onTogglePin: { interaction.togglePin() }, onCollapse: { interaction.collapse() })
+                    ZStack(alignment: .top) {
+                        focusContent(state: .collapsed, size: contentSizes.compact, opacity: presentation.opacity(for: .collapsed))
+                        focusContent(state: .notification, size: contentSizes.notification, opacity: presentation.opacity(for: .notification))
+                        focusContent(state: .expanded, size: contentSizes.expanded, opacity: presentation.opacity(for: .expanded))
+                    }
+                    .frame(width: proxy.size.width, height: proxy.size.height, alignment: .top)
                 } else if let layout = cardLayout {
                     WidgetSurfaceContent(
                         model: model,
@@ -245,7 +248,9 @@ struct NotchPlayerView: View {
                         songInfoVisibility: songInfoVisibility,
                         clickEnabled: clickEnabled,
                         onTogglePin: { interaction.togglePin() },
-                        onCollapse: { interaction.collapse() }
+                        onCollapse: { interaction.collapse() },
+                        presentation: presentation,
+                        contentSizes: contentSizes
                     )
                 }
             }
@@ -364,5 +369,20 @@ struct NotchPlayerView: View {
         .onDisappear {
             interaction.cancelPendingTasks()
         }
+    }
+
+    private func focusContent(state: NotchPanelState, size: CGSize, opacity: Double) -> some View {
+        let interactive = state == panelState && opacity > 0.8
+        return NotchFocusView(
+            model: model, state: state, size: size,
+            topInset: panelLayoutState.topInset, cameraWidth: panelLayoutState.cameraWidth,
+            isVisible: panelLayoutState.isVisible && state == panelState && opacity > 0.01,
+            clickEnabled: clickEnabled,
+            onTogglePin: { interaction.togglePin() }, onCollapse: { interaction.collapse() }
+        )
+        .opacity(opacity)
+        .allowsHitTesting(interactive)
+        .disabled(!interactive)
+        .accessibilityHidden(!interactive)
     }
 }
