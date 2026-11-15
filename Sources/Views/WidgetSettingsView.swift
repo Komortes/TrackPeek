@@ -121,6 +121,8 @@ struct WidgetSettingsView: View {
             subtitle: String(localized: "A floating player on your desktop."),
             scrollIdentity: selectedPage.rawValue,
             navigation: {
+                activationStatus
+
                 Picker(String(localized: "Widget Settings"), selection: $selectedPage) {
                     ForEach(Page.allCases) { page in
                         Text(page.title).tag(page)
@@ -131,8 +133,6 @@ struct WidgetSettingsView: View {
                 .fixedSize()
             }
         ) {
-            activationStatus
-
             switch selectedPage {
             case .template:
                 layoutSection

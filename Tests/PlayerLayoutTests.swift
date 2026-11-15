@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import SwiftUI
 import Testing
 @testable import TrackPeek
 
@@ -162,5 +163,96 @@ extension PlayerLayoutTests {
     @Test("full lyrics retain compact popover bounds")
     func lyricsPopoverSizing() {
         #expect(PlayerLayout.lyrics.popoverSize(artworkSize: 274) == CGSize(width: 380, height: 470))
+    }
+}
+
+extension PlayerLayoutTests {
+    @Test("settings rows tolerate diagnostic controls that are conditionally absent", arguments: [false, true])
+    @MainActor
+    func settingsRowWithOptionalControl(showsControl: Bool) throws {
+        let renderer = ImageRenderer(content: SettingsRow(title: "Player Access", subtitle: "Connected") {
+            if showsControl {
+                Color.red.frame(width: 120, height: 24)
+            }
+        }.frame(width: 430))
+        renderer.scale = 1
+        let image = try #require(renderer.cgImage)
+        #expect(image.width == 430)
+        #expect(image.height >= 44 && image.height < 80)
+    }
+
+    @Test("narrow settings rows place wide controls below long translated labels")
+    @MainActor
+    func narrowSettingsRowStacksControl() throws {
+        let bounds = try settingsRowBounds(width: 430, controlWidth: 300)
+
+        #expect(bounds.label.maxY + 6 <= bounds.control.minY)
+        #expect(abs(bounds.label.minX - bounds.control.minX) <= 3)
+        #expect(bounds.label.width > 220, "The translation should use the row width instead of a squeezed column")
+        #expect(bounds.control.width == 300)
+    }
+
+    @Test("wide settings rows keep controls beside the label and aligned to the trailing edge")
+    @MainActor
+    func wideSettingsRowRemainsHorizontal() throws {
+        let bounds = try settingsRowBounds(width: 680, controlWidth: 300)
+
+        #expect(bounds.label.maxX < bounds.control.minX)
+        #expect(bounds.label.minY < bounds.control.maxY && bounds.control.minY < bounds.label.maxY)
+        #expect(abs(bounds.control.maxX - 666) <= 1)
+        #expect(bounds.control.width == 300)
+    }
+
+    @Test("short settings labels and toggle-sized controls remain on one line in narrow rows")
+    @MainActor
+    func shortSettingsRowRemainsHorizontal() throws {
+        let bounds = try settingsRowBounds(width: 430, controlWidth: 44, title: "On Hover", subtitle: "")
+
+        #expect(bounds.label.maxX < bounds.control.minX)
+        #expect(bounds.label.minY < bounds.control.maxY && bounds.control.minY < bounds.label.maxY)
+        #expect(abs(bounds.control.maxX - 416) <= 1)
+    }
+
+    /// Render the real row with a colored control stand-in. Pixel bounds verify
+    /// the resulting arrangement without depending on its layout implementation.
+    @MainActor
+    private func settingsRowBounds(
+        width: CGFloat,
+        controlWidth: CGFloat,
+        title: String = "Показывать панель воспроизведения",
+        subtitle: String = "Выбранный дисплей отключён. Настройка сохранится до его повторного подключения."
+    ) throws -> (label: CGRect, control: CGRect) {
+        let content = SettingsRow(title: title, subtitle: subtitle) {
+            Color.red.frame(width: controlWidth, height: 24)
+        }
+        .frame(width: width)
+        .foregroundStyle(.black)
+        .environment(\.colorScheme, .light)
+        .background(.white)
+        let renderer = ImageRenderer(content: content)
+        renderer.scale = 1
+        let bitmap = NSBitmapImageRep(cgImage: try #require(renderer.cgImage))
+        #expect(bitmap.pixelsWide == Int(width))
+
+        var label = CGRect.null
+        var control = CGRect.null
+        for y in 0..<bitmap.pixelsHigh {
+            for x in 0..<bitmap.pixelsWide {
+                guard let color = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB),
+                      color.alphaComponent > 0.9 else { continue }
+                let red = color.redComponent
+                let green = color.greenComponent
+                let blue = color.blueComponent
+                let pixel = CGRect(x: x, y: y, width: 1, height: 1)
+                if red > 0.7 && green < 0.4 && blue < 0.4 {
+                    control = control.union(pixel)
+                } else if max(red, green, blue) < 0.7 && max(red, green, blue) - min(red, green, blue) < 0.08 {
+                    label = label.union(pixel)
+                }
+            }
+        }
+        try #require(!label.isNull, "Expected visible label text")
+        try #require(!control.isNull, "Expected visible control")
+        return (label, control)
     }
 }

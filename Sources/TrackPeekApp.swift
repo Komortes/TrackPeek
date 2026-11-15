@@ -70,6 +70,7 @@ struct TrackPeekApp: App {
         Settings {
             SettingsView()
         }
+        .defaultSize(width: 940, height: 680)
         .windowToolbarStyle(.unifiedCompact)
     }
 }

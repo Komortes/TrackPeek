@@ -199,7 +199,8 @@ struct SettingsView: View {
         .navigationSplitViewStyle(.balanced)
         .toolbar(removing: .sidebarToggle)
         .navigationTitle(String(localized: "TrackPeek Settings"))
-        .frame(width: 940, height: 680)
+        .frame(minWidth: 820, idealWidth: 940, maxWidth: .infinity,
+               minHeight: 520, idealHeight: 680, maxHeight: .infinity)
         .background(SettingsWindowToolbar())
     }
 
