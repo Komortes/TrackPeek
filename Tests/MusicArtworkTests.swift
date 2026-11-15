@@ -4,6 +4,46 @@ import Testing
 
 @Suite("Music artwork cache", .timeLimit(.minutes(1)))
 struct MusicArtworkTests {
+    @Test("ending a client lifetime removes only its own artwork")
+    func clientLifetimeCleanup() async throws {
+        let directory = try makeDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let live = MusicAppleScriptClient(artworkLoader: { Data([1]) }, artworkDirectory: directory)
+        let liveURL = try #require(try await live.resolvedArtworkURL(trackIdentity: "A"))
+        var retired: MusicAppleScriptClient? = MusicAppleScriptClient(
+            artworkLoader: { Data([2]) }, artworkDirectory: directory
+        )
+        let retiredURL = try #require(try await retired?.resolvedArtworkURL(trackIdentity: "A"))
+        retired = nil
+        #expect(!FileManager.default.fileExists(atPath: retiredURL.path))
+        #expect(try Data(contentsOf: liveURL) == Data([1]))
+        #expect(try files(in: directory) == [liveURL.lastPathComponent])
+        _ = try await live.resolvedArtworkURL(trackIdentity: "A")
+    }
+
+    @Test("termination removes retained artwork and prevents a late lookup from leaving a new file")
+    func terminationCleanup() async throws {
+        let directory = try makeDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let center = NotificationCenter()
+        let source = SuspendedMusicArtwork()
+        let client = MusicAppleScriptClient(artworkLoader: { try await source.load() }, artworkDirectory: directory,
+                                            artworkNotificationCenter: center)
+        let initial = Task { try await client.resolvedArtworkURL(trackIdentity: "A") }
+        await source.waitForCall(1)
+        await source.complete(1, with: Data([1]))
+        let initialURL = try #require(try await initial.value)
+        let pending = Task { try await client.resolvedArtworkURL(trackIdentity: "B") }
+        await source.waitForCall(2)
+
+        // Use an isolated center: never terminate or reconfigure the real app.
+        center.post(name: NSApplication.willTerminateNotification, object: nil)
+        #expect(!FileManager.default.fileExists(atPath: initialURL.path))
+        await source.complete(2, with: Data([2]))
+        #expect(try await pending.value == nil)
+        #expect(try files(in: directory).isEmpty)
+    }
+
     @Test("a transient failure retries after a cooldown and reuses the recovered file")
     func transientRecovery() async throws {
         let directory = try makeDirectory()
