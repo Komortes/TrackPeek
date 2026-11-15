@@ -1,13 +1,15 @@
 # Актуальный контекст TrackPeek
 
-Обновлено: 2026-11-04. Подготовка начата на
+Обновлено: 2026-11-15. Подготовка начата на
 `af4644bd7c0ef6551fc49385492fca3870007eef`; фактические текущие HEAD/ветку/diff
 показывает `./script/agent.sh context`. Живая очередь находится на приватной доске,
 не в этом публичном документе.
 
 ## Продукт и сборка
 
-- В `project.yml`: версия **1.1, build 5**, Swift 6, deployment target macOS 14.
+- В `project.yml`: кандидат **1.2, build 6**, Swift 6, deployment target macOS 14.
+  Последний опубликованный выпуск — **1.1, build 5**; метаданные кандидата сами
+  по себе не означают публикацию. См. [заметки 1.2](../releases/1.2.md).
 - Реализованы Spotify/Apple Music, menu bar, notch/Focus, desktop widgets,
   lyrics, shortcuts, выбор экрана, экономный режим и диагностика.
 - Языки en/uk/ru; строки в `Sources/Resources/*.xcstrings`.

@@ -5,22 +5,21 @@ actor MusicAppleScriptClient: SpotifyPlaybackProviding {
 
     private var cachedArtworkIdentity: String?
     private var cachedArtworkURL: URL?
-    private var ownedArtworkURL: URL?
     private var artworkRetryAfter: TimeInterval?
     private var artworkGeneration: UInt64 = 0
     private let artworkLoader: (@Sendable () async throws -> Data?)?
-    private let artworkDirectory: URL
+    private let artworkFiles: MusicArtworkFiles
     private let artworkTime: @Sendable () -> TimeInterval
-    private let removeArtworkFile: @Sendable (URL) throws -> Void
 
     init(artworkLoader: (@Sendable () async throws -> Data?)? = nil,
          artworkDirectory: URL = FileManager.default.temporaryDirectory,
          artworkTime: @escaping @Sendable () -> TimeInterval = { ProcessInfo.processInfo.systemUptime },
-         removeArtworkFile: @escaping @Sendable (URL) throws -> Void = { try FileManager.default.removeItem(at: $0) }) {
+         removeArtworkFile: @escaping @Sendable (URL) throws -> Void = { try FileManager.default.removeItem(at: $0) },
+         artworkNotificationCenter: NotificationCenter = .default) {
         self.artworkLoader = artworkLoader
-        self.artworkDirectory = artworkDirectory
+        self.artworkFiles = MusicArtworkFiles(directory: artworkDirectory, removeFile: removeArtworkFile,
+                                             notificationCenter: artworkNotificationCenter)
         self.artworkTime = artworkTime
-        self.removeArtworkFile = removeArtworkFile
     }
 
     func activeSource() -> PlaybackSource {
@@ -188,15 +187,13 @@ actor MusicAppleScriptClient: SpotifyPlaybackProviding {
         cachedArtworkIdentity = trackIdentity
         cachedArtworkURL = nil
         do {
-            try retireArtworkFile()
+            try artworkFiles.retire()
             guard let data = try result.get() else {
                 artworkRetryAfter = nil
                 return nil
             }
             guard !data.isEmpty else { throw SpotifyPlaybackError.invalidResponse }
-            let url = artworkDirectory.appendingPathComponent("trackpeek-music-artwork-\(UUID().uuidString).jpg")
-            try data.write(to: url, options: .atomic)
-            ownedArtworkURL = url
+            let url = try artworkFiles.write(data)
             cachedArtworkURL = url
             artworkRetryAfter = nil
             return url
@@ -205,16 +202,6 @@ actor MusicAppleScriptClient: SpotifyPlaybackProviding {
             artworkRetryAfter = artworkTime() + 5
             return nil
         }
-    }
-
-    private func retireArtworkFile() throws {
-        guard let url = ownedArtworkURL else { return }
-        do {
-            try removeArtworkFile(url)
-        } catch let error as CocoaError where error.code == .fileNoSuchFile {
-            // A temporary file can be removed externally; it no longer needs an owner.
-        }
-        ownedArtworkURL = nil
     }
 
     private func loadCurrentArtwork() async throws -> Data? {
@@ -264,5 +251,62 @@ actor MusicAppleScriptClient: SpotifyPlaybackProviding {
             }
             throw SpotifyPlaybackError.scriptFailed(message)
         }
+    }
+}
+
+/// Termination is synchronous: a task scheduled on the client actor may never
+/// run before process exit. The lock serializes file writes with that cleanup.
+private final class MusicArtworkFiles: NSObject, @unchecked Sendable {
+    private let directory: URL
+    private let removeFile: @Sendable (URL) throws -> Void
+    private let notificationCenter: NotificationCenter
+    private let lock = NSLock()
+    private var ownedURL: URL?
+    private var isTerminating = false
+
+    init(directory: URL, removeFile: @escaping @Sendable (URL) throws -> Void,
+         notificationCenter: NotificationCenter) {
+        self.directory = directory
+        self.removeFile = removeFile
+        self.notificationCenter = notificationCenter
+        super.init()
+        notificationCenter.addObserver(self, selector: #selector(applicationWillTerminate(_:)),
+                                       name: NSApplication.willTerminateNotification, object: nil)
+    }
+
+    deinit {
+        notificationCenter.removeObserver(self)
+        try? retire()
+    }
+
+    func write(_ data: Data) throws -> URL {
+        try lock.withLock {
+            guard !isTerminating else { throw CancellationError() }
+            let url = directory.appendingPathComponent("trackpeek-music-artwork-\(UUID().uuidString).jpg")
+            try data.write(to: url, options: .atomic)
+            ownedURL = url
+            return url
+        }
+    }
+
+    func retire() throws {
+        try lock.withLock { try removeOwnedFile() }
+    }
+
+    @objc private func applicationWillTerminate(_ notification: Notification) {
+        lock.withLock {
+            isTerminating = true
+            try? removeOwnedFile()
+        }
+    }
+
+    private func removeOwnedFile() throws {
+        guard let url = ownedURL else { return }
+        do {
+            try removeFile(url)
+        } catch let error as CocoaError where error.code == .fileNoSuchFile {
+            // External removal already released this file; a replacement is safe.
+        }
+        ownedURL = nil
     }
 }

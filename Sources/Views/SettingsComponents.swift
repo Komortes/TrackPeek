@@ -39,10 +39,11 @@ struct SettingsPage<Navigation: View, Accessory: View, Content: View>: View {
                 pageHeader
                 navigation()
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: 760, alignment: .leading)
             .padding(.horizontal, 24)
-            .padding(.top, 20)
+            .padding(.top, 24)
             .padding(.bottom, 18)
+            .frame(maxWidth: .infinity)
 
             Divider()
 
@@ -50,8 +51,9 @@ struct SettingsPage<Navigation: View, Accessory: View, Content: View>: View {
                 VStack(alignment: .leading, spacing: 24) {
                     content()
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(maxWidth: 760, alignment: .leading)
                 .padding(24)
+                .frame(maxWidth: .infinity)
             }
             .scrollBounceBehavior(.basedOnSize)
             .id(scrollIdentity)
@@ -190,7 +192,7 @@ struct SettingsRow<Control: View>: View {
     @ViewBuilder var control: () -> Control
 
     var body: some View {
-        HStack(spacing: 16) {
+        SettingsRowLayout {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.system(size: 13, weight: .medium))
@@ -204,12 +206,57 @@ struct SettingsRow<Control: View>: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .fixedSize(horizontal: false, vertical: true)
-            control()
-                .fixedSize(horizontal: true, vertical: false)
+            // The builder may produce no controls (for example, connected diagnostics).
+            HStack(spacing: 8) {
+                control()
+            }
+            .fixedSize(horizontal: true, vertical: false)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
         .frame(minHeight: 44)
+    }
+}
+
+/// Keep a readable label column, moving wide controls below it when needed.
+/// One layout preserves the control's identity and keyboard focus on resize.
+private struct SettingsRowLayout: Layout {
+    private struct Arrangement {
+        let size: CGSize
+        let label: CGSize
+        let control: CGSize
+        let stacked: Bool
+    }
+
+    private func arrangement(width proposedWidth: CGFloat?, subviews: Subviews) -> Arrangement {
+        let control = subviews[1].sizeThatFits(.unspecified)
+        let idealLabel = subviews[0].sizeThatFits(.unspecified)
+        let idealWidth = idealLabel.width + 16 + control.width
+        let width = max(control.width, proposedWidth.flatMap { $0.isFinite ? $0 : nil } ?? idealWidth)
+        let stacked = width < min(220, idealLabel.width) + 16 + control.width
+        let label = subviews[0].sizeThatFits(
+            ProposedViewSize(width: stacked ? width : width - 16 - control.width, height: nil)
+        )
+        return Arrangement(
+            size: CGSize(width: width, height: stacked ? label.height + 10 + control.height : max(label.height, control.height)),
+            label: label, control: control, stacked: stacked
+        )
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        arrangement(width: proposal.width, subviews: subviews).size
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let row = arrangement(width: bounds.width, subviews: subviews)
+        let labelY = row.stacked ? bounds.minY : bounds.midY - row.label.height / 2
+        let controlOrigin = row.stacked
+            ? CGPoint(x: bounds.minX, y: bounds.minY + row.label.height + 10)
+            : CGPoint(x: bounds.maxX - row.control.width, y: bounds.midY - row.control.height / 2)
+        subviews[0].place(at: CGPoint(x: bounds.minX, y: labelY), anchor: .topLeading,
+                          proposal: ProposedViewSize(row.label))
+        subviews[1].place(at: controlOrigin, anchor: .topLeading,
+                          proposal: ProposedViewSize(row.control))
     }
 }
 
