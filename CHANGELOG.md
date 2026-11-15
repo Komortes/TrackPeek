@@ -2,6 +2,17 @@
 
 Changes are grouped by release.
 
+## Unreleased — 1.2 (build 6)
+
+- Clearer Settings navigation, local player previews, persistent surface status, and a resizable window with adaptive rows for long labels.
+- Stable notch content during expansion, interruption-safe transitions, and reliable explicit collapse and Reduce Motion handling.
+- Paused seeking preserves the requested position while stale player snapshots settle.
+- Apple Music artwork retries temporary failures and cleans up owned files on replacement, client teardown, and normal app termination.
+- Widget preferences migrate once; resetting settings stays effective after restart.
+- Lyrics HTTP responses no longer use a persistent disk cache.
+
+Release preparation and distribution details: [1.2 notes](docs/releases/1.2.md). The current published download remains 1.1 (build 5) until the signed 1.2 artifacts are verified and published.
+
 ## 1.1 — 2026-10-19 (build 5)
 
 - Choose English, Ukrainian, Russian, or Follow macOS directly in Settings → General → App Language. The choice is saved for TrackPeek and takes effect after restarting the app.
