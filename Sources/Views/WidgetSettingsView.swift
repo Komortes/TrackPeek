@@ -129,10 +129,9 @@ struct WidgetSettingsView: View {
                 .pickerStyle(.segmented)
                 .labelsHidden()
                 .fixedSize()
-            }
+            },
+            accessory: { activationStatus }
         ) {
-            activationStatus
-
             switch selectedPage {
             case .template:
                 layoutSection
@@ -151,26 +150,29 @@ struct WidgetSettingsView: View {
     // MARK: Активация
 
     private var activationStatus: some View {
-        HStack(spacing: 8) {
-            Label(
-                selectedMode == .floatingWidget ? String(localized: "Widget is enabled") : String(localized: "Widget is disabled"),
-                systemImage: selectedMode == .floatingWidget ? "checkmark.circle.fill" : "rectangle.on.rectangle"
-            )
-            .foregroundStyle(.secondary)
-            .font(.callout)
-
-            Text("· \(selectedLayout.title)")
-                .font(.callout)
-                .foregroundStyle(.secondary)
-
-            Spacer()
-
-            if selectedMode != .floatingWidget {
-                Button(String(localized: "Enable Widget")) {
-                    selectedModeRawValue = OverlayMode.floatingWidget.rawValue
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 8) {
+                Label {
+                    Text(selectedMode == .floatingWidget ? String(localized: "Widget is enabled") : String(localized: "Widget is disabled"))
+                        .foregroundStyle(.secondary)
+                } icon: {
+                    Image(systemName: selectedMode == .floatingWidget ? "checkmark.circle.fill" : "rectangle.on.rectangle")
+                        .foregroundStyle(selectedMode == .floatingWidget ? Color.green : Color.secondary)
                 }
-                .controlSize(.small)
+                .font(.callout)
+
+                if selectedMode != .floatingWidget {
+                    Button(String(localized: "Enable Widget")) {
+                        selectedModeRawValue = OverlayMode.floatingWidget.rawValue
+                    }
+                    .controlSize(.small)
+                    .fixedSize()
+                }
             }
+
+            Text(selectedLayout.title)
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
     }
 
