@@ -153,6 +153,33 @@ struct PlaybackRecoveryTests {
         #expect(await fixture.provider.fetchCount == 2)
     }
 
+    @Test("granting access from onboarding recovers the shared player and polling")
+    func onboardingPermissionRecovery() async throws {
+        let fixture = RecoveryFixture()
+        defer { fixture.stop() }
+        let access = OnboardingAccessCheck(coordinator: fixture.coordinator)
+        fixture.coordinator.start()
+        try await waitUntil { await fixture.provider.hasPendingFetch(1) }
+        await fixture.provider.finishFetch(1, with: .failure(SpotifyPlaybackError.automationDenied))
+        try await waitUntil { fixture.model.availability == .automationDenied && !fixture.model.isRefreshing }
+        let first = access.check()
+        try await waitUntil { await fixture.provider.hasPendingFetch(2) }
+        await fixture.provider.finishFetch(2, with: .failure(SpotifyPlaybackError.automationDenied))
+        await first.value
+        #expect(access.status == .denied)
+        #expect(fixture.coordinator.nextRefreshDate == nil)
+
+        access.openPermissions(for: .spotify) { true }
+        let retry = try #require(access.returnedToApp(for: .spotify))
+        try await waitUntil { await fixture.provider.hasPendingFetch(3) }
+        await fixture.provider.finishFetch(3, with: .success(recoveryTrack("Recovered")))
+        await retry.value
+        #expect(access.status == .granted)
+        #expect(fixture.model.track?.title == "Recovered")
+        #expect(fixture.coordinator.nextRefreshDate != nil)
+        #expect(await fixture.provider.fetchCount == 3)
+    }
+
     @Test("sleep cancels the schedule and ignores late reads while wake fetches fresh state")
     func sleepAndWake() async throws {
         let fixture = RecoveryFixture()

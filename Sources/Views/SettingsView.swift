@@ -62,7 +62,6 @@ struct SettingsView: View {
 
     @State private var showsResetConfirmation = false
     @State private var presetRevision = 0
-    private let onboardingController = OnboardingWindowController()
 
     private static let resettableKeys: [String] = [
         ResourceUsageMode.storageKey,
@@ -381,7 +380,7 @@ struct SettingsView: View {
             }
             SettingsGroup {
                 SettingsRow(title: String(localized: "Initial Setup"), subtitle: String(localized: "Music source, permissions and Open at Login.")) {
-                    Button(String(localized: "Open")) { onboardingController.show() }
+                    Button(String(localized: "Open")) { OnboardingWindowController.shared.show() }
                 }
             }
             SettingsSection(title: String(localized: "settings.reset", defaultValue: "Reset")) {

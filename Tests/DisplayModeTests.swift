@@ -1,4 +1,4 @@
-import Foundation
+import AppKit
 import Testing
 @testable import TrackPeek
 
@@ -32,6 +32,78 @@ struct OverlayModeTests {
         #expect(defaults.string(forKey: OverlayMode.storageKey) == "off")
 
         defaults.removePersistentDomain(forName: "overlay-mode-tests")
+    }
+
+    @MainActor
+    @Test("onboarding reuses its window until close and releases the old content")
+    func onboardingWindowLifetime() {
+        let controller = OnboardingWindowController()
+        func makeContent() -> NSViewController {
+            let content = NSViewController()
+            content.view = NSView(frame: NSRect(x: 0, y: 0, width: 100, height: 100))
+            return content
+        }
+
+        let first = controller.windowForPresentation(content: makeContent)
+        #expect(!first.isVisible)
+        #expect(controller.windowForPresentation(content: makeContent) === first)
+        first.close()
+        #expect(first.contentViewController == nil)
+        #expect(first.delegate == nil)
+
+        let reopened = controller.windowForPresentation(content: makeContent)
+        defer { reopened.close() }
+        #expect(reopened !== first)
+        #expect(reopened.contentViewController != nil)
+        #expect(!reopened.isVisible)
+    }
+
+    @MainActor
+    @Test("a fresh first launch selects the surface for the display even after defaults registration",
+          arguments: [false, true])
+    func firstLaunchSelectsSurface(hasNotch: Bool) throws {
+        let suite = "onboarding-fresh.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        WidgetPreferences.registerDefaults(in: defaults)
+        OnboardingWindowController.prepareInitialSelection(hasNotchedDisplay: hasNotch, in: defaults, domainName: suite)
+
+        let saved = try #require(defaults.persistentDomain(forName: suite))
+        #expect(saved[OverlayMode.storageKey] as? String == (hasNotch ? OverlayMode.notch : .floatingWidget).rawValue)
+        #expect(saved[WidgetPreferences.layoutKey] as? String == (hasNotch ? nil : NotchWidgetLayout.miniBar.rawValue))
+    }
+
+    @MainActor
+    @Test("reopening unfinished setup preserves a migrated menu bar selection")
+    func firstLaunchPreservesMigratedMenuBar() throws {
+        let suite = "onboarding-migrated.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        defaults.set("menuBar", forKey: OverlayMode.legacyStorageKey)
+        OverlayMode.migrateIfNeeded(in: defaults)
+
+        OnboardingWindowController.prepareInitialSelection(hasNotchedDisplay: false, in: defaults, domainName: suite)
+
+        let saved = try #require(defaults.persistentDomain(forName: suite))
+        #expect(saved[OverlayMode.storageKey] as? String == OverlayMode.off.rawValue)
+        #expect(saved[WidgetPreferences.layoutKey] == nil)
+    }
+
+    @MainActor
+    @Test("unfinished setup preserves a saved widget layout and subsequent surface edits")
+    func firstLaunchPreservesSavedChoices() throws {
+        let suite = "onboarding-saved.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        defaults.set(NotchWidgetLayout.edge.rawValue, forKey: WidgetPreferences.layoutKey)
+
+        OnboardingWindowController.prepareInitialSelection(hasNotchedDisplay: false, in: defaults, domainName: suite)
+        #expect(defaults.string(forKey: WidgetPreferences.layoutKey) == NotchWidgetLayout.edge.rawValue)
+        #expect(defaults.string(forKey: OverlayMode.storageKey) == OverlayMode.floatingWidget.rawValue)
+
+        defaults.set(OverlayMode.off.rawValue, forKey: OverlayMode.storageKey)
+        OnboardingWindowController.prepareInitialSelection(hasNotchedDisplay: true, in: defaults, domainName: suite)
+        #expect(defaults.string(forKey: OverlayMode.storageKey) == OverlayMode.off.rawValue)
     }
 
     @MainActor
