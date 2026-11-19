@@ -57,11 +57,7 @@ struct PlayerStateView: View {
                     .controlSize(.small)
 
                 Button(String(localized: "Open Privacy & Security Settings")) {
-                    if let url = URL(
-                        string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation"
-                    ) {
-                        NSWorkspace.shared.open(url)
-                    }
+                    PlayerAppLauncher.openAutomationSettings()
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)

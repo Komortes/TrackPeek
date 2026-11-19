@@ -9,6 +9,7 @@ struct SettingsPlayerPreview: View {
     }
 
     let surface: Surface
+    var alignment: Alignment = .center
     @State private var model = SpotifySpikeModel(provider: SettingsPreviewPlayback())
     @State private var lyrics = LyricsStore(provider: SettingsPreviewLyrics())
     @State private var audio = SpotifyAudioMonitor()
@@ -59,7 +60,7 @@ struct SettingsPlayerPreview: View {
                 Image(decorative: image, scale: displayScale)
                     .resizable()
                     .frame(width: size.width * scale, height: size.height * scale)
-                    .frame(width: geometry.size.width, height: geometry.size.height)
+                    .frame(width: geometry.size.width, height: geometry.size.height, alignment: alignment)
             }
         }
         .accessibilityHidden(true)

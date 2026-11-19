@@ -42,9 +42,7 @@ struct PlaybackDiagnosticsView: View {
                 SettingsRow(title: String(localized: "Player Access"), subtitle: diagnostics.permission) {
                     if diagnostics.availability == .automationDenied {
                         Button(String(localized: "Open Permissions")) {
-                            if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Automation") {
-                                NSWorkspace.shared.open(url)
-                            }
+                            PlayerAppLauncher.openAutomationSettings()
                         }
                     }
                 }

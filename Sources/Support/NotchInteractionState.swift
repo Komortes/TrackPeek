@@ -97,14 +97,13 @@ final class NotchInteractionState {
         notificationsEnabled: Bool,
         duration: Double
     ) {
-        guard
-            notificationsEnabled,
-            oldValue != nil,
-            newValue != nil,
-            oldValue != newValue
-        else {
+        guard let newValue else {
+            notificationTask?.cancel()
+            notificationTask = nil
+            notificationVisible = false
             return
         }
+        guard notificationsEnabled, let oldValue, oldValue != newValue else { return }
 
         notificationTask?.cancel()
         notificationVisible = true

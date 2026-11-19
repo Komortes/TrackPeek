@@ -786,13 +786,13 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Плеер вокруг чёлки и в строке меню для Spotify и Apple Music."
+            "value": "Плеер для Spotify и Apple Music в чёлке и строке меню."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Плеєр навколо вирізу та в смузі меню для Spotify й Apple Music."
+            "value": "Плеєр для Spotify й Apple Music у вирізі та смузі меню."
           }
         }
       }
@@ -2403,6 +2403,28 @@
         }
       }
     },
+    "Click TrackPeek in the menu bar to open the player.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Click TrackPeek in the menu bar to open the player."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нажмите TrackPeek в строке меню, чтобы открыть плеер."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Натисніть TrackPeek у смузі меню, щоб відкрити плеєр."
+          }
+        }
+      }
+    },
     "Click a field and press a shortcut with ⌘ Command or ⌃ Control.": {
       "localizations": {
         "en": {
@@ -3371,6 +3393,28 @@
         }
       }
     },
+    "Drag TrackPeek to Applications.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag TrackPeek to Applications."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перетащите TrackPeek в папку «Программы»."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перетягніть TrackPeek до папки «Програми»."
+          }
+        }
+      }
+    },
     "Drag or use the left and right arrows to seek": {
       "localizations": {
         "en": {
@@ -4273,6 +4317,28 @@
         }
       }
     },
+    "Hover to peek, or click the closed notch to keep the player open.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hover to peek, or click the closed notch to keep the player open."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Наведите указатель, чтобы раскрыть плеер, или нажмите на свёрнутую чёлку, чтобы закрепить его."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Наведіть вказівник, щоб розгорнути плеєр, або натисніть на згорнутий виріз, щоб закріпити його."
+          }
+        }
+      }
+    },
     "Hover to expand the player": {
       "localizations": {
         "en": {
@@ -5010,7 +5076,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Только Menu Bar"
+            "value": "Только строка меню"
           }
         },
         "uk": {

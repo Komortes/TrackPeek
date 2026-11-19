@@ -33,6 +33,20 @@ Public ZIP archives are immutable. The original `TrackPeek-1.1.zip` is build 3; 
 
 The checked-in signing setup uses Apple Development with hardened runtime. The archive is not notarized. Keep that limitation in the install instructions and release notes; do not describe it as Developer ID distribution.
 
+## Preview the drag-to-install window
+
+Build a local DMG from an existing TrackPeek app. With Python 3.11 or newer, install the packaging tool in an isolated environment. The optional last argument selects the Finder background language (`en`, `uk`, or `ru`, default `en`).
+
+```sh
+python3 -m venv .build/dmg-tools
+.build/dmg-tools/bin/python -m pip install 'dmgbuild==2.0.0'
+PATH="$PWD/.build/dmg-tools/bin:$PATH" ./script/package_dmg.sh \
+  .build/ci-derived-data/build/Build/Products/Release/TrackPeek.app \
+  .build/TrackPeek-preview.dmg en
+```
+
+Use a new output filename in an existing directory. The command copies the app, adds the Applications link and a Retina background, sets the Finder icon positions, and verifies the disk image checksum. Double-click the DMG to inspect the window and eject the volume when finished. The app retains its existing signature. A DMG made from the ad-hoc CI build is for local inspection. Publishing a Developer ID signed and notarized installer is a separate release step.
+
 ## Publishing a new display version
 
 After the repository owner authorizes publishing, push the verified source and choose its exact commit SHA as the release target. Ensure it is an ancestor of main before publishing. For a display version with no existing public release, create a draft using `gh release create`, the verified SHA as `--target`, the build-specific ZIP, appcast.xml, SHA256SUMS, and the corresponding release notes. Do not let GitHub create a tag against an unrelated or stale default branch.
