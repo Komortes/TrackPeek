@@ -135,6 +135,38 @@ struct NotchInteractionStateTests {
         #expect(!state.hoverReady)
     }
 
+    @Test("losing the track dismisses its notification and reconnecting does not replay it")
+    func lostTrackDismissesNotification() {
+        let state = NotchInteractionState()
+        state.handleTrackChange(from: "first", to: "second", notificationsEnabled: true, duration: 8)
+        #expect(state.panelState(cardLayoutActive: false, hoverEnabled: true, clickEnabled: true) == .notification)
+
+        state.handleTrackChange(from: "second", to: nil, notificationsEnabled: true, duration: 8)
+        #expect(state.panelState(cardLayoutActive: false, hoverEnabled: true, clickEnabled: true) == .collapsed)
+
+        state.handleTrackChange(from: nil, to: "third", notificationsEnabled: true, duration: 8)
+        #expect(!state.notificationVisible)
+    }
+
+    @Test("losing the track preserves the pin and an in-flight hover")
+    func lostTrackPreservesInteraction() async {
+        let delay = InteractionDelay()
+        let state = NotchInteractionState(sleep: delay.sleep)
+        state.togglePin()
+        state.handleTrackChange(from: "first", to: "second", notificationsEnabled: true, duration: 8)
+        await delay.waitForRequest(1)
+        let hover = state.handleHover(isInside: true, pointerIsInside: { true }, enabled: true, delay: 0.3)
+        await delay.waitForRequest(2)
+
+        state.handleTrackChange(from: "second", to: nil, notificationsEnabled: true, duration: 8)
+        #expect(state.isPinned)
+        #expect(!state.notificationVisible)
+        delay.finish(1)
+        delay.finish(2)
+        await hover?.value
+        #expect(state.hoverReady)
+    }
+
     @Test("pin keeps the panel expanded after hover exit and above a notification")
     func pinHasPriorityOverHoverAndNotification() async {
         let delay = InteractionDelay()
